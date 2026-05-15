@@ -1,4 +1,5 @@
 import csv
+import os
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -10,8 +11,11 @@ from .mountain_coordinates import find_mountain_coordinates
 
 
 TRAIL_CSV_PATH = settings.BASE_DIR.parent / "국립공원공단_탐방로_20240911.csv"
+DISASTER_RISK_CSV_PATH = settings.BASE_DIR.parent / "국립공원공단_재난위험지구_20240904.csv"
 KEY_FILE_PATH = settings.BASE_DIR.parent / "key.txt"
 DATA_LINK_FILE_PATH = settings.BASE_DIR.parent / "data" / "데이터 링크.txt"
+VWORLD_KEY_FILE_PATH = settings.BASE_DIR.parent / "vworld_key.txt"
+KMA_API_HUB_KEY_FILE_PATH = settings.BASE_DIR.parent / "kma_api_hub_key.txt"
 
 
 @lru_cache(maxsize=1)
@@ -41,6 +45,55 @@ def _read_trail_csv(path, encoding):
                 courses.append(course)
 
     return courses or COURSES
+
+
+@lru_cache(maxsize=1)
+def load_disaster_risk_zones():
+    if not DISASTER_RISK_CSV_PATH.exists():
+        return []
+
+    for encoding in ("utf-8-sig", "cp949", "euc-kr"):
+        try:
+            return _read_disaster_risk_csv(DISASTER_RISK_CSV_PATH, encoding)
+        except UnicodeDecodeError:
+            continue
+    return []
+
+
+def _read_disaster_risk_csv(path, encoding):
+    zones = []
+    with Path(path).open(encoding=encoding, newline="") as csv_file:
+        reader = csv.DictReader(csv_file)
+        for index, row in enumerate(reader, start=1):
+            zone = normalize_disaster_risk_row(index, row)
+            if zone:
+                zones.append(zone)
+    return zones
+
+
+def normalize_disaster_risk_row(index, row):
+    district = clean_text(row.get("지구명"))
+    location = clean_text(row.get("위치"))
+    facility = clean_text(row.get("시설명"))
+    risk_factor = clean_text(row.get("위험요인"))
+    if not any([district, location, facility, risk_factor]):
+        return None
+
+    return {
+        "id": f"disaster-risk-{index}",
+        "district": district,
+        "location": location,
+        "facility": facility,
+        "has_signage": parse_int(row.get("표지판설치")),
+        "risk_factor": risk_factor,
+        "expected_daily_visitors": parse_int(row.get("일최대예상탐방객")),
+        "evacuation_capacity": parse_int(row.get("대피계획인원")),
+        "evacuation_place": clean_text(row.get("대피장소")),
+        "rescue_equipment": clean_text(row.get("구조대편성 및 구조장비현황")),
+        "control_facility": clean_text(row.get("통제시설")),
+        "source": "국립공원공단_재난위험지구_20240904",
+        "search_text": normalize_search_text(" ".join([district, location, facility, risk_factor])),
+    }
 
 
 def normalize_trail_row(index, row):
@@ -84,6 +137,10 @@ def normalize_trail_row(index, row):
 
 def clean_text(value):
     return (value or "").strip()
+
+
+def normalize_search_text(value):
+    return re.sub(r"\s+", "", str(value or "").lower())
 
 
 def parse_distance_km(value):
@@ -212,3 +269,84 @@ def _load_public_service_key_from_path(path):
         if len(candidate) >= 20 and " " not in candidate and ":" not in candidate:
             return candidate
     return candidates[-1] if candidates else ""
+
+
+@lru_cache(maxsize=1)
+def load_vworld_api_key():
+    env_key = os.environ.get("VWORLD_API_KEY", "").strip()
+    if env_key:
+        return env_key
+
+    for path in (VWORLD_KEY_FILE_PATH, DATA_LINK_FILE_PATH):
+        key = _load_vworld_api_key_from_path(path)
+        if key:
+            return key
+    return ""
+
+
+def _load_vworld_api_key_from_path(path):
+    if not path.exists():
+        return ""
+
+    for encoding in ("utf-8", "utf-8-sig", "cp949", "euc-kr"):
+        try:
+            text = path.read_text(encoding=encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        return ""
+
+    keyed_patterns = [
+        r"VWORLD_API_KEY\s*[:=]\s*([A-Za-z0-9-]{20,})",
+        r"VWORLD_KEY\s*[:=]\s*([A-Za-z0-9-]{20,})",
+        r"브이월드[^:\n]*키\s*[:=]\s*([A-Za-z0-9-]{20,})",
+    ]
+    for pattern in keyed_patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+
+    uuid_like = re.search(
+        r"\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\b",
+        text,
+    )
+    return uuid_like.group(0).strip() if uuid_like else ""
+
+
+@lru_cache(maxsize=1)
+def load_kma_api_hub_key():
+    env_key = os.environ.get("KMA_API_HUB_KEY", "").strip()
+    if env_key:
+        return env_key
+
+    for path in (KMA_API_HUB_KEY_FILE_PATH, DATA_LINK_FILE_PATH):
+        key = _load_kma_api_hub_key_from_path(path)
+        if key:
+            return key
+    return load_public_service_key()
+
+
+def _load_kma_api_hub_key_from_path(path):
+    if not path.exists():
+        return ""
+
+    for encoding in ("utf-8", "utf-8-sig", "cp949", "euc-kr"):
+        try:
+            text = path.read_text(encoding=encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        return ""
+
+    patterns = [
+        r"KMA_API_HUB_KEY\s*[:=]\s*([A-Za-z0-9_-]{10,})",
+        r"authKey\s*=\s*([A-Za-z0-9_-]{10,})",
+        r"산악예보[^:\n]*키\s*[:=]\s*([A-Za-z0-9_-]{10,})",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    return ""

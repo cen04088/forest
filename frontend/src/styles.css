@@ -262,7 +262,6 @@ p {
 }
 
 .wide,
-.mode-banner,
 .primary-btn {
   grid-column: 1 / -1;
 }
@@ -271,21 +270,6 @@ p {
   color: #ff385c;
   font-size: 12px;
   font-weight: 900;
-}
-
-.mode-banner {
-  display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: #fff7f8;
-  color: #717171;
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.mode-banner strong {
-  color: #222;
 }
 
 .primary-btn,

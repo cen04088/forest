@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from .wildfire_api import parse_wildfire_risk_xml, wildfire_risk_label
+from .wildfire_api import parse_wildfire_risk_json, parse_wildfire_risk_xml, wildfire_risk_label
 
 
 class WildfireApiTests(TestCase):
@@ -33,3 +33,24 @@ class WildfireApiTests(TestCase):
         self.assertEqual(result["mean_index"], 51)
         self.assertEqual(result["max_index"], 77)
         self.assertEqual(result["region"], "전국")
+
+    def test_parse_wildfire_risk_json(self):
+        result = parse_wildfire_risk_json(
+            """
+            {
+              "response": {
+                "body": {
+                  "items": {
+                    "item": [
+                      {"analdate":"2026-05-15 15","doname":"전국","meanavg":"66","maxi":"88"}
+                    ]
+                  }
+                }
+              }
+            }
+            """
+        )
+
+        self.assertEqual(result["risk"], "very_high")
+        self.assertEqual(result["mean_index"], 66)
+        self.assertEqual(result["max_index"], 88)

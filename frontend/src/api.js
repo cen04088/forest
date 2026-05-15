@@ -25,9 +25,26 @@ export async function fetchWeather(location) {
   return request(`/weather/?${params.toString()}`);
 }
 
+export async function fetchMountainWeather({ mountainName = "", mountainNum = "" } = {}) {
+  const params = new URLSearchParams({ mountain: mountainName || "" });
+  if (mountainNum) {
+    params.set("mountainNum", mountainNum);
+  }
+  return request(`/mountain-weather/?${params.toString()}`);
+}
+
 export async function fetchForestSpatial(mountainName) {
   const params = new URLSearchParams({ mountain: mountainName || "" });
   return request(`/forest-spatial/?${params.toString()}`);
+}
+
+export async function fetchVWorldTrails({ mountainName = "", lat, lng, radius = 5 } = {}) {
+  const params = new URLSearchParams({ mountain: mountainName || "", radius });
+  if (lat !== undefined && lng !== undefined) {
+    params.set("lat", lat);
+    params.set("lng", lng);
+  }
+  return request(`/vworld-trails/?${params.toString()}`);
 }
 
 export async function fetchMountainStory(mountainName) {

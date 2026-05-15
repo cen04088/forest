@@ -1,5 +1,7 @@
 # Secrets and local configuration
 key.txt
+kma_api_hub_key.txt
+vworld_key.txt
 .env
 .env.*
 !.env.example

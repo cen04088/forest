@@ -54,6 +54,10 @@
           </select>
         </label>
         <label>
+          출발 일자
+          <input v-model="profile.departureDate" type="date" :min="minDepartureDate" :max="maxDepartureDate" />
+        </label>
+        <label>
           출발 시간
           <input v-model="profile.departureTime" type="time" />
         </label>
@@ -75,15 +79,6 @@
             <option :value="240">4시간</option>
           </select>
         </label>
-        <label class="wide">
-          오늘 컨디션
-          <input v-model.number="profile.condition" type="range" min="1" max="5" />
-          <span class="range-copy">{{ conditionLabel }}</span>
-        </label>
-        <div class="mode-banner">
-          <strong>보행 취약자 안전 기준 적용</strong>
-          <span>동반 유형과 체력/경험을 묻지 않고 어린이·노년층 기준으로 보수 판단합니다.</span>
-        </div>
         <button class="primary-btn wide" type="submit" :disabled="loading">
           {{ loading ? "안전 등급 계산 중" : "실제 코스로 안전 진단" }}
         </button>
@@ -179,9 +174,9 @@
           <span>사용자 동의 기반 GPS 동기화</span>
         </article>
         <article>
-          <p class="eyebrow">경로 이탈</p>
-          <strong>0m</strong>
-          <span>허용 범위 80m 이내</span>
+          <p class="eyebrow">위험 구역</p>
+          <strong>{{ selectedCourse?.risk_factors?.length || 0 }}건</strong>
+          <span>주의 알림 기준</span>
         </article>
       </div>
 
@@ -260,9 +255,12 @@ const safeLinkMapEl = ref(null);
 const mapStatus = ref("");
 const safeLinkMapStatus = ref("");
 let kakaoMapLoadPromise = null;
+const minDepartureDate = formatDateForInput(new Date());
+const maxDepartureDate = formatDateForInput(addDays(new Date(), 3));
 
 const profile = reactive({
   mountainName: "",
+  departureDate: minDepartureDate,
   departureTime: "09:20",
   availableMinutes: 240,
   desiredHikingMinutes: 120,
@@ -370,6 +368,7 @@ const mountainOptions = computed(() => {
   }
   return [...buckets.values()]
     .filter((item) => item.name && item.name !== "산 정보 없음")
+    .filter((item) => item.name !== "국립공원")
     .sort((a, b) => b.count - a.count)
     .slice(0, 40);
 });
@@ -380,12 +379,6 @@ const selectedMountainSummary = computed(() => {
   const selected = mountainOptions.value.find((item) => item.name === profile.mountainName);
   if (!selected) return "실제 탐방로 데이터 연결 중";
   return `실제 코스 ${selected.count}개 후보 분석`;
-});
-
-const conditionLabel = computed(() => {
-  if (profile.condition <= 2) return "낮음";
-  if (profile.condition === 3) return "보통";
-  return "좋음";
 });
 
 const heroBadgeLabel = computed(() => selectedCourse.value?.safety_label || "진단 중");
@@ -417,6 +410,19 @@ function fallbackSafetyLabel(course) {
   return { safe: "추천", caution: "주의", danger: "비추천" }[course.safety_grade] || "추천";
 }
 
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function formatDateForInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function daylightLabel(minutes) {
   if (minutes === null || minutes === undefined) return "확인 중";
   if (minutes < 30) return "부족";
@@ -435,13 +441,31 @@ async function renderMaps() {
 }
 
 async function renderDetailMap() {
-  if (!detailMapEl.value || !selectedCourse.value?.lat || !selectedCourse.value?.lng) return;
+  if (!detailMapEl.value) return;
+  if (!selectedCourse.value?.lat || !selectedCourse.value?.lng) {
+    mapStatus.value = "이 코스는 지도 좌표가 없어 다른 추천 코스를 선택해 주세요.";
+    return;
+  }
   mapStatus.value = "카카오 지도를 불러오는 중입니다.";
   try {
     const kakao = await loadKakaoMapSdk();
     const center = new kakao.maps.LatLng(selectedCourse.value.lat, selectedCourse.value.lng);
     const map = new kakao.maps.Map(detailMapEl.value, { center, level: 5 });
     new kakao.maps.Marker({ map, position: center, title: selectedCourse.value.name });
+    const routePath = kakaoRoutePath(kakao, selectedCourse.value);
+    if (routePath.length >= 2) {
+      new kakao.maps.Polyline({
+        map,
+        path: routePath,
+        strokeWeight: 6,
+        strokeColor: selectedCourse.value.safety_decision === "not_recommended" ? "#cf3528" : "#23864b",
+        strokeOpacity: 0.9,
+        strokeStyle: selectedCourse.value.safety_decision === "recommend" ? "solid" : "shortdash",
+      });
+      const bounds = new kakao.maps.LatLngBounds();
+      routePath.forEach((point) => bounds.extend(point));
+      map.setBounds(bounds);
+    }
     new kakao.maps.Circle({
       map,
       center,
@@ -455,12 +479,17 @@ async function renderDetailMap() {
     });
     mapStatus.value = "";
   } catch (err) {
+    console.error("Kakao map detail render failed", err);
     mapStatus.value = "카카오 지도를 표시하려면 JavaScript 키와 도메인 등록이 필요합니다.";
   }
 }
 
 async function renderSafeLinkMap() {
-  if (!safeLinkMapEl.value || !selectedCourse.value?.lat || !selectedCourse.value?.lng) return;
+  if (!safeLinkMapEl.value) return;
+  if (!selectedCourse.value?.lat || !selectedCourse.value?.lng) {
+    safeLinkMapStatus.value = "이 코스는 지도 좌표가 없어 위치 공유 지도를 표시할 수 없습니다.";
+    return;
+  }
   safeLinkMapStatus.value = "카카오 지도를 불러오는 중입니다.";
   try {
     const kakao = await loadKakaoMapSdk();
@@ -471,14 +500,20 @@ async function renderSafeLinkMap() {
     const next = new kakao.maps.LatLng(courseLat + 0.003, courseLng + 0.004);
     const map = new kakao.maps.Map(safeLinkMapEl.value, { center: current, level: 5 });
     new kakao.maps.Marker({ map, position: current, title: "공유 대상 현재 위치" });
+    const routePath = kakaoRoutePath(kakao, selectedCourse.value);
     new kakao.maps.Polyline({
       map,
-      path: [start, current, next],
+      path: routePath.length >= 2 ? routePath : [start, current, next],
       strokeWeight: 5,
       strokeColor: "#23864b",
       strokeOpacity: 0.9,
       strokeStyle: "solid",
     });
+    if (routePath.length >= 2) {
+      const bounds = new kakao.maps.LatLngBounds();
+      routePath.forEach((point) => bounds.extend(point));
+      map.setBounds(bounds);
+    }
     new kakao.maps.Circle({
       map,
       center: next,
@@ -492,6 +527,7 @@ async function renderSafeLinkMap() {
     });
     safeLinkMapStatus.value = "";
   } catch (err) {
+    console.error("Kakao map Safe Link render failed", err);
     safeLinkMapStatus.value = "카카오 지도를 표시하려면 JavaScript 키와 도메인 등록이 필요합니다.";
   }
 }
@@ -511,10 +547,22 @@ function loadKakaoMapSdk() {
     const script = document.createElement("script");
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
     script.async = true;
-    script.onload = () => window.kakao.maps.load(() => resolve(window.kakao));
-    script.onerror = reject;
+    script.onload = () => {
+      if (!window.kakao?.maps) {
+        reject(new Error("Kakao SDK loaded but maps namespace is missing"));
+        return;
+      }
+      window.kakao.maps.load(() => resolve(window.kakao));
+    };
+    script.onerror = () => reject(new Error("Failed to load Kakao Maps SDK script"));
     document.head.appendChild(script);
   });
   return kakaoMapLoadPromise;
+}
+
+function kakaoRoutePath(kakao, course) {
+  return (course?.route_geometry || [])
+    .filter((point) => Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng)))
+    .map((point) => new kakao.maps.LatLng(Number(point.lat), Number(point.lng)));
 }
 </script>

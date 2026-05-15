@@ -1,14 +1,31 @@
-from .loaders import DATA_LINK_FILE_PATH, KEY_FILE_PATH, TRAIL_CSV_PATH, load_public_service_key
+from .loaders import (
+    DATA_LINK_FILE_PATH,
+    DISASTER_RISK_CSV_PATH,
+    KEY_FILE_PATH,
+    KMA_API_HUB_KEY_FILE_PATH,
+    TRAIL_CSV_PATH,
+    VWORLD_KEY_FILE_PATH,
+    load_public_service_key,
+    load_kma_api_hub_key,
+    load_vworld_api_key,
+)
+from .local_road_api import ROAD_SHP_PATH
 
 
 def data_source_status():
     service_key_loaded = bool(load_public_service_key())
+    kma_api_hub_key_loaded = bool(load_kma_api_hub_key())
+    vworld_key_loaded = bool(load_vworld_api_key())
     return {
         "service_key_loaded": service_key_loaded,
         "files": {
             "trail_csv": {
                 "configured": str(TRAIL_CSV_PATH.name),
                 "exists": TRAIL_CSV_PATH.exists(),
+            },
+            "disaster_risk_csv": {
+                "configured": str(DISASTER_RISK_CSV_PATH.name),
+                "exists": DISASTER_RISK_CSV_PATH.exists(),
             },
             "key_txt": {
                 "configured": str(KEY_FILE_PATH.name),
@@ -18,6 +35,18 @@ def data_source_status():
                 "configured": str(DATA_LINK_FILE_PATH.relative_to(DATA_LINK_FILE_PATH.parents[1])),
                 "exists": DATA_LINK_FILE_PATH.exists(),
             },
+            "vworld_key": {
+                "configured": str(VWORLD_KEY_FILE_PATH.name),
+                "exists": VWORLD_KEY_FILE_PATH.exists(),
+            },
+            "kma_api_hub_key": {
+                "configured": str(KMA_API_HUB_KEY_FILE_PATH.name),
+                "exists": KMA_API_HUB_KEY_FILE_PATH.exists(),
+            },
+            "local_road_shp": {
+                "configured": "road/WG_MT_WAY/WG_MT_WAY.shp",
+                "exists": ROAD_SHP_PATH.exists(),
+            },
         },
         "connected_sources": [
             {
@@ -25,6 +54,30 @@ def data_source_status():
                 "name": "National park trail courses",
                 "status": "connected" if TRAIL_CSV_PATH.exists() else "fallback",
                 "endpoint": "local_csv",
+            },
+            {
+                "id": "disaster_risk_zones",
+                "name": "National park disaster risk zones",
+                "status": "connected" if DISASTER_RISK_CSV_PATH.exists() else "missing_file",
+                "endpoint": "local_csv",
+            },
+            {
+                "id": "local_road_shp",
+                "name": "Local hiking trail geometry SHP",
+                "status": "connected" if ROAD_SHP_PATH.exists() else "missing_file",
+                "endpoint": "road/WG_MT_WAY/WG_MT_WAY.shp",
+            },
+            {
+                "id": "vworld_trails",
+                "name": "VWorld hiking trail geometry",
+                "status": "ready" if vworld_key_loaded else "missing_key",
+                "endpoint": "https://api.vworld.kr/req/data",
+            },
+            {
+                "id": "kma_mountain_weather",
+                "name": "KMA mountain weather forecast",
+                "status": "ready" if kma_api_hub_key_loaded else "missing_key",
+                "endpoint": "https://apihub.kma.go.kr/api/typ08/getMountainWeather",
             },
             {
                 "id": "weather_nowcast",
@@ -67,7 +120,7 @@ def data_source_status():
             "DEM/slope raster",
             "mountain accident history",
             "route-level risk polygons",
-            "Safe Link moving track events",
+            "Safe Link location sharing events",
             "B2G hotspot statistics",
         ],
     }

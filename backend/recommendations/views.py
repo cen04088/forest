@@ -13,7 +13,9 @@ from .mountain_story_api import fetch_mountain_story
 from .services import recommend_courses
 from .sun_api import fetch_sun_times
 from .weather_api import fetch_current_weather
+from .mountain_weather_api import fetch_mountain_weather
 from .wildfire_api import fetch_wildfire_risk
+from .vworld_api import fetch_vworld_trails
 
 
 @require_GET
@@ -49,6 +51,20 @@ def forest_spatial(request):
 
 
 @require_GET
+def vworld_trails(request):
+    mountain_name = request.GET.get("mountain", "")
+    lat = request.GET.get("lat")
+    lng = request.GET.get("lng")
+    radius_km = request.GET.get("radius", 5)
+    page_no = request.GET.get("page", 1)
+    num_of_rows = request.GET.get("size", 50)
+    return JsonResponse(
+        fetch_vworld_trails(lat, lng, mountain_name, radius_km, page_no, num_of_rows),
+        json_dumps_params={"ensure_ascii": False},
+    )
+
+
+@require_GET
 def mountain_story(request):
     mountain_name = request.GET.get("mountain", "")
     page_no = request.GET.get("page", 1)
@@ -64,6 +80,18 @@ def weather(request):
     lat = float(request.GET.get("lat", 37.5665))
     lng = float(request.GET.get("lng", 126.978))
     return JsonResponse(fetch_current_weather(lat, lng), json_dumps_params={"ensure_ascii": False})
+
+
+@require_GET
+def mountain_weather(request):
+    mountain_name = request.GET.get("mountain", "")
+    mountain_num = request.GET.get("mountainNum", "")
+    base_date = request.GET.get("base_date", "")
+    base_time = request.GET.get("base_time", "")
+    return JsonResponse(
+        fetch_mountain_weather(mountain_name, mountain_num or None, base_date, base_time),
+        json_dumps_params={"ensure_ascii": False},
+    )
 
 
 @require_GET

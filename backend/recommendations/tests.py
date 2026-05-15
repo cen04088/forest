@@ -1,8 +1,16 @@
 import json
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from django.test import Client, TestCase
 
-from .services import data_quality_adjustment, purpose_bonus, select_alternatives, time_buffer_range
+from .services import (
+    data_quality_adjustment,
+    daylight_margin_minutes,
+    purpose_bonus,
+    select_alternatives,
+    time_buffer_range,
+)
 
 
 class RecommendationApiTests(TestCase):
@@ -50,6 +58,20 @@ class RecommendationApiTests(TestCase):
         self.assertGreaterEqual(data["recommendations"][0]["score"], data["recommendations"][1]["score"])
         self.assertIn("weather", data)
 
+    def test_recommendations_do_not_mutate_public_course_cache(self):
+        client = Client()
+        before = client.get("/api/courses/").json()["courses"][0]
+
+        client.post(
+            "/api/recommendations/",
+            data=json.dumps({"profile": {"departureTime": "09:00"}, "location": {"lat": 37.5665, "lng": 126.978}}),
+            content_type="application/json",
+        )
+        after = client.get("/api/courses/").json()["courses"][0]
+
+        self.assertNotIn("disaster_risk_zones", before)
+        self.assertNotIn("disaster_risk_zones", after)
+
 
 class RecommendationServiceTests(TestCase):
     def test_select_alternatives_prefers_short_easy_daylight_safe_courses(self):
@@ -94,3 +116,14 @@ class RecommendationServiceTests(TestCase):
     def test_time_buffer_range_shrinks_upper_bound_for_vulnerable_mode(self):
         self.assertEqual(time_buffer_range(120, {"companion": "solo"}), (90, 150))
         self.assertEqual(time_buffer_range(120, {"companion": "vulnerable"}), (90, 135))
+
+    def test_daylight_margin_uses_selected_departure_date(self):
+        margin = daylight_margin_minutes(
+            {"duration_min": 90},
+            {"sunset": "18:30"},
+            now=datetime(2026, 5, 15, 8, 0, tzinfo=ZoneInfo("Asia/Seoul")),
+            departure_date="2026-05-17",
+            departure_time="16:00",
+        )
+
+        self.assertEqual(margin, 60)

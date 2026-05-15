@@ -2,9 +2,12 @@ from datetime import datetime, timedelta
 from math import asin, cos, radians, sin, sqrt
 from zoneinfo import ZoneInfo
 
+from .disaster_risk import disaster_risk_level, disaster_risk_messages, find_course_disaster_risks
 from .forest_api import fetch_forest_spatial_data, forest_spatial_items_to_courses
 from .loaders import load_public_trail_courses
-from .weather_api import fetch_current_weather
+from .local_road_api import fetch_local_road_trails
+from .weather_api import fetch_current_weather, merge_mountain_weather
+from .vworld_api import fetch_vworld_trails
 
 
 DIFFICULTY_LEVEL = {"easy": 1, "medium": 2, "hard": 3}
@@ -85,7 +88,12 @@ def time_fit_score(course, profile, weather=None):
     elif duration > upper:
         score -= min((duration - upper) * 0.8, 25)
 
-    daylight_margin = daylight_margin_minutes(course, weather, departure_time=profile.get("departureTime"))
+    daylight_margin = daylight_margin_minutes(
+        course,
+        weather,
+        departure_date=profile.get("departureDate"),
+        departure_time=profile.get("departureTime"),
+    )
     if daylight_margin is not None:
         if daylight_margin < 0:
             score -= 45
@@ -123,6 +131,13 @@ def safety_decision_for_course(course, profile, weather, weather_score, fit_scor
     wind = float(weather.get("wind_speed_ms", 0) or 0)
     wildfire = weather.get("wildfire_risk", "low")
     vulnerable = is_vulnerable_companion(profile)
+    disaster_zones = course.get("disaster_risk_zones", [])
+    disaster_level = disaster_risk_level(disaster_zones)
+
+    if disaster_level == "high":
+        red_flags.extend(disaster_risk_messages(disaster_zones)[:2])
+    elif disaster_level == "caution":
+        yellow_flags.extend(disaster_risk_messages(disaster_zones)[:2])
 
     if rainfall >= 10:
         red_flags.append("강수량이 높아 미끄럼 위험이 큽니다")
@@ -193,20 +208,45 @@ def recommend_courses(payload):
     profile = payload.get("profile", {})
     location = payload.get("location") or {"lat": 37.5665, "lng": 126.978}
     weather = fetch_current_weather(location["lat"], location["lng"])
-    weather_score = weather_safety_score(weather)
-    courses = list(load_public_trail_courses())
+    courses = [dict(course) for course in load_public_trail_courses()]
+    disaster_zones = None
 
     mountain_name = (profile.get("mountainName") or "").strip()
     if mountain_name:
+        weather = merge_mountain_weather(weather, mountain_name, profile.get("mountainNum"))
+    weather_score = weather_safety_score(weather)
+    if mountain_name:
+        local_road_result = fetch_local_road_trails(
+            location.get("lat"),
+            location.get("lng"),
+            mountain_name,
+            radius_km=max(int(profile.get("maxDistanceKm", 30)) / 2, 8),
+            size=40,
+        )
+        courses = local_road_result.get("items", []) + courses
+        vworld_result = fetch_vworld_trails(
+            location.get("lat"),
+            location.get("lng"),
+            mountain_name,
+            radius_km=max(int(profile.get("maxDistanceKm", 30)) / 2, 5),
+            size=40,
+        )
+        courses = vworld_result.get("items", []) + courses
         forest_result = fetch_forest_spatial_data(mountain_name, 1, 10)
         courses = forest_spatial_items_to_courses(forest_result) + courses
 
     recommendations = []
     for course in courses:
+        course["disaster_risk_zones"] = find_course_disaster_risks(course, disaster_zones)
         fit = fitness_score(course, profile)
         access, distance = accessibility_score(course, location["lat"], location["lng"], profile)
         time_fit = time_fit_score(course, profile, weather)
-        daylight_margin = daylight_margin_minutes(course, weather, departure_time=profile.get("departureTime"))
+        daylight_margin = daylight_margin_minutes(
+            course,
+            weather,
+            departure_date=profile.get("departureDate"),
+            departure_time=profile.get("departureTime"),
+        )
         safety = safety_decision_for_course(course, profile, weather, weather_score, fit, time_fit, daylight_margin)
         total = fit * 0.35 + weather_score * 0.3 + access * 0.2 + time_fit * 0.15
         total -= course["crowding"] * 8
@@ -237,7 +277,7 @@ def recommend_courses(payload):
         )
 
     recommendations.sort(key=lambda item: (safety_rank(item["safety_decision"]), item["score"]), reverse=True)
-    if mountain_name:
+    if mountain_name and not is_generic_mountain_name(mountain_name):
         matched = [
             item
             for item in recommendations
@@ -344,6 +384,8 @@ def build_reason(course, profile, weather_score, distance, daylight_margin=None)
 def mountain_preference_bonus(course, mountain_name):
     if not mountain_name:
         return 0
+    if is_generic_mountain_name(mountain_name):
+        return 0
 
     target = mountain_name.replace(" ", "")
     mountain = str(course.get("mountain", "")).replace(" ", "")
@@ -389,10 +431,16 @@ def data_quality_adjustment(course):
     if mountain == "국립공원":
         adjustment -= 10
     if course.get("lat") is None or course.get("lng") is None:
-        adjustment -= 8
+        adjustment -= 28
     else:
         adjustment += 5
+    if course.get("route_geometry"):
+        adjustment += 12
     return adjustment
+
+
+def is_generic_mountain_name(name):
+    return str(name or "").replace(" ", "") in {"국립공원", "등산로", "브이월드등산로"}
 
 
 def select_alternatives(recommendations, top_courses):
@@ -412,25 +460,35 @@ def select_alternatives(recommendations, top_courses):
     return candidates[:2]
 
 
-def daylight_margin_minutes(course, weather, now=None, departure_time=None):
+def daylight_margin_minutes(course, weather, now=None, departure_date=None, departure_time=None):
     if not weather or not weather.get("sunset"):
         return None
 
-    sunset = parse_today_time(weather["sunset"], now)
+    current = parse_departure_datetime(departure_date, departure_time, now)
+    current = current or now or datetime.now(ZoneInfo("Asia/Seoul"))
+    sunset = parse_departure_datetime(departure_date, weather["sunset"], current)
     if not sunset:
         return None
 
-    current = parse_today_time(departure_time, now) if departure_time else None
-    current = current or now or datetime.now(ZoneInfo("Asia/Seoul"))
     finish = current + timedelta(minutes=int(course.get("duration_min", 0)))
     return round((sunset - finish).total_seconds() / 60)
 
 
-def parse_today_time(value, now=None):
+def parse_departure_datetime(date_value=None, time_value=None, now=None):
     try:
-        hour, minute = [int(part) for part in str(value).split(":")[:2]]
+        hour, minute = [int(part) for part in str(time_value).split(":")[:2]]
     except (TypeError, ValueError):
         return None
 
     current = now or datetime.now(ZoneInfo("Asia/Seoul"))
-    return current.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    date = current.date()
+    if date_value:
+        try:
+            date = datetime.strptime(str(date_value), "%Y-%m-%d").date()
+        except ValueError:
+            date = current.date()
+    return datetime.combine(date, datetime.min.time(), tzinfo=current.tzinfo).replace(hour=hour, minute=minute)
+
+
+def parse_today_time(value, now=None):
+    return parse_departure_datetime(None, value, now)
