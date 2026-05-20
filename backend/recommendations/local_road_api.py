@@ -27,8 +27,9 @@ def fetch_local_road_trails(lat=None, lng=None, mountain_name="", radius_km=8, s
             or target in normalize_text(record.get("name", ""))
             or target in normalize_text(record.get("region", ""))
         ]
-        if matched:
-            candidates = matched
+        if not matched:
+            return {"ok": True, "source": "local_road_shp", "total_count": 0, "items": []}
+        candidates = matched
 
     if lat is not None and lng is not None:
         lat = float(lat)

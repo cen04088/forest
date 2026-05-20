@@ -235,6 +235,8 @@ def recommend_courses(payload):
         forest_result = fetch_forest_spatial_data(mountain_name, 1, 10)
         courses = forest_spatial_items_to_courses(forest_result) + courses
 
+    courses = merge_connected_geometry_courses(courses)
+
     recommendations = []
     for course in courses:
         course["disaster_risk_zones"] = find_course_disaster_risks(course, disaster_zones)
@@ -425,11 +427,16 @@ def data_quality_adjustment(course):
     adjustment = 0
     name = str(course.get("name", "")).strip()
     mountain = str(course.get("mountain", "")).strip()
+    distance_km = float(course.get("distance_km") or 0)
 
     if name in GENERIC_COURSE_NAMES:
         adjustment -= 18
     if mountain == "국립공원":
         adjustment -= 10
+    if distance_km and distance_km < 0.3:
+        adjustment -= 35
+    elif distance_km and distance_km < 0.8:
+        adjustment -= 15
     if course.get("lat") is None or course.get("lng") is None:
         adjustment -= 28
     else:
@@ -437,6 +444,131 @@ def data_quality_adjustment(course):
     if course.get("route_geometry"):
         adjustment += 12
     return adjustment
+
+
+def merge_connected_geometry_courses(courses):
+    grouped = {}
+    passthrough = []
+    for course in courses:
+        geometry = course.get("route_geometry") or []
+        if len(geometry) < 2:
+            passthrough.append(course)
+            continue
+        key = (course.get("source") or "", course.get("mountain") or "")
+        grouped.setdefault(key, []).append(course)
+
+    merged = list(passthrough)
+    for group in grouped.values():
+        merged.extend(merge_geometry_group(group))
+    return merged
+
+
+def merge_geometry_group(group):
+    endpoint_to_indexes = {}
+    for index, course in enumerate(group):
+        for endpoint in geometry_endpoints(course):
+            endpoint_to_indexes.setdefault(endpoint, set()).add(index)
+
+    visited = set()
+    courses = []
+    for index in range(len(group)):
+        if index in visited:
+            continue
+        stack = [index]
+        component = []
+        visited.add(index)
+        while stack:
+            current = stack.pop()
+            component.append(group[current])
+            for endpoint in geometry_endpoints(group[current]):
+                for next_index in endpoint_to_indexes.get(endpoint, set()):
+                    if next_index not in visited:
+                        visited.add(next_index)
+                        stack.append(next_index)
+
+        courses.append(build_merged_geometry_course(component) if len(component) > 1 else component[0])
+    return courses
+
+
+def geometry_endpoints(course):
+    geometry = course.get("route_geometry") or []
+    if len(geometry) < 2:
+        return []
+    return [rounded_point_key(geometry[0]), rounded_point_key(geometry[-1])]
+
+
+def rounded_point_key(point):
+    return (round(float(point["lat"]), 5), round(float(point["lng"]), 5))
+
+
+def build_merged_geometry_course(component):
+    first = component[0]
+    distance_km = round(sum(float(course.get("distance_km") or 0) for course in component), 2)
+    duration_min = sum(int(course.get("duration_min") or 0) for course in component)
+    difficulty = merged_difficulty(component, distance_km, duration_min)
+    geometry = merge_component_geometry(component)
+    center = geometry[len(geometry) // 2] if geometry else {"lat": first.get("lat"), "lng": first.get("lng")}
+
+    return {
+        **first,
+        "id": f"{stable_course_id(first.get('source', 'course'))}-merged-{stable_course_id('-'.join(sorted(str(course['id']) for course in component)))}",
+        "name": merged_geometry_name(component),
+        "difficulty": difficulty,
+        "distance_km": distance_km,
+        "duration_min": max(duration_min, round(distance_km * 34), 20),
+        "elevation_gain_m": round(distance_km * {"easy": 35, "medium": 65, "hard": 95}[difficulty]),
+        "lat": center.get("lat"),
+        "lng": center.get("lng"),
+        "highlights": merged_geometry_highlights(component),
+        "route_geometry": geometry,
+        "segment_count": len(component),
+    }
+
+
+def merged_difficulty(component, distance_km, duration_min):
+    if distance_km >= 6 or duration_min >= 180 or any(course.get("difficulty") == "hard" for course in component):
+        return "hard"
+    if distance_km >= 3 or duration_min >= 90 or any(course.get("difficulty") == "medium" for course in component):
+        return "medium"
+    return "easy"
+
+
+def merge_component_geometry(component):
+    geometry = []
+    for course in component:
+        points = course.get("route_geometry") or []
+        if not points:
+            continue
+        if geometry and rounded_point_key(geometry[-1]) == rounded_point_key(points[0]):
+            geometry.extend(points[1:])
+        else:
+            geometry.extend(points)
+    return geometry[:160]
+
+
+def merged_geometry_name(component):
+    names = []
+    for course in component:
+        name = str(course.get("name") or "").strip()
+        if name and name not in names:
+            names.append(name)
+    if len(names) == 1:
+        return names[0]
+    return f"{names[0]} 등 {len(component)}개 연결 구간"
+
+
+def merged_geometry_highlights(component):
+    highlights = []
+    for course in component:
+        for item in course.get("highlights", []):
+            if item and item not in highlights:
+                highlights.append(item)
+    highlights.append(f"{len(component)}개 연결 구간 통합")
+    return highlights[:4]
+
+
+def stable_course_id(value):
+    return "".join(char for char in str(value or "") if char.isalnum())[:64] or "course"
 
 
 def is_generic_mountain_name(name):

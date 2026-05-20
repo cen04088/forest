@@ -33,7 +33,7 @@ def load_public_trail_courses():
 
 
 def _read_trail_csv(path, encoding):
-    courses = []
+    segments = []
     seen_keys = set()
     with Path(path).open(encoding=encoding, newline="") as csv_file:
         reader = csv.DictReader(csv_file)
@@ -42,8 +42,9 @@ def _read_trail_csv(path, encoding):
             if course and course["dedupe_key"] not in seen_keys:
                 seen_keys.add(course["dedupe_key"])
                 course.pop("dedupe_key")
-                courses.append(course)
+                segments.append(course)
 
+    courses = merge_connected_trail_segments(segments)
     return courses or COURSES
 
 
@@ -131,8 +132,123 @@ def normalize_trail_row(index, row):
         "crowding": 0.35,
         "highlights": build_highlights(start, waypoint, end),
         "source": "국립공원공단_탐방로_20240911+좌표보강" if coordinates else "국립공원공단_탐방로_20240911",
+        "segment_nodes": build_segment_nodes(start, waypoint, end),
+        "segment_count": 1,
         "dedupe_key": dedupe_key,
     }
+
+
+def merge_connected_trail_segments(segments):
+    grouped = {}
+    for segment in segments:
+        nodes = [normalize_node(node) for node in segment.get("segment_nodes", []) if normalize_node(node)]
+        if len(nodes) < 2:
+            grouped.setdefault(("single", segment["id"]), []).append(segment)
+            continue
+        grouped.setdefault((segment.get("mountain") or "국립공원", segment.get("source") or ""), []).append(segment)
+
+    merged_courses = []
+    for key, group in grouped.items():
+        if key[0] == "single":
+            merged_courses.extend(strip_segment_fields(course) for course in group)
+            continue
+        merged_courses.extend(merge_segment_group(group))
+    return merged_courses
+
+
+def merge_segment_group(group):
+    node_to_indexes = {}
+    for index, segment in enumerate(group):
+        nodes = [normalize_node(node) for node in segment.get("segment_nodes", []) if normalize_node(node)]
+        for node in set(nodes):
+            node_to_indexes.setdefault(node, set()).add(index)
+
+    visited = set()
+    courses = []
+    for index in range(len(group)):
+        if index in visited:
+            continue
+        stack = [index]
+        component = []
+        visited.add(index)
+        while stack:
+            current = stack.pop()
+            component.append(group[current])
+            for node in [normalize_node(node) for node in group[current].get("segment_nodes", []) if normalize_node(node)]:
+                for next_index in node_to_indexes.get(node, set()):
+                    if next_index not in visited:
+                        visited.add(next_index)
+                        stack.append(next_index)
+
+        if len(component) == 1:
+            courses.append(strip_segment_fields(component[0]))
+        elif should_merge_trail_component(component):
+            courses.append(build_merged_course(component))
+        else:
+            courses.extend(strip_segment_fields(segment) for segment in component)
+    return courses
+
+
+def should_merge_trail_component(component):
+    distance_km = sum(float(segment.get("distance_km") or 0) for segment in component)
+    return len(component) <= 8 and distance_km <= 15
+
+
+def build_merged_course(component):
+    first = component[0]
+    all_nodes = []
+    degree = {}
+    for segment in component:
+        nodes = [node for node in segment.get("segment_nodes", []) if node]
+        all_nodes.extend(nodes)
+        if len(nodes) >= 2:
+            start = normalize_node(nodes[0])
+            end = normalize_node(nodes[-1])
+            degree[start] = degree.get(start, 0) + 1
+            degree[end] = degree.get(end, 0) + 1
+
+    endpoints = [node for node in all_nodes if degree.get(normalize_node(node), 0) == 1]
+    start = endpoints[0] if endpoints else all_nodes[0]
+    end = endpoints[-1] if len(endpoints) > 1 else all_nodes[-1]
+    waypoints = [node for node in all_nodes if node not in {start, end}]
+    distance_km = round(sum(float(segment.get("distance_km") or 0) for segment in component), 2)
+    duration_min = sum(int(segment.get("duration_min") or 0) for segment in component)
+    difficulty = infer_difficulty(distance_km, duration_min)
+    lat_values = [segment["lat"] for segment in component if segment.get("lat") is not None]
+    lng_values = [segment["lng"] for segment in component if segment.get("lng") is not None]
+
+    return {
+        **strip_segment_fields(first),
+        "id": f"public-merged-{stable_text_id(first.get('mountain'))}-{stable_text_id(start)}-{stable_text_id(end)}-{len(component)}",
+        "name": f"{start}~{end}",
+        "difficulty": difficulty,
+        "distance_km": distance_km,
+        "duration_min": max(duration_min, estimate_duration(distance_km)),
+        "elevation_gain_m": infer_elevation_gain(distance_km, difficulty),
+        "lat": round(sum(lat_values) / len(lat_values), 6) if lat_values else None,
+        "lng": round(sum(lng_values) / len(lng_values), 6) if lng_values else None,
+        "highlights": build_merged_highlights(start, waypoints, end, len(component)),
+        "segment_count": len(component),
+    }
+
+
+def build_merged_highlights(start, waypoints, end, count):
+    highlights = [f"출발: {start}"]
+    unique_waypoints = []
+    for waypoint in waypoints:
+        if waypoint and waypoint not in {start, end} and waypoint not in unique_waypoints:
+            unique_waypoints.append(waypoint)
+    if unique_waypoints:
+        highlights.append(f"주요 경유: {', '.join(unique_waypoints[:3])}")
+    highlights.append(f"도착: {end}")
+    highlights.append(f"{count}개 연결 구간 통합")
+    return highlights[:4]
+
+
+def strip_segment_fields(course):
+    clean = dict(course)
+    clean.pop("segment_nodes", None)
+    return clean
 
 
 def clean_text(value):
@@ -141,6 +257,14 @@ def clean_text(value):
 
 def normalize_search_text(value):
     return re.sub(r"\s+", "", str(value or "").lower())
+
+
+def normalize_node(value):
+    return re.sub(r"\s+", "", str(value or "").strip().lower())
+
+
+def stable_text_id(value):
+    return re.sub(r"[^0-9a-zA-Z가-힣]+", "", str(value or ""))[:24] or "course"
 
 
 def parse_distance_km(value):
@@ -236,6 +360,14 @@ def build_highlights(start, waypoint, end):
     if end:
         highlights.append(f"도착: {end}")
     return highlights[:3] or ["탐방로 구간 데이터"]
+
+
+def build_segment_nodes(start, waypoint, end):
+    nodes = [start]
+    if waypoint:
+        nodes.extend(part.strip() for part in re.split(r"[,/·>]+", waypoint) if part.strip())
+    nodes.append(end)
+    return [node for node in nodes if node]
 
 
 @lru_cache(maxsize=1)
