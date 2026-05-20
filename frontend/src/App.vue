@@ -1,6 +1,6 @@
 <template>
   <main class="app-shell">
-    <header class="app-header" v-if="activeTab !== 'myPage'">
+    <header class="app-header">
       <div>
         <p class="eyebrow">AI Forest Safety</p>
         <h1>ForestRx</h1>
@@ -13,17 +13,7 @@
       </button>
     </header>
 
-    <section class="hero" :style="heroPhotoStyle" aria-label="오늘의 산행 안전 요약" v-if="activeTab !== 'myPage'">
-      <div class="hero-copy">
-        <span :class="['safety-badge', heroBadgeClass]">{{ heroBadgeLabel }}</span>
-        <h2>{{ selectedMountainName || "산을 선택하세요" }}</h2>
-        <p>{{ selectedMountainSummary }}</p>
-      </div>
-      <div class="hero-metrics">
-        <span>📍 <strong>{{ publicCourses.length.toLocaleString() }}</strong> 코스</span>
-        <span>⏱️ <strong>{{ selectedCourse ? daylightLabel(selectedCourse.daylight_margin_min) : "대기" }}</strong> 하산여유</span>
-      </div>
-    </section>
+
 
     <nav class="tabbar" aria-label="주요 화면">
       <button :class="{ active: activeTab === 'guide' }" type="button" @click="activeTab = 'guide'">
@@ -171,11 +161,23 @@
           <div ref="detailMapEl" class="kakao-map" aria-label="선택 코스 카카오 지도"></div>
           <p v-if="mapStatus" class="map-status">{{ mapStatus }}</p>
           <div class="legend">
-            <span><i class="line green-line"></i>추천</span>
+            <span><i class="line green-line"></i>{{ selectedCourseRoutePoints.length >= 2 ? "등산로" : "위치" }}</span>
             <span><i class="line yellow-line"></i>주의</span>
-            <span><i class="line red-line"></i>위험</span>
           </div>
         </div>
+        <div class="route-summary">
+          <div>
+            <strong>{{ selectedCourseRoutePoints.length >= 2 ? "지도 경로 표시" : "코스 단계 표시" }}</strong>
+            <p>{{ routeDisplayMessage }}</p>
+          </div>
+          <span class="mini-status">{{ selectedCourseRoutePoints.length >= 2 ? `${selectedCourseRoutePoints.length}점` : `${courseTimelineItems.length}단계` }}</span>
+        </div>
+        <ol class="route-timeline" aria-label="코스 진행 단계">
+          <li v-for="item in courseTimelineItems" :key="item.label + item.value">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+          </li>
+        </ol>
         <p class="detail-copy">{{ selectedCourse.agent_briefing }}</p>
       </section>
     </section>
@@ -619,6 +621,21 @@ const readySourceCount = computed(() => dataSources.value.filter(isReadySource).
 const selectedCourseLat = computed(() => Number(selectedCourse.value?.lat));
 const selectedCourseLng = computed(() => Number(selectedCourse.value?.lng));
 const hasSelectedCourseLocation = computed(() => Number.isFinite(selectedCourseLat.value) && Number.isFinite(selectedCourseLng.value));
+const selectedCourseRoutePoints = computed(() =>
+  (selectedCourse.value?.route_geometry || []).filter((point) => Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng))),
+);
+const routeDisplayMessage = computed(() => {
+  if (!selectedCourse.value) return "코스를 선택하면 표시 방식이 정해집니다.";
+  if (selectedCourseRoutePoints.value.length >= 2) return "이 코스는 실제 선형 좌표가 있어 지도에 등산로 라인을 표시합니다.";
+  return "이 코스는 공공 데이터에 정확한 선형 좌표가 없어 출발·경유·도착 단계로 표시합니다.";
+});
+const courseTimelineItems = computed(() => {
+  const highlights = selectedCourse.value?.highlights || [];
+  const parsed = highlights.map(parseTimelineHighlight).filter(Boolean);
+  if (parsed.length) return parsed;
+  if (!selectedCourse.value) return [];
+  return [{ label: "코스", value: selectedCourse.value.name }];
+});
 const kakaoMapUrl = computed(() => {
   if (!hasSelectedCourseLocation.value) return "";
   return `https://map.kakao.com/link/map/${encodeURIComponent(selectedCourse.value.name)},${selectedCourseLat.value},${selectedCourseLng.value}`;
@@ -721,6 +738,14 @@ function isSelectedMountainCourse(course) {
 
 function normalizeText(value) {
   return String(value || "").replace(/\s/g, "").toLowerCase();
+}
+
+function parseTimelineHighlight(item) {
+  const text = String(item || "").trim();
+  if (!text) return null;
+  const [label, ...rest] = text.split(":");
+  if (rest.length) return { label: label.trim(), value: rest.join(":").trim() };
+  return { label: "정보", value: text };
 }
 
 function mountainPhotoFor(mountainName) {
@@ -859,7 +884,13 @@ async function renderMaps() {
 async function renderDetailMap() {
   if (!detailMapEl.value) return;
   if (!selectedCourse.value?.lat || !selectedCourse.value?.lng) {
-    mapStatus.value = "이 코스는 지도 좌표가 없어 다른 추천 코스를 선택해 주세요.";
+    renderCourseFallbackMap(detailMapEl.value, selectedCourse.value, { safeLink: false });
+    mapStatus.value = "지도 좌표가 부족해 코스 단계로 표시합니다.";
+    return;
+  }
+  if (selectedCourseRoutePoints.value.length < 2) {
+    renderCourseFallbackMap(detailMapEl.value, selectedCourse.value, { safeLink: false });
+    mapStatus.value = "정확한 등산로 선형이 없어 JavaScript 코스 프리뷰로 표시합니다.";
     return;
   }
   mapStatus.value = "카카오 지도를 불러오는 중입니다.";
@@ -881,6 +912,9 @@ async function renderDetailMap() {
       const bounds = new kakao.maps.LatLngBounds();
       routePath.forEach((point) => bounds.extend(point));
       map.setBounds(bounds);
+      mapStatus.value = "";
+    } else {
+      mapStatus.value = "정확한 등산로 선형이 없어 중심 위치만 표시합니다.";
     }
     new kakao.maps.Circle({
       map,
@@ -893,17 +927,23 @@ async function renderDetailMap() {
       fillColor: "#d29a12",
       fillOpacity: 0.18,
     });
-    mapStatus.value = "";
   } catch (err) {
     console.error("Kakao map detail render failed", err);
-    mapStatus.value = "카카오 지도를 표시하려면 JavaScript 키와 도메인 등록이 필요합니다.";
+    renderCourseFallbackMap(detailMapEl.value, selectedCourse.value, { safeLink: false });
+    mapStatus.value = "카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.";
   }
 }
 
 async function renderSafeLinkMap() {
   if (!safeLinkMapEl.value) return;
   if (!selectedCourse.value?.lat || !selectedCourse.value?.lng) {
-    safeLinkMapStatus.value = "선택된 코스의 지도 좌표가 없습니다.";
+    renderCourseFallbackMap(safeLinkMapEl.value, selectedCourse.value, { safeLink: true });
+    safeLinkMapStatus.value = "선택된 코스의 지도 좌표가 부족합니다.";
+    return;
+  }
+  if (selectedCourseRoutePoints.value.length < 2) {
+    renderCourseFallbackMap(safeLinkMapEl.value, selectedCourse.value, { safeLink: true });
+    safeLinkMapStatus.value = "정확한 등산로 선형이 없어 JavaScript 코스 프리뷰로 표시합니다.";
     return;
   }
   safeLinkMapStatus.value = "카카오 지도를 불러오는 중입니다.";
@@ -944,7 +984,8 @@ async function renderSafeLinkMap() {
     safeLinkMapStatus.value = "";
   } catch (err) {
     console.error("Kakao map Safe Link render failed", err);
-    safeLinkMapStatus.value = "카카오 지도를 표시하려면 JavaScript 키와 도메인 등록이 필요합니다.";
+    renderCourseFallbackMap(safeLinkMapEl.value, selectedCourse.value, { safeLink: true });
+    safeLinkMapStatus.value = "카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.";
   }
 }
 
@@ -960,17 +1001,25 @@ function loadKakaoMapSdk() {
       reject(new Error("Missing Kakao map app key"));
       return;
     }
+    const timeout = window.setTimeout(() => reject(new Error("Kakao Maps SDK load timeout")), 7000);
     const script = document.createElement("script");
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
     script.async = true;
     script.onload = () => {
       if (!window.kakao?.maps) {
+        window.clearTimeout(timeout);
         reject(new Error("Kakao SDK loaded but maps namespace is missing"));
         return;
       }
-      window.kakao.maps.load(() => resolve(window.kakao));
+      window.kakao.maps.load(() => {
+        window.clearTimeout(timeout);
+        resolve(window.kakao);
+      });
     };
-    script.onerror = () => reject(new Error("Failed to load Kakao Maps SDK script"));
+    script.onerror = () => {
+      window.clearTimeout(timeout);
+      reject(new Error("Failed to load Kakao Maps SDK script"));
+    };
     document.head.appendChild(script);
   });
   return kakaoMapLoadPromise;
@@ -980,5 +1029,76 @@ function kakaoRoutePath(kakao, course) {
   return (course?.route_geometry || [])
     .filter((point) => Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng)))
     .map((point) => new kakao.maps.LatLng(Number(point.lat), Number(point.lng)));
+}
+
+function renderCourseFallbackMap(container, course, { safeLink = false } = {}) {
+  if (!container) return;
+  const timeline = (course?.highlights || []).map(parseTimelineHighlight).filter(Boolean).slice(0, 3);
+  const routePoints = normalizeSvgRoutePoints(course?.route_geometry || []);
+  const routePath = routePoints.length >= 2 ? routePoints.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ") : "M 36 118 C 92 58, 166 166, 254 74";
+  const startLabel = timeline[0]?.value || course?.name || "출발";
+  const endLabel = timeline.find((item) => item.label.includes("도착"))?.value || timeline.at(-1)?.value || "도착";
+  const start = routePoints[0] || { x: 36, y: 118 };
+  const end = routePoints.at(-1) || { x: 254, y: 74 };
+  const mid = routePoints[Math.floor(routePoints.length / 2)] || { x: 150, y: 100 };
+  const hasGeometry = routePoints.length >= 2;
+
+  container.innerHTML = `
+    <div class="fallback-map ${hasGeometry ? "has-geometry" : "estimated"}">
+      <svg viewBox="0 0 290 180" aria-hidden="true">
+        <defs>
+          <linearGradient id="routeGradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#11a361" />
+            <stop offset="100%" stop-color="#2563eb" />
+          </linearGradient>
+        </defs>
+        <path class="fallback-terrain ridge-a" d="M-10 138 C 36 88, 66 112, 104 74 C 142 36, 178 80, 214 52 C 244 30, 270 46, 304 18" />
+        <path class="fallback-terrain ridge-b" d="M-8 162 C 44 126, 82 146, 126 110 C 170 74, 206 118, 296 70" />
+        <path class="fallback-contour" d="M28 42 C 82 58, 120 24, 168 48 C 214 70, 242 52, 270 38 M24 86 C 70 104, 104 76, 152 94 C 196 110, 234 92, 268 104 M28 136 C 82 126, 124 154, 178 130 C 214 114, 242 132, 270 122" />
+        <path class="fallback-grid" d="M20 40 H270 M20 90 H270 M20 140 H270 M70 20 V160 M145 20 V160 M220 20 V160" />
+        <path class="fallback-route-shadow" d="${routePath}" />
+        <path class="fallback-route" d="${routePath}" />
+        <circle class="fallback-pulse" cx="${mid.x}" cy="${mid.y}" r="18" />
+        <circle class="fallback-node" cx="${start.x}" cy="${start.y}" r="7" />
+        <circle class="fallback-node end" cx="${end.x}" cy="${end.y}" r="7" />
+      </svg>
+      <div class="fallback-pin start" style="left:${start.x / 2.9}%; top:${start.y / 1.8}%">출발</div>
+      <div class="fallback-pin end" style="left:${end.x / 2.9}%; top:${end.y / 1.8}%">도착</div>
+      <div class="fallback-map-copy">
+        <span>${hasGeometry ? "Coordinate Image" : "Estimated Route Image"}</span>
+        <strong>${escapeHtml(course?.name || "코스 정보")}</strong>
+        <p>${escapeHtml(startLabel)} → ${escapeHtml(endLabel)}</p>
+        <em>${escapeHtml(course?.distance_km ?? "-")}km · ${safeLink ? "보호자 공유용" : "입력 좌표 기반"}</em>
+      </div>
+    </div>
+  `;
+}
+
+function normalizeSvgRoutePoints(points) {
+  const valid = points
+    .filter((point) => Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng)))
+    .slice(0, 24);
+  if (valid.length < 2) return [];
+  const lats = valid.map((point) => Number(point.lat));
+  const lngs = valid.map((point) => Number(point.lng));
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  const latSpan = maxLat - minLat || 1;
+  const lngSpan = maxLng - minLng || 1;
+  return valid.map((point) => ({
+    x: 28 + ((Number(point.lng) - minLng) / lngSpan) * 234,
+    y: 152 - ((Number(point.lat) - minLat) / latSpan) * 124,
+  }));
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 </script>
