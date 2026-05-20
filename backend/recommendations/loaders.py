@@ -98,7 +98,7 @@ def normalize_disaster_risk_row(index, row):
 
 
 def normalize_trail_row(index, row):
-    name = clean_text(row.get("시설물명칭"))
+    name = clean_course_name(row.get("시설물명칭"))
     start = clean_text(row.get("구간_시작지점"))
     waypoint = clean_text(row.get("구간_경유지점"))
     end = clean_text(row.get("구간_종착지점"))
@@ -253,6 +253,11 @@ def strip_segment_fields(course):
 
 def clean_text(value):
     return (value or "").strip()
+
+
+def clean_course_name(value):
+    text = clean_text(value)
+    return re.sub(r"^\s*\d+\s*[.)]\s*", "", text).strip()
 
 
 def normalize_search_text(value):

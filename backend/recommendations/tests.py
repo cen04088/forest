@@ -12,6 +12,7 @@ from .services import (
     select_alternatives,
     time_buffer_range,
 )
+from .loaders import clean_course_name
 
 
 class RecommendationApiTests(TestCase):
@@ -128,6 +129,10 @@ class RecommendationServiceTests(TestCase):
         )
 
         self.assertEqual(margin, 60)
+
+    def test_clean_course_name_removes_number_prefix(self):
+        self.assertEqual(clean_course_name("27.U2기지초입부~서이말등대(거제)"), "U2기지초입부~서이말등대(거제)")
+        self.assertEqual(clean_course_name("17. 영원사~삼불사~약수암"), "영원사~삼불사~약수암")
 
     def test_connected_geometry_segments_are_merged(self):
         courses = [

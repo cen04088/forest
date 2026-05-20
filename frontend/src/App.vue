@@ -159,7 +159,6 @@
         </div>
         <div class="detail-map">
           <div ref="detailMapEl" class="kakao-map" aria-label="선택 코스 카카오 지도"></div>
-          <p v-if="mapStatus" class="map-status">{{ mapStatus }}</p>
           <div class="legend">
             <span><i class="line green-line"></i>{{ selectedCourseRoutePoints.length >= 2 ? "등산로" : "위치" }}</span>
             <span><i class="line yellow-line"></i>주의</span>
@@ -194,7 +193,6 @@
         <article class="safe-link-card">
           <div class="safe-link-map">
             <div ref="safeLinkMapEl" class="kakao-map" aria-label="세이프링크 카카오 지도"></div>
-            <p v-if="safeLinkMapStatus" class="map-status">{{ safeLinkMapStatus }}</p>
           </div>
           <div class="safe-link-status">
             <span :class="['safety-badge', selectedCourse ? safetyClass(selectedCourse) : 'yellow']">
@@ -1033,15 +1031,25 @@ function kakaoRoutePath(kakao, course) {
 
 function renderCourseFallbackMap(container, course, { safeLink = false } = {}) {
   if (!container) return;
-  const timeline = (course?.highlights || []).map(parseTimelineHighlight).filter(Boolean).slice(0, 3);
+  void safeLink;
+  const timeline = (course?.highlights || []).map(parseTimelineHighlight).filter(Boolean);
   const routePoints = normalizeSvgRoutePoints(course?.route_geometry || []);
-  const routePath = routePoints.length >= 2 ? routePoints.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ") : "M 36 118 C 92 58, 166 166, 254 74";
-  const startLabel = timeline[0]?.value || course?.name || "출발";
-  const endLabel = timeline.find((item) => item.label.includes("도착"))?.value || timeline.at(-1)?.value || "도착";
-  const start = routePoints[0] || { x: 36, y: 118 };
-  const end = routePoints.at(-1) || { x: 254, y: 74 };
-  const mid = routePoints[Math.floor(routePoints.length / 2)] || { x: 150, y: 100 };
+  const displayPoints = routePoints.length >= 2 ? routePoints : [{ x: 38, y: 122 }, { x: 146, y: 82 }, { x: 252, y: 116 }];
+  const routePath = displayPoints.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ");
   const hasGeometry = routePoints.length >= 2;
+  const stops = buildFallbackRouteStops(timeline, displayPoints);
+  const stopCircleMarkup = stops
+    .map((stop) => `<circle class="fallback-node ${stop.type}" cx="${stop.point.x}" cy="${stop.point.y}" r="${stop.type === "waypoint" ? 5 : 7}" />`)
+    .join("");
+  const stopMarkup = stops
+    .map(
+      (stop) => `
+        <div class="fallback-stop ${stop.type}" style="left:${toPercent(stop.labelPoint.x, 290)}%; top:${toPercent(stop.labelPoint.y, 180)}%">
+          <span>${escapeHtml(stop.label)}</span>
+        </div>
+      `,
+    )
+    .join("");
 
   container.innerHTML = `
     <div class="fallback-map ${hasGeometry ? "has-geometry" : "estimated"}">
@@ -1052,26 +1060,81 @@ function renderCourseFallbackMap(container, course, { safeLink = false } = {}) {
             <stop offset="100%" stop-color="#2563eb" />
           </linearGradient>
         </defs>
-        <path class="fallback-terrain ridge-a" d="M-10 138 C 36 88, 66 112, 104 74 C 142 36, 178 80, 214 52 C 244 30, 270 46, 304 18" />
-        <path class="fallback-terrain ridge-b" d="M-8 162 C 44 126, 82 146, 126 110 C 170 74, 206 118, 296 70" />
-        <path class="fallback-contour" d="M28 42 C 82 58, 120 24, 168 48 C 214 70, 242 52, 270 38 M24 86 C 70 104, 104 76, 152 94 C 196 110, 234 92, 268 104 M28 136 C 82 126, 124 154, 178 130 C 214 114, 242 132, 270 122" />
-        <path class="fallback-grid" d="M20 40 H270 M20 90 H270 M20 140 H270 M70 20 V160 M145 20 V160 M220 20 V160" />
         <path class="fallback-route-shadow" d="${routePath}" />
         <path class="fallback-route" d="${routePath}" />
-        <circle class="fallback-pulse" cx="${mid.x}" cy="${mid.y}" r="18" />
-        <circle class="fallback-node" cx="${start.x}" cy="${start.y}" r="7" />
-        <circle class="fallback-node end" cx="${end.x}" cy="${end.y}" r="7" />
+        ${stopCircleMarkup}
       </svg>
-      <div class="fallback-pin start" style="left:${start.x / 2.9}%; top:${start.y / 1.8}%">출발</div>
-      <div class="fallback-pin end" style="left:${end.x / 2.9}%; top:${end.y / 1.8}%">도착</div>
-      <div class="fallback-map-copy">
-        <span>${hasGeometry ? "Coordinate Image" : "Estimated Route Image"}</span>
-        <strong>${escapeHtml(course?.name || "코스 정보")}</strong>
-        <p>${escapeHtml(startLabel)} → ${escapeHtml(endLabel)}</p>
-        <em>${escapeHtml(course?.distance_km ?? "-")}km · ${safeLink ? "보호자 공유용" : "입력 좌표 기반"}</em>
-      </div>
+      ${stopMarkup}
+      <div class="fallback-distance">${escapeHtml(course?.distance_km ?? "-")}km</div>
     </div>
   `;
+}
+
+function buildFallbackRouteStops(timeline, points) {
+  const startLabel = timeline[0]?.value || "출발";
+  const endLabel = timeline.find((item) => item.label.includes("도착"))?.value || timeline.at(-1)?.value || "도착";
+  const waypointItems = timeline
+    .filter((item) => item.value && !item.label.includes("출발") && !item.label.includes("도착"))
+    .slice(0, 3);
+  const stops = [{ type: "start", label: shortStopLabel(startLabel), point: pointAtRouteFraction(points, 0) }];
+
+  waypointItems.forEach((item, index) => {
+    stops.push({
+      type: "waypoint",
+      label: shortStopLabel(item.value),
+      point: pointAtRouteFraction(points, (index + 1) / (waypointItems.length + 1)),
+    });
+  });
+
+  stops.push({ type: "end", label: shortStopLabel(endLabel), point: pointAtRouteFraction(points, 1) });
+  return stops.map((stop, index) => ({ ...stop, labelPoint: labelPointForStop(stop.point, stop.type, index) }));
+}
+
+function labelPointForStop(point, type, index) {
+  const verticalOffset = type === "waypoint" ? -22 : 20;
+  const horizontalOffset = type === "start" ? 30 : type === "end" ? -30 : index % 2 ? 16 : -16;
+  return {
+    x: clamp(point.x + horizontalOffset, 42, 248),
+    y: clamp(point.y + verticalOffset, 24, 156),
+  };
+}
+
+function pointAtRouteFraction(points, fraction) {
+  if (points.length <= 1) return points[0] || { x: 145, y: 90 };
+  const clamped = Math.min(1, Math.max(0, fraction));
+  const segments = points.slice(1).map((point, index) => {
+    const previous = points[index];
+    return { from: previous, to: point, length: Math.hypot(point.x - previous.x, point.y - previous.y) };
+  });
+  const total = segments.reduce((sum, segment) => sum + segment.length, 0) || 1;
+  let target = total * clamped;
+
+  for (const segment of segments) {
+    if (target <= segment.length) {
+      const ratio = segment.length ? target / segment.length : 0;
+      return {
+        x: segment.from.x + (segment.to.x - segment.from.x) * ratio,
+        y: segment.from.y + (segment.to.y - segment.from.y) * ratio,
+      };
+    }
+    target -= segment.length;
+  }
+
+  return points.at(-1);
+}
+
+function shortStopLabel(value) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  return text.length > 10 ? `${text.slice(0, 10)}...` : text;
+}
+
+function toPercent(value, max) {
+  return (value / max) * 100;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function normalizeSvgRoutePoints(points) {

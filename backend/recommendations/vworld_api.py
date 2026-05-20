@@ -5,7 +5,7 @@ import urllib.request
 from functools import lru_cache
 from math import asin, cos, radians, sin, sqrt
 
-from .loaders import load_vworld_api_key
+from .loaders import clean_course_name, load_vworld_api_key
 
 
 VWORLD_DATA_URL = "https://api.vworld.kr/req/data"
@@ -118,7 +118,7 @@ def normalize_vworld_feature(index, feature, mountain_name=""):
         return None
 
     name = first_text(properties, ["mntil_nm", "mntilnm", "mtn_nm", "mntn_nm", "name", "road_name", "명칭"])
-    course_name = name or (f"{mountain_name} 등산로" if mountain_name else "브이월드 등산로")
+    course_name = clean_course_name(name or (f"{mountain_name} 등산로" if mountain_name else "브이월드 등산로"))
     center = route_center(route_geometry)
     distance_km = first_float(properties, ["length", "len", "shape_leng", "st_length"])
     if distance_km is None:

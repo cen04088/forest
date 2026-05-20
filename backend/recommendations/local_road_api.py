@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from django.conf import settings
 
+from .loaders import clean_course_name
 from .vworld_api import route_length_km
 
 
@@ -77,7 +78,7 @@ def normalize_road_record(index, row, points):
     center = route_geometry[len(route_geometry) // 2]
 
     mountain = row.get("MNTN_NM") or "등산로"
-    name = row.get("PMNTN_NM") or row.get("PMNTN_MAIN") or f"{mountain} 등산로"
+    name = clean_course_name(row.get("PMNTN_NM") or row.get("PMNTN_MAIN") or f"{mountain} 등산로")
     risk = row.get("PMNTN_RISK", "")
 
     return {

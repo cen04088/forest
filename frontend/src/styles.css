@@ -623,12 +623,20 @@ p {
 .fallback-map {
   position: absolute;
   inset: 0;
-  display: grid;
-  align-content: end;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(248, 250, 248, 0.2), rgba(248, 250, 248, 0.95)),
-    #e7eee9;
+    linear-gradient(180deg, rgba(248, 250, 248, 0.1), rgba(248, 250, 248, 0.9)),
+    #dfece5;
+}
+
+.fallback-map.has-geometry {
+  background:
+    linear-gradient(145deg, #dcebe2 0%, #eef5ef 48%, #d7e7dd 100%);
+}
+
+.fallback-map.estimated {
+  background:
+    linear-gradient(145deg, #e7eee9 0%, #f4f7f2 48%, #dce8e0 100%);
 }
 
 .fallback-map svg {
@@ -638,16 +646,18 @@ p {
   height: 100%;
 }
 
-.fallback-grid {
+.fallback-route-shadow {
   fill: none;
-  stroke: rgba(31, 107, 69, 0.12);
-  stroke-width: 1;
+  stroke: rgba(18, 66, 43, 0.16);
+  stroke-width: 13;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .fallback-route {
   fill: none;
-  stroke: var(--green);
-  stroke-width: 7;
+  stroke: url("#routeGradient");
+  stroke-width: 8;
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 5px 10px rgba(31, 107, 69, 0.22));
@@ -663,36 +673,60 @@ p {
   fill: var(--blue);
 }
 
-.fallback-map-copy {
-  position: relative;
-  z-index: 2;
+.fallback-node.waypoint {
+  fill: #b7791f;
+}
+
+.fallback-stop {
+  position: absolute;
+  z-index: 3;
   display: grid;
-  gap: 5px;
-  margin: 14px;
-  padding: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8px 20px rgba(18, 66, 43, 0.12);
-}
-
-.fallback-map-copy span {
-  color: var(--blue);
-  font-size: 11px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.fallback-map-copy strong {
+  justify-items: center;
+  max-width: 82px;
+  transform: translate(-50%, -50%);
   color: var(--ink);
-  font-size: 16px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
 }
 
-.fallback-map-copy p {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.45;
+.fallback-stop span {
+  display: block;
+  max-width: 82px;
+  overflow: hidden;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  text-overflow: ellipsis;
+  box-shadow: 0 5px 14px rgba(18, 66, 43, 0.1);
+}
+
+.fallback-stop.start {
+  color: var(--green);
+}
+
+.fallback-stop.waypoint {
+  color: #b7791f;
+}
+
+.fallback-stop.end {
+  color: var(--blue);
+}
+
+.fallback-distance {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 4;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 6px 16px rgba(18, 66, 43, 0.12);
 }
 
 .map-status {
