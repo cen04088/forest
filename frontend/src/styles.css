@@ -612,6 +612,28 @@ p {
   height: 210px;
 }
 
+.map-status-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background-color: var(--green-soft);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--green-deep);
+  border: 1px solid rgba(17, 163, 97, 0.2);
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.map-status-msg .info-icon {
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .kakao-map {
   position: absolute;
   inset: 0;

@@ -245,6 +245,10 @@
             <span><i class="line yellow-line"></i>주의</span>
           </div>
         </div>
+        <div v-if="mapStatus" class="map-status-msg">
+          <span class="info-icon">ℹ️</span>
+          <span>{{ mapStatus }}</span>
+        </div>
         <div class="route-summary">
           <div>
             <strong>{{ selectedCourseRoutePoints.length >= 2 ? '지도 경로 표시' : '코스 단계 표시' }}</strong>
@@ -279,6 +283,10 @@
         <article class="safe-link-card">
           <div class="safe-link-map">
             <div ref="safeLinkMapEl" class="kakao-map" aria-label="보호자 공유 카카오 지도"></div>
+          </div>
+          <div v-if="safeLinkMapStatus" class="map-status-msg">
+            <span class="info-icon">ℹ️</span>
+            <span>{{ safeLinkMapStatus }}</span>
           </div>
           <div class="safe-link-status">
             <span :class="['safety-badge', selectedCourse ? safetyClass(selectedCourse) : 'yellow']">
