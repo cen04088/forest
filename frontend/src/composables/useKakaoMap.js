@@ -72,6 +72,7 @@ export function useKakaoMap() {
       const kakao = await loadKakaoMapSdk();
       const center = new kakao.maps.LatLng(selectedCourse.lat, selectedCourse.lng);
       const map = new kakao.maps.Map(detailMapEl, { center, level: 5 });
+      map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
       new kakao.maps.Marker({ map, position: center, title: selectedCourse.name });
       const routePath = kakaoRoutePath(kakao, selectedCourse);
       if (routePath.length >= 2) {
@@ -130,6 +131,7 @@ export function useKakaoMap() {
       const current = new kakao.maps.LatLng(courseLat, courseLng);
       const next = new kakao.maps.LatLng(courseLat + 0.003, courseLng + 0.004);
       const map = new kakao.maps.Map(safeLinkMapEl, { center: current, level: 5 });
+      map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
       new kakao.maps.Marker({ map, position: current, title: '공유 대상 현재 위치' });
       const routePath = kakaoRoutePath(kakao, selectedCourse);
       new kakao.maps.Polyline({
