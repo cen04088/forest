@@ -212,22 +212,31 @@ def recommend_courses(payload):
     disaster_zones = None
 
     mountain_name = (profile.get("mountainName") or "").strip()
+    query_lat = location.get("lat")
+    query_lng = location.get("lng")
+
     if mountain_name:
         weather = merge_mountain_weather(weather, mountain_name, profile.get("mountainNum"))
+        from .mountain_coordinates import find_mountain_coordinates
+        _, mtn_coords = find_mountain_coordinates(mountain_name)
+        if mtn_coords:
+            query_lat = mtn_coords["lat"]
+            query_lng = mtn_coords["lng"]
+
     weather_score = weather_safety_score(weather)
     if mountain_name:
         local_road_result = fetch_local_road_trails(
-            location.get("lat"),
-            location.get("lng"),
+            query_lat,
+            query_lng,
             mountain_name,
             radius_km=max(int(profile.get("maxDistanceKm", 30)) / 2, 8),
             size=40,
         )
         courses = local_road_result.get("items", []) + courses
         vworld_result = fetch_vworld_trails(
-            location.get("lat"),
-            location.get("lng"),
-            mountain_name,
+            lat=query_lat,
+            lng=query_lng,
+            mountain_name=mountain_name,
             radius_km=max(int(profile.get("maxDistanceKm", 30)) / 2, 5),
             size=40,
         )

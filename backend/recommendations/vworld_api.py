@@ -29,6 +29,9 @@ def fetch_vworld_trails(lat=None, lng=None, mountain_name="", radius_km=5, page_
         "key": api_key,
     }
 
+    if mountain_name:
+        base_query["attrFilter"] = f"mntn_nm:like:{mountain_name}"
+
     if lat is not None and lng is not None:
         base_query["geomFilter"] = build_bbox_filter(float(lat), float(lng), float(radius_km))
 
@@ -51,16 +54,26 @@ def is_auth_error(error):
 
 def vworld_domain_candidates():
     configured = os.environ.get("VWORLD_API_DOMAIN", "").strip()
+    railway = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").strip()
+    
     candidates = [
         configured,
+    ]
+    if railway:
+        candidates.extend([
+            f"https://{railway}",
+            f"http://{railway}",
+            railway
+        ])
+    candidates.extend([
         "http://127.0.0.1:5173",
         "http://localhost:5173",
         "http://127.0.0.1:8000",
         "http://localhost:8000",
         "",
-    ]
+    ])
     seen = set()
-    return [domain for domain in candidates if not (domain in seen or seen.add(domain))]
+    return [domain for domain in candidates if domain is not None and (domain == "" or not (domain in seen or seen.add(domain)))]
 
 
 @lru_cache(maxsize=128)
