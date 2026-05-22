@@ -323,9 +323,9 @@
           <strong>카카오맵에서 위치 보기</strong>
           <span>보호자가 코스 위치를 바로 확인합니다.</span>
         </a>
-        <a :class="['map-action', !selectedCourse ? 'disabled' : '']" :href="selectedCourse ? kakaoNavigateUrl : undefined" target="_blank" rel="noreferrer">
-          <strong>카카오맵 길찾기 열기</strong>
-          <span>현재 위치 기준 경로 확인은 카카오맵에서 처리합니다.</span>
+        <a :class="['map-action', !selectedCourse ? 'disabled' : '']" :href="selectedCourse ? kakaoLocationSharingUrl : undefined" target="_blank" rel="noreferrer">
+          <strong>카카오맵 친구위치 공유</strong>
+          <span>현재 나의 위치를 친구들과 카카오맵으로 실시간 공유합니다.</span>
         </a>
         <!-- 119 신고 CTA -->
         <a class="map-action emergency" href="tel:119">
@@ -732,9 +732,9 @@ const kakaoMapUrl = computed(() => {
   if (!hasSelectedCourseLocation.value) return '';
   return `https://map.kakao.com/link/map/${encodeURIComponent(selectedCourse.value.name)},${selectedCourseLat.value},${selectedCourseLng.value}`;
 });
-const kakaoNavigateUrl = computed(() => {
+const kakaoLocationSharingUrl = computed(() => {
   if (!hasSelectedCourseLocation.value) return '';
-  return `https://map.kakao.com/link/to/${encodeURIComponent(selectedCourse.value.name)},${selectedCourseLat.value},${selectedCourseLng.value}`;
+  return 'https://m.map.kakao.com/scheme/open?page=locationsharing';
 });
 const safeLinkSummary = computed(() => {
   if (!selectedCourse.value) return '안전 진단 후 보호자에게 보낼 공유 카드가 생성됩니다.';
