@@ -1,8 +1,9 @@
 <template>
   <main class="app-shell">
+    <!-- ─── 헤더 ──────────────────────────────────────────────────────── -->
     <header class="app-header">
       <div>
-        <p class="eyebrow">AI Forest Safety</p>
+        <p class="eyebrow">스마트 안전 진단</p>
         <h1>ForestRx</h1>
         <p>어린이와 노약자도 함께 갈 수 있는 안전한 산행 코스를 추천합니다.</p>
       </div>
@@ -13,8 +14,13 @@
       </button>
     </header>
 
+    <!-- ─── 에러 배너 ──────────────────────────────────────────────────── -->
+    <div v-if="error" class="error-banner" role="alert">
+      <span>⚠️ {{ error }}</span>
+      <button class="error-close" type="button" aria-label="닫기" @click="error = ''">✕</button>
+    </div>
 
-
+    <!-- ─── 탭바 ──────────────────────────────────────────────────────── -->
     <nav class="tabbar" aria-label="주요 화면">
       <button :class="{ active: activeTab === 'guide' }" type="button" @click="activeTab = 'guide'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
@@ -22,11 +28,12 @@
       </button>
       <button :class="{ active: activeTab === 'safeLink' }" type="button" @click="activeTab = 'safeLink'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-        <span>세이프링크</span>
+        <span>안전공유</span>
       </button>
       <button :class="{ active: activeTab === 'community' }" type="button" @click="activeTab = 'community'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         <span>커뮤니티</span>
+        <span class="tab-badge">준비중</span>
       </button>
       <button :class="{ active: activeTab === 'myPage' }" type="button" @click="activeTab = 'myPage'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -34,33 +41,61 @@
       </button>
     </nav>
 
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 안전코스 탭                                                         -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
     <section v-if="activeTab === 'guide'" class="screen-stack">
+
+      <!-- 플래너 입력 폼 -->
       <section class="panel planner-panel">
         <div class="section-title">
           <div>
             <p class="eyebrow">Safe Course</p>
             <h2>약자 동반 안전코스추천</h2>
           </div>
-          <span class="mini-status">{{ loading ? "분석 중" : "준비됨" }}</span>
+          <span class="mini-status">{{ loading ? '분석 중' : '준비됨' }}</span>
         </div>
 
         <form class="planner" @submit.prevent="submit">
-          <label class="field wide-field">
+          <!-- 산 선택 + GPS 버튼 -->
+          <div class="field wide-field gps-field">
             <span>산 선택</span>
-            <select v-model="profile.mountainName" @change="handleMountainChange">
-              <option v-for="mountain in mountainOptions" :key="mountain.name" :value="mountain.name">
-                {{ mountain.name }} · {{ mountain.count }}개 코스
-              </option>
-            </select>
-          </label>
+            <div class="gps-row">
+              <select v-model="profile.mountainName" @change="handleMountainChange">
+                <option v-for="mountain in mountainOptions" :key="mountain.name" :value="mountain.name">
+                  {{ mountain.name }} · {{ mountain.count }}개 코스
+                </option>
+              </select>
+              <button
+                class="gps-btn"
+                type="button"
+                :class="gpsStatus"
+                :disabled="gpsStatus === 'loading'"
+                :title="gpsBtnTitle"
+                @click="handleGPS"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                  <path v-if="gpsStatus === 'loading'" d="M12 6a6 6 0 0 1 6 6" class="gps-spin" />
+                </svg>
+              </button>
+            </div>
+            <!-- GPS 결과 메시지 -->
+            <p v-if="gpsStatus === 'success'" class="gps-message success">
+              📍 현재 위치 감지 완료 — 가장 가까운 코스를 우선합니다
+            </p>
+            <p v-if="gpsStatus === 'error'" class="gps-message error">⚠️ {{ gpsError }}</p>
+          </div>
+
           <label class="field">
             <span>출발 일자</span>
             <input v-model="profile.departureDate" type="date" :min="minDepartureDate" :max="maxDepartureDate" />
           </label>
-        <label class="field">
-          <span>출발 시간</span>
-          <input v-model="profile.departureTime" type="time" :min="minDepartureTime" @change="ensureFutureDepartureTime" />
-        </label>
+          <label class="field">
+            <span>출발 시간</span>
+            <input v-model="profile.departureTime" type="time" :min="minDepartureTime" @change="ensureFutureDepartureTime" />
+          </label>
           <label class="field">
             <span>희망 산행 시간</span>
             <select v-model.number="profile.desiredHikingMinutes">
@@ -70,12 +105,27 @@
               <option :value="240">4시간</option>
             </select>
           </label>
-          <button class="primary-btn wide-field" type="submit" :disabled="loading">
-            {{ loading ? "안전 등급 계산 중" : "동반자 기준 안전코스 찾기" }}
+          <button class="primary-btn wide-field" :class="{ loading }" type="submit" :disabled="loading">
+            {{ loading ? '안전 등급 계산 중…' : '동반자 기준 안전코스 찾기' }}
           </button>
         </form>
       </section>
 
+      <!-- 로딩 스켈레톤 -->
+      <section v-if="loading" class="panel">
+        <div class="skeleton-card">
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line full"></div>
+          <div class="skeleton-line medium"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line full"></div>
+          <div class="skeleton-line medium"></div>
+        </div>
+      </section>
+
+      <!-- 비추천 공지 -->
       <article v-if="resultState === 'no_safe_course'" class="empty-state">
         <span class="safety-badge red">비추천</span>
         <h3>현재 조건에서 권장할 코스가 없습니다</h3>
@@ -85,7 +135,8 @@
         </div>
       </article>
 
-      <section v-if="recommendations.length" class="panel">
+      <!-- 추천 코스 목록 -->
+      <section v-if="!loading && recommendations.length" class="panel">
         <div class="section-title compact">
           <div>
             <p class="eyebrow">Recommended</p>
@@ -97,36 +148,18 @@
           선택한 산과 정확히 일치하는 후보가 부족해 주변 안전 후보를 함께 보여줍니다.
         </p>
         <div class="course-list">
-          <article
+          <CourseCard
             v-for="course in displayPrimaryCourses"
             :key="course.id"
-            :class="['course-card', selectedCourse?.id === course.id ? 'selected' : '']"
-            @click="selectCourse(course)"
-            role="button"
-            tabindex="0"
-            @keydown.enter="selectCourse(course)"
-            @keydown.space.prevent="selectCourse(course)"
-          >
-            <div class="course-meta">
-              <span :class="['safety-badge', safetyClass(course)]">{{ course.safety_label || fallbackSafetyLabel(course) }}</span>
-              <span>{{ course.safe_for_vulnerable ? "취약자 동반 가능" : "취약자 주의" }}</span>
-            </div>
-            <h3>{{ course.name }}</h3>
-            <p>{{ course.mountain }} · {{ course.distance_km }}km · 약 {{ durationLabel(course.duration_min) }}</p>
-            <div class="metric-row-compact">
-              <span title="하산 여유">⏱️ {{ daylightLabel(course.daylight_margin_min) }}</span>
-              <span title="접근 거리">📍 {{ course.distance_from_user_km ?? "-" }}km</span>
-              <span title="데이터 출처">ℹ️ {{ course.sourceLabel || sourceLabel(course) }}</span>
-            </div>
-            <div class="risk-tags">
-              <span v-for="factor in (course.risk_factors || []).slice(0, 3)" :key="factor">{{ factor }}</span>
-              <span v-if="!(course.risk_factors || []).length">위험 요인 확인 중</span>
-            </div>
-          </article>
+            :course="course"
+            :is-selected="selectedCourse?.id === course.id"
+            @select="selectCourse"
+          />
         </div>
       </section>
 
-      <section v-if="nearbyAlternativeCourses.length" class="panel subtle-panel">
+      <!-- 대체 코스 -->
+      <section v-if="!loading && nearbyAlternativeCourses.length" class="panel subtle-panel">
         <div class="section-title compact">
           <div>
             <p class="eyebrow">Alternative</p>
@@ -145,10 +178,13 @@
             <strong>{{ course.name }}</strong>
             <small>{{ course.mountain }} · {{ course.distance_km }}km · {{ durationLabel(course.duration_min) }}</small>
           </span>
-          <span :class="['safety-badge', safetyClass(course)]">{{ course.safety_label || fallbackSafetyLabel(course) }}</span>
+          <span :class="['safety-badge', safetyClass(course)]">
+            {{ course.safety_label || fallbackSafetyLabel(course) }}
+          </span>
         </button>
       </section>
 
+      <!-- 코스 상세 (지도 + 타임라인) -->
       <section v-if="selectedCourse" class="panel detail-panel">
         <div class="section-title">
           <div>
@@ -160,16 +196,18 @@
         <div class="detail-map">
           <div ref="detailMapEl" class="kakao-map" aria-label="선택 코스 카카오 지도"></div>
           <div class="legend">
-            <span><i class="line green-line"></i>{{ selectedCourseRoutePoints.length >= 2 ? "등산로" : "위치" }}</span>
+            <span><i class="line green-line"></i>{{ selectedCourseRoutePoints.length >= 2 ? '등산로' : '위치' }}</span>
             <span><i class="line yellow-line"></i>주의</span>
           </div>
         </div>
         <div class="route-summary">
           <div>
-            <strong>{{ selectedCourseRoutePoints.length >= 2 ? "지도 경로 표시" : "코스 단계 표시" }}</strong>
+            <strong>{{ selectedCourseRoutePoints.length >= 2 ? '지도 경로 표시' : '코스 단계 표시' }}</strong>
             <p>{{ routeDisplayMessage }}</p>
           </div>
-          <span class="mini-status">{{ selectedCourseRoutePoints.length >= 2 ? `${selectedCourseRoutePoints.length}점` : `${courseTimelineItems.length}단계` }}</span>
+          <span class="mini-status">
+            {{ selectedCourseRoutePoints.length >= 2 ? `${selectedCourseRoutePoints.length}점` : `${courseTimelineItems.length}단계` }}
+          </span>
         </div>
         <ol class="route-timeline" aria-label="코스 진행 단계">
           <li v-for="item in courseTimelineItems" :key="item.label + item.value">
@@ -181,27 +219,37 @@
       </section>
     </section>
 
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 안전공유 탭 (구 세이프링크)                                          -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
     <section v-else-if="activeTab === 'safeLink'" class="screen-stack">
       <section class="panel">
         <div class="section-title">
           <div>
             <p class="eyebrow">Safe Link</p>
-            <h2>보호자 안전 공유</h2>
+            <h2>보호자 공유카드</h2>
           </div>
         </div>
 
         <article class="safe-link-card">
           <div class="safe-link-map">
-            <div ref="safeLinkMapEl" class="kakao-map" aria-label="세이프링크 카카오 지도"></div>
+            <div ref="safeLinkMapEl" class="kakao-map" aria-label="보호자 공유 카카오 지도"></div>
           </div>
           <div class="safe-link-status">
             <span :class="['safety-badge', selectedCourse ? safetyClass(selectedCourse) : 'yellow']">
-              {{ selectedCourse?.safety_label || "진단 대기" }}
+              {{ selectedCourse?.safety_label || '진단 대기' }}
             </span>
-            <h3>{{ selectedCourse?.name || "안전 진단 후 공유 가능" }}</h3>
+            <h3>{{ selectedCourse?.name || '안전 진단 후 공유 가능' }}</h3>
             <p>{{ safeLinkSummary }}</p>
           </div>
         </article>
+
+        <!-- 현재 공유 상태 표시 (Mock UI) -->
+        <div v-if="selectedCourse" class="safe-link-status-bar">
+          <div class="status-dot" :class="selectedCourse.safety_decision === 'recommend' ? 'dot-green' : 'dot-yellow'"></div>
+          <span>{{ selectedCourse.safe_link_preview?.status || '정상 이동' }}</span>
+          <span class="status-time">마지막 확인: 방금 전</span>
+        </div>
       </section>
 
       <section class="panel share-panel">
@@ -226,9 +274,17 @@
           <strong>카카오맵 길찾기 열기</strong>
           <span>현재 위치 기준 경로 확인은 카카오맵에서 처리합니다.</span>
         </a>
+        <!-- 119 신고 CTA -->
+        <a class="map-action emergency" href="tel:119">
+          <strong>🚨 119 신고</strong>
+          <span>산악 사고 발생 시 즉시 119에 신고하세요.</span>
+        </a>
       </section>
     </section>
 
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 커뮤니티 탭 (준비중)                                                -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
     <section v-else-if="activeTab === 'community'" class="screen-stack">
       <section class="panel">
         <div class="section-title">
@@ -237,6 +293,13 @@
             <h2>동반 산행 커뮤니티</h2>
           </div>
           <span class="mini-status">후기 기반</span>
+        </div>
+
+        <!-- 준비중 배너 -->
+        <div class="coming-soon-banner">
+          <p class="coming-soon-icon">🏗️</p>
+          <strong>커뮤니티 기능 준비 중</strong>
+          <p>약자 동반 산행 후기, 현장 정보 공유 기능을 개발하고 있습니다.<br>아래는 서비스 오픈 시 제공될 샘플입니다.</p>
         </div>
 
         <div class="community-hero">
@@ -252,7 +315,7 @@
             <p class="eyebrow">Reviews</p>
             <h2>최근 동반 산행 후기</h2>
           </div>
-          <button class="outline-btn" type="button">후기 쓰기</button>
+          <button class="outline-btn" type="button" disabled>후기 쓰기 (준비중)</button>
         </div>
 
         <div class="filter-row">
@@ -281,6 +344,9 @@
       </section>
     </section>
 
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 내정보 탭                                                           -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
     <section v-else class="screen-stack">
       <section class="panel profile-settings">
         <div class="section-title">
@@ -302,35 +368,17 @@
         <div class="field">
           <span>산행 경험</span>
           <div class="segment-group">
-            <label class="segment-btn">
-              <input type="radio" v-model="profile.experience" value="beginner" name="exp" />
-              <span>🌱 초보</span>
-            </label>
-            <label class="segment-btn">
-              <input type="radio" v-model="profile.experience" value="intermediate" name="exp" />
-              <span>👟 보통</span>
-            </label>
-            <label class="segment-btn">
-              <input type="radio" v-model="profile.experience" value="advanced" name="exp" />
-              <span>⛰️ 숙련</span>
-            </label>
+            <label class="segment-btn"><input type="radio" v-model="profile.experience" value="beginner" name="exp" /><span>🌱 초보</span></label>
+            <label class="segment-btn"><input type="radio" v-model="profile.experience" value="intermediate" name="exp" /><span>👟 보통</span></label>
+            <label class="segment-btn"><input type="radio" v-model="profile.experience" value="advanced" name="exp" /><span>⛰️ 숙련</span></label>
           </div>
         </div>
         <div class="field">
           <span>컨디션</span>
           <div class="segment-group">
-            <label class="segment-btn">
-              <input type="radio" v-model.number="profile.condition" :value="2" name="cond" />
-              <span>📉 낮음</span>
-            </label>
-            <label class="segment-btn">
-              <input type="radio" v-model.number="profile.condition" :value="3" name="cond" />
-              <span>➖ 보통</span>
-            </label>
-            <label class="segment-btn">
-              <input type="radio" v-model.number="profile.condition" :value="4" name="cond" />
-              <span>💪 좋음</span>
-            </label>
+            <label class="segment-btn"><input type="radio" v-model.number="profile.condition" :value="2" name="cond" /><span>📉 낮음</span></label>
+            <label class="segment-btn"><input type="radio" v-model.number="profile.condition" :value="3" name="cond" /><span>➖ 보통</span></label>
+            <label class="segment-btn"><input type="radio" v-model.number="profile.condition" :value="4" name="cond" /><span>💪 좋음</span></label>
           </div>
         </div>
       </section>
@@ -349,135 +397,109 @@
           <span>{{ item }}</span>
         </label>
       </section>
-
     </section>
-
-    <p v-if="error" class="error-toast">{{ error }}</p>
   </main>
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
-import { fetchCourses, fetchDataSources, fetchRecommendations } from "./api";
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { fetchCourses, fetchDataSources, fetchRecommendations } from './api';
+import { useLocation } from './composables/useLocation.js';
+import { useKakaoMap } from './composables/useKakaoMap.js';
+import { safetyClass, fallbackSafetyLabel, durationLabel, daylightLabel, daylightColor } from './utils/courseHelpers.js';
+import CourseCard from './components/CourseCard.vue';
 
-const activeTab = ref("guide");
+// ─── 상태 ─────────────────────────────────────────────────────────────────
+const activeTab = ref('guide');
 const loading = ref(false);
-const error = ref("");
+const error = ref('');
 const publicCourses = ref([]);
 const dataSources = ref([]);
 const recommendations = ref([]);
 const alternatives = ref([]);
 const selectedCourse = ref(null);
-const resultState = ref("idle");
-const agentSummary = ref("산과 출발 조건을 선택하면 실제 탐방로, 날씨, 일몰, 위험 데이터를 종합해 안전 등급을 계산합니다.");
+const resultState = ref('idle');
+const agentSummary = ref('산과 출발 조건을 선택하면 실제 탐방로, 날씨, 일몰, 위험 데이터를 종합해 안전 등급을 계산합니다.');
 const alternativeActions = ref([]);
-const location = ref({ lat: 37.5665, lng: 126.978 });
 const detailMapEl = ref(null);
 const safeLinkMapEl = ref(null);
-const mapStatus = ref("");
-const safeLinkMapStatus = ref("");
-const shareStatus = ref("");
-let kakaoMapLoadPromise = null;
+const shareStatus = ref('');
+
+// ─── Composables ──────────────────────────────────────────────────────────
+const { location, gpsStatus, gpsError, detectGPS } = useLocation();
+const { mapStatus, safeLinkMapStatus, renderDetailMap, renderSafeLinkMap } = useKakaoMap();
+
+// ─── 날짜/시간 초기값 ────────────────────────────────────────────────────
 const initialDepartureAt = addMinutes(new Date(), 5);
 const minDepartureDate = formatDateForInput(initialDepartureAt);
 const maxDepartureDate = formatDateForInput(addDays(initialDepartureAt, 3));
-const minDepartureTime = computed(() => (profile.departureDate === minDepartureDate ? formatTimeForInput(addMinutes(new Date(), 5)) : undefined));
+const minDepartureTime = computed(() =>
+  profile.departureDate === minDepartureDate ? formatTimeForInput(addMinutes(new Date(), 5)) : undefined,
+);
 
+// ─── 프로필 ───────────────────────────────────────────────────────────────
 const profile = reactive({
-  mountainName: "",
+  mountainName: '',
   departureDate: minDepartureDate,
   departureTime: formatTimeForInput(initialDepartureAt),
   availableMinutes: 240,
   desiredHikingMinutes: 120,
-  companion: "vulnerable",
-  experience: "beginner",
+  companion: 'vulnerable',
+  experience: 'beginner',
   condition: 4,
-  intensity: "moderate",
-  purpose: "balanced",
-  transport: "public",
+  intensity: 'moderate',
+  purpose: 'balanced',
+  transport: 'public',
   maxDistanceKm: 30,
 });
 
+// ─── 정적 데이터 ──────────────────────────────────────────────────────────
 const guardianChecklist = [
-  "아이와 보호자 연락처를 서로 확인했어요",
-  "물, 간식, 보조배터리를 챙겼어요",
-  "입산 통제와 날씨 변화를 한 번 더 확인했어요",
-  "해 지기 전에 내려오는 계획을 세웠어요",
+  '아이와 보호자 연락처를 서로 확인했어요',
+  '물, 간식, 보조배터리를 챙겼어요',
+  '입산 통제와 날씨 변화를 한 번 더 확인했어요',
+  '해 지기 전에 내려오는 계획을 세웠어요',
 ];
 
 const companionTypes = [
-  { value: "vulnerable", label: "어린이 또는 노약자 동반" },
-  { value: "child", label: "어린이 동반" },
-  { value: "senior", label: "노약자 동반" },
-  { value: "family", label: "가족 동반" },
-  { value: "solo", label: "혼자 산행" },
+  { value: 'vulnerable', label: '어린이 또는 노약자 동반' },
+  { value: 'child', label: '어린이 동반' },
+  { value: 'senior', label: '노약자 동반' },
+  { value: 'family', label: '가족 동반' },
+  { value: 'solo', label: '혼자 산행' },
 ];
 
 const activeCommunityFilter = ref('전체');
 
 const rawCommunityPosts = [
-  {
-    author: "초코아빠",
-    time: "2시간 전",
-    likes: 12,
-    title: "초등학생과 90분 코스로 다녀왔어요",
-    body: "초입 화장실 이후에는 쉼터 간격이 길어 물을 미리 챙기는 편이 좋았습니다.",
-    tag: "어린이",
-    color: "green",
-  },
-  {
-    author: "산좋아",
-    time: "5시간 전",
-    likes: 8,
-    title: "부모님과 갈 때 계단 구간은 우회가 좋아요",
-    body: "초반 경사는 완만하지만 중간 데크 계단이 길어 쉬는 시간을 넉넉히 잡았습니다.",
-    tag: "노약자",
-    color: "yellow",
-  },
-  {
-    author: "비오는날",
-    time: "하루 전",
-    likes: 24,
-    title: "비 온 다음날은 흙길보다 포장 접근로 추천",
-    body: "미끄러운 구간이 있어 유모차나 보행 보조가 필요한 동반자는 대체 코스가 안전했습니다.",
-    tag: "주의",
-    color: "yellow",
-  },
+  { author: '초코아빠', time: '2시간 전', likes: 12, title: '초등학생과 90분 코스로 다녀왔어요', body: '초입 화장실 이후에는 쉼터 간격이 길어 물을 미리 챙기는 편이 좋았습니다.', tag: '어린이', color: 'green' },
+  { author: '산좋아', time: '5시간 전', likes: 8, title: '부모님과 갈 때 계단 구간은 우회가 좋아요', body: '초반 경사는 완만하지만 중간 데크 계단이 길어 쉬는 시간을 넉넉히 잡았습니다.', tag: '노약자', color: 'yellow' },
+  { author: '비오는날', time: '하루 전', likes: 24, title: '비 온 다음날은 흙길보다 포장 접근로 추천', body: '미끄러운 구간이 있어 유모차나 보행 보조가 필요한 동반자는 대체 코스가 안전했습니다.', tag: '주의', color: 'yellow' },
 ];
 
 const filteredCommunityPosts = computed(() => {
   if (activeCommunityFilter.value === '전체') return rawCommunityPosts;
-  return rawCommunityPosts.filter(post => post.tag === activeCommunityFilter.value);
+  return rawCommunityPosts.filter((post) => post.tag === activeCommunityFilter.value);
 });
 
-const communitySignals = [
-  { color: "green", title: "편의시설", body: "화장실, 쉼터, 음수대, 주차장 접근성을 후기에서 모읍니다." },
-  { color: "yellow", title: "약자 체감 난이도", body: "공식 난이도와 별개로 아이와 노약자가 힘들어한 구간을 기록합니다." },
-  { color: "yellow", title: "현장 변수", body: "공사, 통제, 미끄럼, 벌레, 그늘 부족처럼 당일 체감 정보를 공유합니다." },
-];
-
-const defaultMountainPhoto = {
-  label: "한국 산행",
-  url: "https://commons.wikimedia.org/wiki/Special:FilePath/Korea-Seoraksan-01.jpg",
-};
-
-const mountainPhotos = {
-  관악산: { label: "관악산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Gwanaksan%20Seoul%20KR.jpg" },
-  북한산: { label: "북한산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Bukhansan%20Mountain.jpg" },
-  도봉산: { label: "도봉산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/DoBongSan%20%28Mt.%20DoBongSan%29%20in%20Spring.jpg" },
-  인왕산: { label: "인왕산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Korea-Seoul-Inwangsan-28.jpg" },
-  아차산: { label: "아차산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Forts%20in%20Achasan%20mountain.jpg" },
-  청계산: { label: "청계산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Cheonggyesan.jpg" },
-  수락산: { label: "수락산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Suraksan.JPG" },
-  남산: { label: "남산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Seoul%20from%20Namsan.jpg" },
-  설악산: { label: "설악산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Korea-Seoraksan-01.jpg" },
-  지리산: { label: "지리산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Korea-Mountain-Jirisan-15.jpg" },
-  한라산: { label: "한라산", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Hallasan%20Above.jpg" },
-};
-
-onMounted(() => {
-  loadEverything();
+// ─── GPS 버튼 ─────────────────────────────────────────────────────────────
+const gpsBtnTitle = computed(() => {
+  if (gpsStatus.value === 'loading') return '위치 감지 중...';
+  if (gpsStatus.value === 'success') return '위치 감지 완료';
+  if (gpsStatus.value === 'error') return '위치 감지 실패 — 다시 시도';
+  return '내 위치 자동 감지';
 });
+
+async function handleGPS() {
+  const success = await detectGPS();
+  if (success) {
+    syncLocationToSelectedMountain();
+    await submit();
+  }
+}
+
+// ─── 라이프사이클 ─────────────────────────────────────────────────────────
+onMounted(() => { loadEverything(); });
 
 async function loadEverything() {
   await Promise.all([loadSources(), loadCourses()]);
@@ -492,34 +514,30 @@ async function loadSources() {
   try {
     const data = await fetchDataSources();
     dataSources.value = data.connected_sources || [];
-  } catch {
-    dataSources.value = [];
-  }
+  } catch { dataSources.value = []; }
 }
 
 async function loadCourses() {
   try {
     const data = await fetchCourses();
     publicCourses.value = data.courses || [];
-  } catch {
-    publicCourses.value = [];
-  }
+  } catch { publicCourses.value = []; }
 }
 
 async function submit() {
   loading.value = true;
-  error.value = "";
+  error.value = '';
   try {
     const data = await fetchRecommendations({ profile, location: location.value });
     recommendations.value = data.recommendations || [];
     alternatives.value = data.alternatives || [];
-    resultState.value = data.result_state || "has_recommendations";
-    agentSummary.value = data.agent_summary || recommendations.value[0]?.agent_briefing || "";
+    resultState.value = data.result_state || 'has_recommendations';
+    agentSummary.value = data.agent_summary || recommendations.value[0]?.agent_briefing || '';
     alternativeActions.value = data.alternative_actions || [];
     selectedCourse.value = displayPrimaryCourses.value[0] || recommendations.value[0] || null;
     renderMaps();
   } catch (err) {
-    error.value = err.message;
+    error.value = err.message || '추천 데이터를 불러오지 못했습니다.';
   } finally {
     loading.value = false;
   }
@@ -547,33 +565,21 @@ function syncLocationToSelectedMountain() {
 
 function selectCourse(course) {
   selectedCourse.value = course;
-  shareStatus.value = "";
+  shareStatus.value = '';
   renderMaps();
 }
 
-watch([selectedCourse, activeTab], () => {
-  renderMaps();
-});
+// ─── 감시자 ───────────────────────────────────────────────────────────────
+watch([selectedCourse, activeTab], () => { renderMaps(); });
+watch(() => [profile.departureDate, profile.departureTime], () => { ensureFutureDepartureTime(); });
 
-watch(
-  () => [profile.departureDate, profile.departureTime],
-  () => {
-    ensureFutureDepartureTime();
-  },
-);
-
+// ─── 계산 속성 ────────────────────────────────────────────────────────────
 const mountainOptions = computed(() => {
   const buckets = new Map();
   for (const course of publicCourses.value) {
-    const name = course.mountain || "산 정보 없음";
+    const name = course.mountain || '산 정보 없음';
     if (!buckets.has(name)) {
-      buckets.set(name, {
-        name,
-        count: 0,
-        lat: course.lat,
-        lng: course.lng,
-        region: course.region,
-      });
+      buckets.set(name, { name, count: 0, lat: course.lat, lng: course.lng, region: course.region });
     }
     const item = buckets.get(name);
     item.count += 1;
@@ -581,20 +587,13 @@ const mountainOptions = computed(() => {
     if (!item.lng && course.lng) item.lng = course.lng;
   }
   return [...buckets.values()]
-    .filter((item) => item.name && item.name !== "산 정보 없음")
-    .filter((item) => item.name !== "국립공원")
+    .filter((item) => item.name && item.name !== '산 정보 없음')
+    .filter((item) => item.name !== '국립공원')
     .sort((a, b) => b.count - a.count)
     .slice(0, 40);
 });
 
-const selectedMountainName = computed(() => profile.mountainName || mountainOptions.value[0]?.name || "");
-
-const selectedMountainSummary = computed(() => {
-  const selected = mountainOptions.value.find((item) => item.name === profile.mountainName);
-  if (!selected) return "실제 탐방로 데이터 연결 중";
-  return `실제 코스 ${selected.count}개를 기준으로 위험 요인을 분석합니다.`;
-});
-
+const selectedMountainName = computed(() => profile.mountainName || mountainOptions.value[0]?.name || '');
 const normalizedSelectedMountain = computed(() => normalizeText(selectedMountainName.value));
 const matchedRecommendations = computed(() =>
   recommendations.value.filter((course) => isSelectedMountainCourse(course)),
@@ -604,564 +603,138 @@ const displayPrimaryCourses = computed(() =>
   (strictMountainMatch.value ? matchedRecommendations.value : recommendations.value).slice(0, 3),
 );
 const nearbyAlternativeCourses = computed(() => {
-  const seen = new Set(displayPrimaryCourses.value.map((course) => course.id));
+  const seen = new Set(displayPrimaryCourses.value.map((c) => c.id));
   return [...recommendations.value, ...alternatives.value]
-    .filter((course) => !seen.has(course.id))
-    .filter((course) => !isSelectedMountainCourse(course))
+    .filter((c) => !seen.has(c.id))
+    .filter((c) => !isSelectedMountainCourse(c))
     .slice(0, 3);
 });
 
-const routeScopeLabel = computed(() => (strictMountainMatch.value ? "선택 산" : "주변"));
-const heroBadgeLabel = computed(() => selectedCourse.value?.safety_label || "진단 중");
-const heroBadgeClass = computed(() => (selectedCourse.value ? safetyClass(selectedCourse.value) : "yellow"));
-const heroPhotoStyle = computed(() => backgroundImageStyle(mountainPhotoFor(selectedMountainName.value).url));
-const readySourceCount = computed(() => dataSources.value.filter(isReadySource).length);
 const selectedCourseLat = computed(() => Number(selectedCourse.value?.lat));
 const selectedCourseLng = computed(() => Number(selectedCourse.value?.lng));
-const hasSelectedCourseLocation = computed(() => Number.isFinite(selectedCourseLat.value) && Number.isFinite(selectedCourseLng.value));
+const hasSelectedCourseLocation = computed(
+  () => Number.isFinite(selectedCourseLat.value) && Number.isFinite(selectedCourseLng.value),
+);
 const selectedCourseRoutePoints = computed(() =>
-  (selectedCourse.value?.route_geometry || []).filter((point) => Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng))),
+  (selectedCourse.value?.route_geometry || []).filter(
+    (p) => Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)),
+  ),
 );
 const routeDisplayMessage = computed(() => {
-  if (!selectedCourse.value) return "코스를 선택하면 표시 방식이 정해집니다.";
-  if (selectedCourseRoutePoints.value.length >= 2) return "이 코스는 실제 선형 좌표가 있어 지도에 등산로 라인을 표시합니다.";
-  return "이 코스는 공공 데이터에 정확한 선형 좌표가 없어 출발·경유·도착 단계로 표시합니다.";
+  if (!selectedCourse.value) return '코스를 선택하면 표시 방식이 정해집니다.';
+  if (selectedCourseRoutePoints.value.length >= 2) return '이 코스는 실제 선형 좌표가 있어 지도에 등산로 라인을 표시합니다.';
+  return '이 코스는 공공 데이터에 정확한 선형 좌표가 없어 출발·경유·도착 단계로 표시합니다.';
 });
 const courseTimelineItems = computed(() => {
   const highlights = selectedCourse.value?.highlights || [];
   const parsed = highlights.map(parseTimelineHighlight).filter(Boolean);
   if (parsed.length) return parsed;
   if (!selectedCourse.value) return [];
-  return [{ label: "코스", value: selectedCourse.value.name }];
+  return [{ label: '코스', value: selectedCourse.value.name }];
 });
 const kakaoMapUrl = computed(() => {
-  if (!hasSelectedCourseLocation.value) return "";
+  if (!hasSelectedCourseLocation.value) return '';
   return `https://map.kakao.com/link/map/${encodeURIComponent(selectedCourse.value.name)},${selectedCourseLat.value},${selectedCourseLng.value}`;
 });
 const kakaoNavigateUrl = computed(() => {
-  if (!hasSelectedCourseLocation.value) return "";
+  if (!hasSelectedCourseLocation.value) return '';
   return `https://map.kakao.com/link/to/${encodeURIComponent(selectedCourse.value.name)},${selectedCourseLat.value},${selectedCourseLng.value}`;
 });
 const safeLinkSummary = computed(() => {
-  if (!selectedCourse.value) return "안전 진단 후 보호자에게 보낼 공유 카드가 생성됩니다.";
+  if (!selectedCourse.value) return '안전 진단 후 보호자에게 보낼 공유 카드가 생성됩니다.';
   return `${selectedCourse.value.mountain} ${selectedCourse.value.name} 코스의 안전 등급과 카카오 지도 위치를 보호자에게 공유합니다.`;
 });
-const myProfileSummary = computed(() => {
-  const companion = companionTypes.find((type) => type.value === profile.companion)?.label || "동반자 기준";
-  const experience = { beginner: "초보", intermediate: "보통", advanced: "숙련" }[profile.experience] || "초보";
-  return `${companion} · ${experience} · 최대 ${durationLabel(profile.availableMinutes)} 산행을 기준으로 추천합니다.`;
-});
 const myProfileStatus = computed(() => {
-  const companion = companionTypes.find((type) => type.value === profile.companion)?.label || "동반자";
-  return companion.replace(" 동반", "");
+  const companion = companionTypes.find((t) => t.value === profile.companion)?.label || '동반자';
+  return companion.replace(' 동반', '');
 });
 const safeLinkMessage = computed(() => {
-  if (!selectedCourse.value) return "안전 진단 후 공유 메시지가 생성됩니다.";
+  if (!selectedCourse.value) return '안전 진단 후 공유 메시지가 생성됩니다.';
   const course = selectedCourse.value;
-  const riskFactors = (course.risk_factors || []).slice(0, 2).join(", ") || "특이 위험 요인 없음";
-  const locationLine = hasSelectedCourseLocation.value ? `카카오맵 위치: ${kakaoMapUrl.value}` : "카카오맵 위치: 좌표 정보 없음";
+  const riskFactors = (course.risk_factors || []).slice(0, 2).join(', ') || '특이 위험 요인 없음';
+  const locationLine = hasSelectedCourseLocation.value
+    ? `카카오맵 위치: ${kakaoMapUrl.value}`
+    : '카카오맵 위치: 좌표 정보 없음';
   return [
-    "[ForestRx 세이프링크]",
+    '[ForestRx 안전공유]',
     `산/코스: ${course.mountain} · ${course.name}`,
     `안전 등급: ${course.safety_label || fallbackSafetyLabel(course)}`,
     `예상 산행: 약 ${durationLabel(course.duration_min)} / 거리 ${course.distance_km}km`,
     `하산 여유: ${daylightLabel(course.daylight_margin_min)}`,
     `주의 요인: ${riskFactors}`,
     locationLine,
-    "현장 통제, 기상 변화, 입산 제한 여부를 함께 확인해 주세요.",
-  ].join("\n");
-});
-const guardianSummary = computed(() => {
-  if (!selectedCourse.value) return "안전진단을 실행하면 보호자가 확인할 상태가 표시됩니다.";
-  return `${selectedCourse.value.safety_label || fallbackSafetyLabel(selectedCourse.value)} 등급입니다. 하산 여유는 ${daylightLabel(selectedCourse.value.daylight_margin_min)}이며, 보호자는 카카오맵 위치와 주의 요인을 확인할 수 있습니다.`;
-});
-const guardianAlerts = computed(() => {
-  const course = selectedCourse.value;
-  if (!course) {
-    return [
-      { color: "yellow", title: "안전진단 대기", body: "산과 출발 시간을 선택하고 안전진단을 먼저 실행해 주세요." },
-    ];
-  }
-
-  const alerts = [
-    {
-      color: course.safety_decision === "recommend" ? "green" : "yellow",
-      title: "현재 코스 상태",
-      body: course.agent_briefing || "현재 조건을 기준으로 안전 상태를 계산했습니다.",
-    },
-    {
-      color: daylightColor(course.daylight_margin_min),
-      title: "하산 시간",
-      body: `일몰 전 하산 여유는 ${daylightLabel(course.daylight_margin_min)}입니다.`,
-    },
-  ];
-
-  for (const factor of (course.risk_factors || []).slice(0, 2)) {
-    alerts.push({ color: "yellow", title: "주의 요인", body: factor });
-  }
-
-  if (!hasSelectedCourseLocation.value) {
-    alerts.push({ color: "yellow", title: "위치 공유 제한", body: "이 코스는 지도 좌표가 없어 카카오맵 위치 공유가 제한됩니다." });
-  }
-
-  return alerts;
-});
-const safetyEvidenceItems = computed(() => {
-  const course = selectedCourse.value;
-  if (!course) {
-    return [
-      { color: "yellow", title: "안전진단 전", body: "코스를 선택하면 날씨, 일몰, 접근 거리, 위험 데이터를 종합해 판단합니다." },
-    ];
-  }
-
-  return [
-    { color: safetyDotColor(course), title: "코스 안전 등급", body: `${course.safety_label || fallbackSafetyLabel(course)} 등급으로 판단했습니다.` },
-    { color: daylightColor(course.daylight_margin_min), title: "하산 여유", body: `현재 출발 시간 기준 하산 여유는 ${daylightLabel(course.daylight_margin_min)}입니다.` },
-    { color: "green", title: "코스 거리", body: `${course.distance_km}km, 약 ${durationLabel(course.duration_min)} 산행으로 계산했습니다.` },
-    { color: course.distance_from_user_km === null || course.distance_from_user_km === undefined ? "yellow" : "green", title: "접근 거리", body: `기준 위치에서 약 ${course.distance_from_user_km ?? "-"}km 떨어져 있습니다.` },
-    { color: (course.risk_factors || []).length ? "yellow" : "green", title: "주의 요인", body: (course.risk_factors || []).slice(0, 2).join(", ") || "특이 위험 요인이 크게 표시되지 않았습니다." },
-    { color: "green", title: "데이터 출처", body: sourceLabel(course) },
-  ];
+    '현장 통제, 기상 변화, 입산 제한 여부를 함께 확인해 주세요.',
+  ].join('\n');
 });
 
-function isReadySource(source) {
-  return ["ready", "connected"].includes(source.status);
+// ─── 지도 렌더링 ──────────────────────────────────────────────────────────
+async function renderMaps() {
+  await nextTick();
+  if (activeTab.value === 'guide') {
+    renderDetailMap(detailMapEl.value, selectedCourse.value, selectedCourseRoutePoints.value);
+  }
+  if (activeTab.value === 'safeLink') {
+    renderSafeLinkMap(safeLinkMapEl.value, selectedCourse.value, selectedCourseRoutePoints.value);
+  }
 }
 
-function isSelectedMountainCourse(course) {
-  const target = normalizedSelectedMountain.value;
-  if (!target) return false;
-  return normalizeText(course.mountain).includes(target) || normalizeText(course.name).includes(target);
-}
-
-function normalizeText(value) {
-  return String(value || "").replace(/\s/g, "").toLowerCase();
-}
-
-function parseTimelineHighlight(item) {
-  const text = String(item || "").trim();
-  if (!text) return null;
-  const [label, ...rest] = text.split(":");
-  if (rest.length) return { label: label.trim(), value: rest.join(":").trim() };
-  return { label: "정보", value: text };
-}
-
-function mountainPhotoFor(mountainName) {
-  const normalized = normalizeText(mountainName);
-  const entry = Object.entries(mountainPhotos).find(([name]) => normalized.includes(normalizeText(name)));
-  return entry?.[1] || defaultMountainPhoto;
-}
-
-function backgroundImageStyle(url) {
-  return { "--mountain-photo": `url("${url}")` };
-}
-
-function durationLabel(minutes) {
-  const value = Number(minutes || 0);
-  const hours = Math.floor(value / 60);
-  const mins = value % 60;
-  if (!hours) return `${mins}분`;
-  if (!mins) return `${hours}시간`;
-  return `${hours}시간 ${mins}분`;
-}
-
-function safetyClass(course) {
-  return {
-    recommend: "green",
-    caution: "yellow",
-    not_recommended: "red",
-  }[course.safety_decision] || "green";
-}
-
-function fallbackSafetyLabel(course) {
-  return { safe: "추천", caution: "주의", danger: "비추천" }[course.safety_grade] || "추천";
-}
-
-function safetyDotColor(course) {
-  return {
-    recommend: "green",
-    caution: "yellow",
-    not_recommended: "red",
-  }[course?.safety_decision] || "green";
-}
-
-function daylightColor(minutes) {
-  if (minutes === null || minutes === undefined) return "yellow";
-  if (minutes < 30) return "red";
-  if (minutes < 60) return "yellow";
-  return "green";
-}
-
-function sourceLabel(course) {
-  const source = String(course.source || "");
-  if (source.includes("SHP")) return "로컬 SHP";
-  if (source.includes("국립공원")) return "국립공원";
-  if (source.includes("VWorld")) return "VWorld";
-  return "공공 데이터";
-}
-
+// ─── 공유 기능 ────────────────────────────────────────────────────────────
 async function copySafeLinkMessage() {
   if (!selectedCourse.value) return;
   try {
     await navigator.clipboard.writeText(safeLinkMessage.value);
-    shareStatus.value = "보호자 공유 문구를 복사했습니다.";
+    shareStatus.value = '보호자 공유 문구를 복사했습니다.';
   } catch {
-    shareStatus.value = "브라우저에서 복사를 허용하지 않았습니다. 문구를 직접 선택해 복사해 주세요.";
+    shareStatus.value = '브라우저에서 복사를 허용하지 않았습니다. 문구를 직접 선택해 복사해 주세요.';
   }
 }
 
 async function shareSafeLink() {
   if (!selectedCourse.value) return;
   const sharePayload = {
-    title: "ForestRx 세이프링크",
+    title: 'ForestRx 안전공유',
     text: safeLinkMessage.value,
     url: hasSelectedCourseLocation.value ? kakaoMapUrl.value : window.location.href,
   };
-
   if (navigator.share) {
     try {
       await navigator.share(sharePayload);
-      shareStatus.value = "보호자 공유 창을 열었습니다.";
+      shareStatus.value = '보호자 공유 창을 열었습니다.';
       return;
     } catch (err) {
-      if (err?.name === "AbortError") {
-        shareStatus.value = "공유를 취소했습니다.";
-        return;
-      }
+      if (err?.name === 'AbortError') { shareStatus.value = '공유를 취소했습니다.'; return; }
     }
   }
-
   await copySafeLinkMessage();
-  if (hasSelectedCourseLocation.value) {
-    window.open(kakaoMapUrl.value, "_blank", "noreferrer");
-  }
+  if (hasSelectedCourseLocation.value) window.open(kakaoMapUrl.value, '_blank', 'noreferrer');
 }
 
-function addDays(date, days) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
+// ─── 유틸 함수 ────────────────────────────────────────────────────────────
+function isSelectedMountainCourse(course) {
+  const target = normalizedSelectedMountain.value;
+  if (!target) return false;
+  return normalizeText(course.mountain).includes(target) || normalizeText(course.name).includes(target);
 }
 
-function addMinutes(date, minutes) {
-  const next = new Date(date);
-  next.setMinutes(next.getMinutes() + minutes);
-  return next;
+function normalizeText(value) { return String(value || '').replace(/\s/g, '').toLowerCase(); }
+
+function parseTimelineHighlight(item) {
+  const text = String(item || '').trim();
+  if (!text) return null;
+  const [label, ...rest] = text.split(':');
+  if (rest.length) return { label: label.trim(), value: rest.join(':').trim() };
+  return { label: '정보', value: text };
 }
 
+function addDays(date, days) { const d = new Date(date); d.setDate(d.getDate() + days); return d; }
+function addMinutes(date, minutes) { const d = new Date(date); d.setMinutes(d.getMinutes() + minutes); return d; }
 function formatDateForInput(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
-
 function formatTimeForInput(date) {
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
-}
-
-function daylightLabel(minutes) {
-  if (minutes === null || minutes === undefined) return "확인 중";
-  if (minutes < 30) return "부족";
-  if (minutes < 60) return "짧음";
-  return "충분";
-}
-
-async function renderMaps() {
-  await nextTick();
-  if (activeTab.value === "guide") {
-    renderDetailMap();
-  }
-  if (activeTab.value === "safeLink") {
-    renderSafeLinkMap();
-  }
-}
-
-async function renderDetailMap() {
-  if (!detailMapEl.value) return;
-  if (!selectedCourse.value?.lat || !selectedCourse.value?.lng) {
-    renderCourseFallbackMap(detailMapEl.value, selectedCourse.value, { safeLink: false });
-    mapStatus.value = "지도 좌표가 부족해 코스 단계로 표시합니다.";
-    return;
-  }
-  if (selectedCourseRoutePoints.value.length < 2) {
-    renderCourseFallbackMap(detailMapEl.value, selectedCourse.value, { safeLink: false });
-    mapStatus.value = "정확한 등산로 선형이 없어 JavaScript 코스 프리뷰로 표시합니다.";
-    return;
-  }
-  mapStatus.value = "카카오 지도를 불러오는 중입니다.";
-  try {
-    const kakao = await loadKakaoMapSdk();
-    const center = new kakao.maps.LatLng(selectedCourse.value.lat, selectedCourse.value.lng);
-    const map = new kakao.maps.Map(detailMapEl.value, { center, level: 5 });
-    new kakao.maps.Marker({ map, position: center, title: selectedCourse.value.name });
-    const routePath = kakaoRoutePath(kakao, selectedCourse.value);
-    if (routePath.length >= 2) {
-      new kakao.maps.Polyline({
-        map,
-        path: routePath,
-        strokeWeight: 6,
-        strokeColor: selectedCourse.value.safety_decision === "not_recommended" ? "#cf3528" : "#23864b",
-        strokeOpacity: 0.9,
-        strokeStyle: selectedCourse.value.safety_decision === "recommend" ? "solid" : "shortdash",
-      });
-      const bounds = new kakao.maps.LatLngBounds();
-      routePath.forEach((point) => bounds.extend(point));
-      map.setBounds(bounds);
-      mapStatus.value = "";
-    } else {
-      mapStatus.value = "정확한 등산로 선형이 없어 중심 위치만 표시합니다.";
-    }
-    new kakao.maps.Circle({
-      map,
-      center,
-      radius: 180,
-      strokeWeight: 2,
-      strokeColor: "#d29a12",
-      strokeOpacity: 0.9,
-      strokeStyle: "dashed",
-      fillColor: "#d29a12",
-      fillOpacity: 0.18,
-    });
-  } catch (err) {
-    console.error("Kakao map detail render failed", err);
-    renderCourseFallbackMap(detailMapEl.value, selectedCourse.value, { safeLink: false });
-    mapStatus.value = "카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.";
-  }
-}
-
-async function renderSafeLinkMap() {
-  if (!safeLinkMapEl.value) return;
-  if (!selectedCourse.value?.lat || !selectedCourse.value?.lng) {
-    renderCourseFallbackMap(safeLinkMapEl.value, selectedCourse.value, { safeLink: true });
-    safeLinkMapStatus.value = "선택된 코스의 지도 좌표가 부족합니다.";
-    return;
-  }
-  if (selectedCourseRoutePoints.value.length < 2) {
-    renderCourseFallbackMap(safeLinkMapEl.value, selectedCourse.value, { safeLink: true });
-    safeLinkMapStatus.value = "정확한 등산로 선형이 없어 JavaScript 코스 프리뷰로 표시합니다.";
-    return;
-  }
-  safeLinkMapStatus.value = "카카오 지도를 불러오는 중입니다.";
-  try {
-    const kakao = await loadKakaoMapSdk();
-    const courseLat = selectedCourse.value.lat;
-    const courseLng = selectedCourse.value.lng;
-    const start = new kakao.maps.LatLng(courseLat - 0.004, courseLng - 0.004);
-    const current = new kakao.maps.LatLng(courseLat, courseLng);
-    const next = new kakao.maps.LatLng(courseLat + 0.003, courseLng + 0.004);
-    const map = new kakao.maps.Map(safeLinkMapEl.value, { center: current, level: 5 });
-    new kakao.maps.Marker({ map, position: current, title: "공유 대상 현재 위치" });
-    const routePath = kakaoRoutePath(kakao, selectedCourse.value);
-    new kakao.maps.Polyline({
-      map,
-      path: routePath.length >= 2 ? routePath : [start, current, next],
-      strokeWeight: 5,
-      strokeColor: "#23864b",
-      strokeOpacity: 0.9,
-      strokeStyle: "solid",
-    });
-    if (routePath.length >= 2) {
-      const bounds = new kakao.maps.LatLngBounds();
-      routePath.forEach((point) => bounds.extend(point));
-      map.setBounds(bounds);
-    }
-    new kakao.maps.Circle({
-      map,
-      center: next,
-      radius: 160,
-      strokeWeight: 2,
-      strokeColor: "#cf3528",
-      strokeOpacity: 0.9,
-      strokeStyle: "dashed",
-      fillColor: "#cf3528",
-      fillOpacity: 0.16,
-    });
-    safeLinkMapStatus.value = "";
-  } catch (err) {
-    console.error("Kakao map Safe Link render failed", err);
-    renderCourseFallbackMap(safeLinkMapEl.value, selectedCourse.value, { safeLink: true });
-    safeLinkMapStatus.value = "카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.";
-  }
-}
-
-function loadKakaoMapSdk() {
-  if (window.kakao?.maps) {
-    return new Promise((resolve) => window.kakao.maps.load(() => resolve(window.kakao)));
-  }
-  if (kakaoMapLoadPromise) return kakaoMapLoadPromise;
-
-  const appKey = import.meta.env.VITE_KAKAO_MAP_APP_KEY;
-  kakaoMapLoadPromise = new Promise((resolve, reject) => {
-    if (!appKey) {
-      reject(new Error("Missing Kakao map app key"));
-      return;
-    }
-    const timeout = window.setTimeout(() => reject(new Error("Kakao Maps SDK load timeout")), 7000);
-    const script = document.createElement("script");
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
-    script.async = true;
-    script.onload = () => {
-      if (!window.kakao?.maps) {
-        window.clearTimeout(timeout);
-        reject(new Error("Kakao SDK loaded but maps namespace is missing"));
-        return;
-      }
-      window.kakao.maps.load(() => {
-        window.clearTimeout(timeout);
-        resolve(window.kakao);
-      });
-    };
-    script.onerror = () => {
-      window.clearTimeout(timeout);
-      reject(new Error("Failed to load Kakao Maps SDK script"));
-    };
-    document.head.appendChild(script);
-  });
-  return kakaoMapLoadPromise;
-}
-
-function kakaoRoutePath(kakao, course) {
-  return (course?.route_geometry || [])
-    .filter((point) => Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng)))
-    .map((point) => new kakao.maps.LatLng(Number(point.lat), Number(point.lng)));
-}
-
-function renderCourseFallbackMap(container, course, { safeLink = false } = {}) {
-  if (!container) return;
-  void safeLink;
-  const timeline = (course?.highlights || []).map(parseTimelineHighlight).filter(Boolean);
-  const routePoints = normalizeSvgRoutePoints(course?.route_geometry || []);
-  const displayPoints = routePoints.length >= 2 ? routePoints : [{ x: 38, y: 122 }, { x: 146, y: 82 }, { x: 252, y: 116 }];
-  const routePath = displayPoints.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ");
-  const hasGeometry = routePoints.length >= 2;
-  const stops = buildFallbackRouteStops(timeline, displayPoints);
-  const stopCircleMarkup = stops
-    .map((stop) => `<circle class="fallback-node ${stop.type}" cx="${stop.point.x}" cy="${stop.point.y}" r="${stop.type === "waypoint" ? 5 : 7}" />`)
-    .join("");
-  const stopMarkup = stops
-    .map(
-      (stop) => `
-        <div class="fallback-stop ${stop.type}" style="left:${toPercent(stop.labelPoint.x, 290)}%; top:${toPercent(stop.labelPoint.y, 180)}%">
-          <span>${escapeHtml(stop.label)}</span>
-        </div>
-      `,
-    )
-    .join("");
-
-  container.innerHTML = `
-    <div class="fallback-map ${hasGeometry ? "has-geometry" : "estimated"}">
-      <svg viewBox="0 0 290 180" aria-hidden="true">
-        <defs>
-          <linearGradient id="routeGradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#11a361" />
-            <stop offset="100%" stop-color="#2563eb" />
-          </linearGradient>
-        </defs>
-        <path class="fallback-route-shadow" d="${routePath}" />
-        <path class="fallback-route" d="${routePath}" />
-        ${stopCircleMarkup}
-      </svg>
-      ${stopMarkup}
-      <div class="fallback-distance">${escapeHtml(course?.distance_km ?? "-")}km</div>
-    </div>
-  `;
-}
-
-function buildFallbackRouteStops(timeline, points) {
-  const startLabel = timeline[0]?.value || "출발";
-  const endLabel = timeline.find((item) => item.label.includes("도착"))?.value || timeline.at(-1)?.value || "도착";
-  const waypointItems = timeline
-    .filter((item) => item.value && !item.label.includes("출발") && !item.label.includes("도착"))
-    .slice(0, 3);
-  const stops = [{ type: "start", label: shortStopLabel(startLabel), point: pointAtRouteFraction(points, 0) }];
-
-  waypointItems.forEach((item, index) => {
-    stops.push({
-      type: "waypoint",
-      label: shortStopLabel(item.value),
-      point: pointAtRouteFraction(points, (index + 1) / (waypointItems.length + 1)),
-    });
-  });
-
-  stops.push({ type: "end", label: shortStopLabel(endLabel), point: pointAtRouteFraction(points, 1) });
-  return stops.map((stop, index) => ({ ...stop, labelPoint: labelPointForStop(stop.point, stop.type, index) }));
-}
-
-function labelPointForStop(point, type, index) {
-  const verticalOffset = type === "waypoint" ? -22 : 20;
-  const horizontalOffset = type === "start" ? 30 : type === "end" ? -30 : index % 2 ? 16 : -16;
-  return {
-    x: clamp(point.x + horizontalOffset, 42, 248),
-    y: clamp(point.y + verticalOffset, 24, 156),
-  };
-}
-
-function pointAtRouteFraction(points, fraction) {
-  if (points.length <= 1) return points[0] || { x: 145, y: 90 };
-  const clamped = Math.min(1, Math.max(0, fraction));
-  const segments = points.slice(1).map((point, index) => {
-    const previous = points[index];
-    return { from: previous, to: point, length: Math.hypot(point.x - previous.x, point.y - previous.y) };
-  });
-  const total = segments.reduce((sum, segment) => sum + segment.length, 0) || 1;
-  let target = total * clamped;
-
-  for (const segment of segments) {
-    if (target <= segment.length) {
-      const ratio = segment.length ? target / segment.length : 0;
-      return {
-        x: segment.from.x + (segment.to.x - segment.from.x) * ratio,
-        y: segment.from.y + (segment.to.y - segment.from.y) * ratio,
-      };
-    }
-    target -= segment.length;
-  }
-
-  return points.at(-1);
-}
-
-function shortStopLabel(value) {
-  const text = String(value || "").replace(/\s+/g, " ").trim();
-  if (!text) return "";
-  return text.length > 10 ? `${text.slice(0, 10)}...` : text;
-}
-
-function toPercent(value, max) {
-  return (value / max) * 100;
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function normalizeSvgRoutePoints(points) {
-  const valid = points
-    .filter((point) => Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng)))
-    .slice(0, 24);
-  if (valid.length < 2) return [];
-  const lats = valid.map((point) => Number(point.lat));
-  const lngs = valid.map((point) => Number(point.lng));
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const latSpan = maxLat - minLat || 1;
-  const lngSpan = maxLng - minLng || 1;
-  return valid.map((point) => ({
-    x: 28 + ((Number(point.lng) - minLng) / lngSpan) * 234,
-    y: 152 - ((Number(point.lat) - minLat) / latSpan) * 124,
-  }));
-}
-
-function escapeHtml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 </script>

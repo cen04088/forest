@@ -1505,14 +1505,344 @@ p {
   background: var(--red);
 }
 
-.error-toast {
-  margin: 12px 0 0;
-  padding: 12px;
-  border-radius: 12px;
+/* ── 에러 배너 (개선) ───────────────────────────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 14px;
   background: var(--red-soft);
   color: var(--red);
   font-size: 13px;
   font-weight: 850;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  animation: slideDown 0.25s ease;
+}
+
+.error-close {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--red);
+  font-size: 14px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 로딩 스피너 ────────────────────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.primary-btn.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.primary-btn.loading::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+/* ── 스켈레톤 로딩 ──────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-line.short  { width: 40%; }
+.skeleton-line.medium { width: 70%; }
+.skeleton-line.full   { width: 100%; }
+
+/* ── GPS 버튼 ───────────────────────────────────────────────────────────── */
+.gps-field .field > span {
+  display: block;
+}
+
+.gps-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.gps-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.gps-btn {
+  flex: 0 0 48px;
+  height: 48px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: #fcfdfc;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+
+.gps-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gps-btn:hover:not(:disabled) {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.gps-btn.loading {
+  border-color: var(--blue);
+  color: var(--blue);
+  animation: pulse 1s infinite;
+}
+
+.gps-btn.success {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.gps-btn.error {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-soft);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.gps-spin {
+  animation: spin 1s linear infinite;
+  transform-origin: 12px 12px;
+}
+
+.gps-message {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.gps-message.success { color: var(--green); }
+.gps-message.error   { color: var(--red); }
+
+/* ── 탭 배지 (준비중) ───────────────────────────────────────────────────── */
+.tab-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+
+/* ── 점수 바 (CourseCard) ───────────────────────────────────────────────── */
+.score-section {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.score-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  padding: 0;
+}
+
+.score-toggle-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.score-bars {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.score-bar-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-bar-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.score-bar-track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.score-bar-fill.bar-green  { background: var(--green); }
+.score-bar-fill.bar-yellow { background: var(--amber); }
+.score-bar-fill.bar-red    { background: var(--red); }
+
+.score-bar-value {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+  text-align: right;
+}
+
+/* ── 커뮤니티 준비중 배너 ───────────────────────────────────────────────── */
+.coming-soon-banner {
+  margin-bottom: 16px;
+  padding: 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--amber-soft), #fff9f0);
+  border: 1px solid rgba(217, 119, 6, 0.18);
+  text-align: center;
+}
+
+.coming-soon-icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+
+.coming-soon-banner strong {
+  display: block;
+  color: var(--amber);
+  font-size: 15px;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.coming-soon-banner p {
+  color: #78480a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── 세이프링크 상태 바 ─────────────────────────────────────────────────── */
+.safe-link-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--wash);
+  font-size: 13px;
+  font-weight: 850;
+  color: var(--ink);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.status-dot.dot-green {
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(17, 163, 97, 0.2);
+  animation: pulse-dot 2s infinite;
+}
+
+.status-dot.dot-yellow {
+  background: var(--amber);
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.2);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(17, 163, 97, 0.2); }
+  50%       { box-shadow: 0 0 0 6px rgba(17, 163, 97, 0.08); }
+}
+
+.status-time {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* ── 119 긴급 CTA ───────────────────────────────────────────────────────── */
+.map-action.emergency {
+  border-color: rgba(220, 38, 38, 0.2);
+  background: var(--red-soft);
+}
+
+.map-action.emergency strong {
+  color: var(--red);
+}
+
+.map-action.emergency span {
+  color: #7f1d1d;
 }
 
 @media (max-width: 380px) {

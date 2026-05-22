@@ -377,6 +377,10 @@ def build_segment_nodes(start, waypoint, end):
 
 @lru_cache(maxsize=1)
 def load_public_service_key():
+    env_key = os.environ.get("PUBLIC_SERVICE_KEY", "").strip()
+    if env_key:
+        return env_key
+
     for path in (KEY_FILE_PATH, DATA_LINK_FILE_PATH):
         key = _load_public_service_key_from_path(path)
         if key:

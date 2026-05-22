@@ -1,11 +1,39 @@
+import os
+from importlib.util import find_spec
 from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIST_DIR = BASE_DIR.parent / "frontend" / "dist"
 
-SECRET_KEY = "dev-only-forestrx-secret-key"
-DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name, default=None):
+    value = os.environ.get(name, "")
+    if not value:
+        return list(default or [])
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-forestrx-secret-key")
+DEBUG = env_bool("DJANGO_DEBUG", default=True)
+
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", ["localhost", "127.0.0.1", ".railway.app", ".up.railway.app"])
+if railway_domain := os.environ.get("RAILWAY_PUBLIC_DOMAIN"):
+    ALLOWED_HOSTS.append(railway_domain)
+
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+if railway_domain:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{railway_domain}")
+
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", ["http://127.0.0.1:5173", "http://localhost:5173"])
+HAS_WHITENOISE = find_spec("whitenoise") is not None
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -27,13 +55,15 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+if HAS_WHITENOISE:
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "forestrx.urls"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [FRONTEND_DIST_DIR],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -60,4 +90,12 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [FRONTEND_DIST_DIR] if FRONTEND_DIST_DIR.exists() else []
+if HAS_WHITENOISE:
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
