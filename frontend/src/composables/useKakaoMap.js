@@ -58,12 +58,12 @@ export function useKakaoMap() {
   async function renderDetailMap(detailMapEl, selectedCourse, routePoints) {
     if (!detailMapEl) return;
     if (!selectedCourse?.lat || !selectedCourse?.lng) {
-      renderCourseFallbackMap(detailMapEl, selectedCourse, { safeLink: false });
+      renderCourseFallbackMap(detailMapEl, selectedCourse, '지도 좌표가 부족해 코스 단계로 표시합니다.', { safeLink: false });
       mapStatus.value = '지도 좌표가 부족해 코스 단계로 표시합니다.';
       return;
     }
     if (routePoints.length < 2) {
-      renderCourseFallbackMap(detailMapEl, selectedCourse, { safeLink: false });
+      renderCourseFallbackMap(detailMapEl, selectedCourse, '정확한 등산로 선형이 없어 코스 프리뷰로 표시합니다.', { safeLink: false });
       mapStatus.value = '정확한 등산로 선형이 없어 JavaScript 코스 프리뷰로 표시합니다.';
       return;
     }
@@ -103,7 +103,7 @@ export function useKakaoMap() {
       });
     } catch (err) {
       console.error('Kakao map detail render failed', err);
-      renderCourseFallbackMap(detailMapEl, selectedCourse, { safeLink: false });
+      renderCourseFallbackMap(detailMapEl, selectedCourse, '카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.', { safeLink: false });
       mapStatus.value = '카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.';
     }
   }
@@ -112,12 +112,12 @@ export function useKakaoMap() {
   async function renderSafeLinkMap(safeLinkMapEl, selectedCourse, routePoints) {
     if (!safeLinkMapEl) return;
     if (!selectedCourse?.lat || !selectedCourse?.lng) {
-      renderCourseFallbackMap(safeLinkMapEl, selectedCourse, { safeLink: true });
+      renderCourseFallbackMap(safeLinkMapEl, selectedCourse, '선택된 코스의 지도 좌표가 부족합니다.', { safeLink: true });
       safeLinkMapStatus.value = '선택된 코스의 지도 좌표가 부족합니다.';
       return;
     }
     if (routePoints.length < 2) {
-      renderCourseFallbackMap(safeLinkMapEl, selectedCourse, { safeLink: true });
+      renderCourseFallbackMap(safeLinkMapEl, selectedCourse, '정확한 등산로 선형이 없어 코스 프리뷰로 표시합니다.', { safeLink: true });
       safeLinkMapStatus.value = '정확한 등산로 선형이 없어 JavaScript 코스 프리뷰로 표시합니다.';
       return;
     }
@@ -159,13 +159,13 @@ export function useKakaoMap() {
       safeLinkMapStatus.value = '';
     } catch (err) {
       console.error('Kakao map Safe Link render failed', err);
-      renderCourseFallbackMap(safeLinkMapEl, selectedCourse, { safeLink: true });
+      renderCourseFallbackMap(safeLinkMapEl, selectedCourse, '카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.', { safeLink: true });
       safeLinkMapStatus.value = '카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.';
     }
   }
 
   // ─── Fallback SVG 지도 ───────────────────────────────────────────────────
-  function renderCourseFallbackMap(container, course, { safeLink = false } = {}) {
+  function renderCourseFallbackMap(container, course, statusText = '', { safeLink = false } = {}) {
     if (!container) return;
     void safeLink;
     const timeline = (course?.highlights || []).map(parseTimelineHighlight).filter(Boolean);
@@ -190,6 +190,10 @@ export function useKakaoMap() {
       )
       .join('');
 
+    const statusOverlay = statusText
+      ? `<div class="fallback-status-overlay">ℹ️ ${escapeHtml(statusText)}</div>`
+      : '';
+
     container.innerHTML = `
       <div class="fallback-map ${hasGeometry ? 'has-geometry' : 'estimated'}">
         <svg viewBox="0 0 290 180" aria-hidden="true">
@@ -205,6 +209,7 @@ export function useKakaoMap() {
         </svg>
         ${stopMarkup}
         <div class="fallback-distance">${escapeHtml(course?.distance_km ?? '-')}km</div>
+        ${statusOverlay}
       </div>
     `;
   }
