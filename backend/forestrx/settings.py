@@ -89,13 +89,22 @@ TIME_ZONE = "Asia/Seoul"
 USE_I18N = True
 USE_TZ = True
 
+# 정적 파일: STATIC_ROOT와 STATICFILES_DIRS가 겨치면 안 됨
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [FRONTEND_DIST_DIR] if FRONTEND_DIST_DIR.exists() else []
+
+# frontend/dist/assets 만 정적 파일로 등록 (겹치기 방지)
+_FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"
+STATICFILES_DIRS = [_FRONTEND_ASSETS_DIR] if _FRONTEND_ASSETS_DIR.exists() else []
+
 if HAS_WHITENOISE:
     STORAGES = {
         "staticfiles": {
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
+    # whitenoise가 SPA index.html을 fallback으로 서빙하도록 설정
+    WHITENOISE_INDEX_FILE = True
+    WHITENOISE_ROOT = str(FRONTEND_DIST_DIR)
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
