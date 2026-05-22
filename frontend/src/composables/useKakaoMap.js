@@ -62,11 +62,6 @@ export function useKakaoMap() {
       mapStatus.value = '지도 좌표가 부족해 코스 단계로 표시합니다.';
       return;
     }
-    if (routePoints.length < 2) {
-      renderCourseFallbackMap(detailMapEl, selectedCourse, '정확한 등산로 선형이 없어 코스 프리뷰로 표시합니다.', { safeLink: false });
-      mapStatus.value = '정확한 등산로 선형이 없어 JavaScript 코스 프리뷰로 표시합니다.';
-      return;
-    }
     mapStatus.value = '카카오 지도를 불러오는 중입니다.';
     try {
       const kakao = await loadKakaoMapSdk();
@@ -117,11 +112,6 @@ export function useKakaoMap() {
       safeLinkMapStatus.value = '선택된 코스의 지도 좌표가 부족합니다.';
       return;
     }
-    if (routePoints.length < 2) {
-      renderCourseFallbackMap(safeLinkMapEl, selectedCourse, '정확한 등산로 선형이 없어 코스 프리뷰로 표시합니다.', { safeLink: true });
-      safeLinkMapStatus.value = '정확한 등산로 선형이 없어 JavaScript 코스 프리뷰로 표시합니다.';
-      return;
-    }
     safeLinkMapStatus.value = '카카오 지도를 불러오는 중입니다.';
     try {
       const kakao = await loadKakaoMapSdk();
@@ -146,6 +136,9 @@ export function useKakaoMap() {
         const bounds = new kakao.maps.LatLngBounds();
         routePath.forEach((p) => bounds.extend(p));
         map.setBounds(bounds);
+        safeLinkMapStatus.value = '';
+      } else {
+        safeLinkMapStatus.value = '정확한 등산로 선형이 없어 중심 및 추정 경로를 표시합니다.';
       }
       new kakao.maps.Circle({
         map,
@@ -158,7 +151,6 @@ export function useKakaoMap() {
         fillColor: '#cf3528',
         fillOpacity: 0.16,
       });
-      safeLinkMapStatus.value = '';
     } catch (err) {
       console.error('Kakao map Safe Link render failed', err);
       renderCourseFallbackMap(safeLinkMapEl, selectedCourse, '카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.', { safeLink: true });
