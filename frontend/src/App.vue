@@ -135,6 +135,39 @@
         </div>
       </article>
 
+      <!-- ✅ 실시간 산행 조건 카드 -->
+      <section v-if="weatherData && !loading" class="panel conditions-card">
+        <div class="conditions-header">
+          <div>
+            <p class="eyebrow">오늘의 조건</p>
+            <h2>실시간 산행 환경</h2>
+          </div>
+          <span class="live-badge">● LIVE</span>
+        </div>
+        <div class="conditions-grid">
+          <div class="condition-item">
+            <span class="condition-icon">{{ weatherIcon }}</span>
+            <span class="condition-label">날씨</span>
+            <strong class="condition-value">{{ weatherLabel }}<br/>{{ weatherData.temperature_c }}°C</strong>
+          </div>
+          <div class="condition-item">
+            <span class="condition-icon">🌅</span>
+            <span class="condition-label">오늘 일몰</span>
+            <strong class="condition-value">{{ weatherData.sunset || '확인 중' }}</strong>
+          </div>
+          <div class="condition-item">
+            <span class="condition-icon">🔥</span>
+            <span class="condition-label">산불 위험</span>
+            <strong :class="['condition-value', wildfireClass]">{{ wildfireLabel }}</strong>
+          </div>
+          <div v-if="weatherData.wind_speed_ms >= 5" class="condition-item">
+            <span class="condition-icon">💨</span>
+            <span class="condition-label">풍속</span>
+            <strong class="condition-value warning">{{ weatherData.wind_speed_ms }}m/s</strong>
+          </div>
+        </div>
+      </section>
+
       <!-- 추천 코스 목록 -->
       <section v-if="!loading && recommendations.length" class="panel">
         <div class="section-title compact">
@@ -144,14 +177,26 @@
           </div>
           <span class="mini-status">{{ displayPrimaryCourses.length }}개</span>
         </div>
+
+        <!-- ✅ 개인화 라인 -->
+        <div class="personalization-line">
+          <span class="companion-chip">{{ companionChipLabel }}</span>
+          <span class="personalization-dots">
+            <span>날씨·일몰·동반자 조건 반영</span>
+            <span v-if="weatherData">·</span>
+            <span v-if="weatherData">{{ weatherLabel }} {{ weatherData.temperature_c }}°C</span>
+          </span>
+        </div>
+
         <p v-if="!strictMountainMatch" class="notice">
           선택한 산과 정확히 일치하는 후보가 부족해 주변 안전 후보를 함께 보여줍니다.
         </p>
         <div class="course-list">
           <CourseCard
-            v-for="course in displayPrimaryCourses"
+            v-for="(course, index) in displayPrimaryCourses"
             :key="course.id"
             :course="course"
+            :rank="index + 1"
             :is-selected="selectedCourse?.id === course.id"
             @select="selectCourse"
           />
@@ -424,6 +469,7 @@ const alternativeActions = ref([]);
 const detailMapEl = ref(null);
 const safeLinkMapEl = ref(null);
 const shareStatus = ref('');
+const weatherData = ref(null); // 실시간 날씨 데이터
 
 // ─── Composables ──────────────────────────────────────────────────────────
 const { location, gpsStatus, gpsError, detectGPS } = useLocation();
@@ -534,6 +580,7 @@ async function submit() {
     resultState.value = data.result_state || 'has_recommendations';
     agentSummary.value = data.agent_summary || recommendations.value[0]?.agent_briefing || '';
     alternativeActions.value = data.alternative_actions || [];
+    weatherData.value = data.weather || recommendations.value[0]?.weather || null;
     selectedCourse.value = displayPrimaryCourses.value[0] || recommendations.value[0] || null;
     renderMaps();
   } catch (err) {
@@ -574,6 +621,47 @@ watch([selectedCourse, activeTab], () => { renderMaps(); });
 watch(() => [profile.departureDate, profile.departureTime], () => { ensureFutureDepartureTime(); });
 
 // ─── 계산 속성 ────────────────────────────────────────────────────────────
+
+// 날씨 조건 표시용
+const weatherIcon = computed(() => {
+  const w = weatherData.value;
+  if (!w) return '🌤️';
+  if (w.rainfall_mm >= 10) return '🌧️';
+  if (w.rainfall_mm > 0) return '🌦️';
+  if (w.wind_speed_ms >= 8) return '💨';
+  return '☀️';
+});
+
+const weatherLabel = computed(() => {
+  const w = weatherData.value;
+  if (!w) return '확인 중';
+  if (w.rainfall_mm >= 10) return '비';
+  if (w.rainfall_mm > 0) return '흐리고 비';
+  if (w.wind_speed_ms >= 8) return '강풍';
+  return '맑음';
+});
+
+const wildfireClass = computed(() => {
+  const risk = weatherData.value?.wildfire_risk || 'low';
+  return { low: 'safe', medium: 'warning', high: 'danger', very_high: 'danger' }[risk] || 'safe';
+});
+
+const wildfireLabel = computed(() => {
+  return { low: '낮음', medium: '중간', high: '높음', very_high: '매우 높음' }[weatherData.value?.wildfire_risk] || '낮음';
+});
+
+// 동반자 칩 라벨
+const companionChipLabel = computed(() => {
+  const map = {
+    vulnerable: '👨‍👧 어린이·노약자 동반 기준',
+    child:      '🧒 어린이 동반 기준',
+    senior:     '🧓 노약자 동반 기준',
+    family:     '👨‍👩‍👦 가족 동반 기준',
+    solo:       '🧍 개인 산행 기준',
+  };
+  return map[profile.companion] || '동반자 기준';
+});
+
 const mountainOptions = computed(() => {
   const buckets = new Map();
   for (const course of publicCourses.value) {
