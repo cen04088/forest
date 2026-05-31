@@ -281,7 +281,7 @@ def recommend_courses(payload):
                 "daylight_margin_min": daylight_margin,
                 "safety_grade": safety_grade(weather_score),
                 "reason": build_reason(course, profile, weather_score, distance, daylight_margin),
-                "agent_briefing": build_agent_briefing(course, safety, daylight_margin),
+                "agent_briefing": build_agent_briefing(course, safety, daylight_margin, weather),
                 "safe_link_preview": build_safe_link_preview(course, safety),
                 "weather": weather,
             }
@@ -315,7 +315,11 @@ def recommend_courses(payload):
     }
 
 
-def build_agent_briefing(course, safety, daylight_margin=None):
+def build_agent_briefing(course, safety, daylight_margin=None, weather=None):
+    from .llm_briefing import generate_briefing
+    llm = generate_briefing(course, safety, weather or {}, daylight_margin)
+    if llm:
+        return llm
     factors = ", ".join(safety["risk_factors"][:2])
     if safety["safety_decision"] == "recommend":
         return f"{course['name']}은 현재 기상과 하산 시간을 고려했을 때 안정적으로 이용 가능한 코스입니다."

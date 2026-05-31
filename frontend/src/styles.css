@@ -2407,3 +2407,241 @@ p {
     gap: 24px;
   }
 }
+
+/* ── 보호자 전용 뷰 ──────────────────────────────────────────────────────── */
+.guardian-shell {
+  min-height: 100dvh;
+  background: var(--wash);
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.guardian-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.guardian-logo {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--green-deep);
+}
+
+.guardian-status-chip {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.guardian-status-chip.green { background: var(--green-soft); color: var(--green); }
+.guardian-status-chip.yellow { background: var(--amber-soft); color: var(--amber); }
+.guardian-status-chip.red { background: var(--red-soft); color: var(--red); }
+.guardian-status-chip.gray { background: var(--line); color: var(--muted); }
+
+.guardian-map {
+  width: 100%;
+  height: 280px;
+  background: var(--line);
+}
+
+.guardian-map-placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.guardian-card {
+  padding: 20px;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guardian-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.guardian-mountain {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.guardian-meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.guardian-risks {
+  flex-wrap: wrap;
+}
+
+.guardian-ended-banner {
+  background: var(--line);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.guardian-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.guardian-actions .outline-btn {
+  flex: 1;
+}
+
+.emergency-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--red);
+  color: #fff;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.guardian-loading,
+.guardian-not-found {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.guardian-error {
+  padding: 12px 20px;
+  color: var(--red);
+  font-size: 13px;
+}
+
+/* ── 산행 시작 / 세이프링크 패널 ────────────────────────────────────────── */
+.safe-link-guide {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+
+.safe-link-active-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.safe-link-live-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.safe-link-url-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.safe-link-url-box {
+  background: var(--wash);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow: hidden;
+}
+
+.safe-link-url-text {
+  font-size: 12px;
+  color: var(--blue);
+  word-break: break-all;
+  font-family: monospace;
+}
+
+.safe-link-ended {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 16px 0;
+  text-align: center;
+}
+
+.share-message-details {
+  margin-top: 16px;
+}
+
+.share-message-details summary {
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.outline-btn.danger {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+/* ── 재난위험지구 패널 ──────────────────────────────────────────────────── */
+.disaster-zone-panel {
+  border: 1px solid var(--red-soft);
+  background: #fff5f5;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+
+.disaster-zone-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 10px;
+}
+
+.disaster-zone-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.disaster-zone-list li {
+  font-size: 12px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.disaster-zone-list span {
+  color: var(--muted);
+}

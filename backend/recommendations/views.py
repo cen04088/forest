@@ -7,7 +7,7 @@ from django.views.decorators.http import require_GET, require_POST
 from .data_sources import data_source_status
 from .forest_api import fetch_forest_spatial_data, safe_public_response
 from .landslide_api import fetch_landslide_prediction
-from .loaders import load_public_service_key, load_public_trail_courses
+from .loaders import load_public_service_key, load_public_trail_courses, load_disaster_risk_zones
 from .mountain_coordinates import MOUNTAIN_COORDINATES
 from .mountain_story_api import fetch_mountain_story
 from .services import recommend_courses
@@ -16,6 +16,7 @@ from .weather_api import fetch_current_weather
 from .mountain_weather_api import fetch_mountain_weather
 from .wildfire_api import fetch_wildfire_risk
 from .vworld_api import fetch_vworld_trails
+from . import safe_links as safe_link_store
 
 
 @require_GET
@@ -127,3 +128,56 @@ def recommendations(request):
         return JsonResponse({"error": "Invalid JSON body"}, status=400)
 
     return JsonResponse(recommend_courses(payload))
+
+
+@require_GET
+def disaster_zones(request):
+    mountain = request.GET.get("mountain", "").strip()
+    zones = load_disaster_risk_zones()
+    if mountain:
+        from .loaders import normalize_search_text
+        needle = normalize_search_text(mountain)
+        zones = [z for z in zones if needle in z.get("search_text", "")]
+    return JsonResponse({"zones": zones[:30]}, json_dumps_params={"ensure_ascii": False})
+
+
+@csrf_exempt
+def safe_link_create(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    try:
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    course = body.get("course", {})
+    session = safe_link_store.create(course)
+    return JsonResponse({"id": session["id"]}, status=201)
+
+
+@csrf_exempt
+def safe_link_detail(request, session_id):
+    if request.method == "GET":
+        session = safe_link_store.get(session_id)
+        if not session:
+            return JsonResponse({"error": "Not found"}, status=404)
+        return JsonResponse(session, json_dumps_params={"ensure_ascii": False})
+
+    if request.method == "POST":
+        try:
+            body = json.loads(request.body.decode("utf-8") or "{}")
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+        action = body.get("action")
+        if action == "end":
+            session = safe_link_store.end_session(session_id)
+            return JsonResponse({"ok": True}) if session else JsonResponse({"error": "Not found"}, status=404)
+        lat = body.get("lat")
+        lng = body.get("lng")
+        if lat is None or lng is None:
+            return JsonResponse({"error": "lat and lng required"}, status=400)
+        session = safe_link_store.update_location(session_id, float(lat), float(lng))
+        if not session:
+            return JsonResponse({"error": "Not found"}, status=404)
+        return JsonResponse({"ok": True, "location_ts": session["location_ts"]})
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)

@@ -66,3 +66,36 @@ export async function fetchRecommendations(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function fetchDisasterZones(mountainName) {
+  const params = new URLSearchParams({ mountain: mountainName || "" });
+  return request(`/disaster-zones/?${params.toString()}`);
+}
+
+export async function createSafeLink(course) {
+  return request("/safe-links/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ course }),
+  });
+}
+
+export async function getSafeLink(id) {
+  return request(`/safe-links/${id}/`);
+}
+
+export async function updateSafeLinkLocation(id, lat, lng) {
+  return request(`/safe-links/${id}/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lat, lng }),
+  });
+}
+
+export async function endSafeLink(id) {
+  return request(`/safe-links/${id}/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "end" }),
+  });
+}

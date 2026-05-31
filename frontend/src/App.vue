@@ -1,11 +1,62 @@
 <template>
-  <main class="app-shell">
+  <!-- ══ 보호자 전용 뷰 (URL에 #/safe/UUID 있을 때) ══════════════════════ -->
+  <main v-if="isGuardianView" class="guardian-shell">
+    <header class="guardian-header">
+      <span class="guardian-logo">ForestRx</span>
+      <span :class="['guardian-status-chip', guardianStatusClass]">{{ guardianStatusLabel }}</span>
+    </header>
+
+    <div v-if="guardianLoading" class="guardian-loading">위치 정보를 불러오는 중입니다…</div>
+    <div v-else-if="guardianSession">
+      <!-- 지도 -->
+      <div ref="guardianMapEl" class="guardian-map kakao-map" aria-label="산행자 현재 위치 지도"></div>
+
+      <!-- 상태 카드 -->
+      <section class="guardian-card">
+        <div class="guardian-info-row">
+          <div>
+            <p class="eyebrow">산행 중</p>
+            <h2>{{ guardianSession.course_name }}</h2>
+            <p class="guardian-mountain">{{ guardianSession.mountain }}</p>
+          </div>
+          <span :class="['safety-badge', guardianStatusClass]">{{ guardianSession.safety_label }}</span>
+        </div>
+
+        <div class="guardian-meta-row">
+          <span>📍 마지막 위치 수신: <strong>{{ guardianLastUpdate }}</strong></span>
+          <span>🕐 {{ guardianSession.duration_min }}분 코스</span>
+        </div>
+
+        <div v-if="guardianSession.risk_factors?.length" class="risk-tags guardian-risks">
+          <span v-for="f in guardianSession.risk_factors" :key="f">{{ f }}</span>
+        </div>
+
+        <div v-if="guardianSession.status === 'ended'" class="guardian-ended-banner">
+          산행이 종료되었습니다.
+        </div>
+      </section>
+
+      <!-- 긴급 버튼 -->
+      <section class="guardian-actions">
+        <a href="tel:119" class="emergency-btn">🚨 119 신고</a>
+        <button class="outline-btn" type="button" @click="refreshGuardian">새로고침</button>
+      </section>
+
+      <p v-if="guardianPollError" class="guardian-error">{{ guardianPollError }}</p>
+    </div>
+    <div v-else class="guardian-not-found">
+      <p>세이프 링크를 찾을 수 없습니다.<br>산행자에게 링크를 다시 받으세요.</p>
+    </div>
+  </main>
+
+  <!-- ══ 본 앱 ═════════════════════════════════════════════════════════ -->
+  <main v-else class="app-shell">
     <!-- ─── 헤더 ──────────────────────────────────────────────────────── -->
     <header class="app-header">
       <div>
-        <p class="eyebrow">스마트 안전 진단</p>
+        <p class="eyebrow">산악사고 예방 안전 진단 · 연간 산악구조 8,000건+</p>
         <h1>ForestRx</h1>
-        <p>어린이와 노약자도 함께 갈 수 있는 안전한 산행 코스를 추천합니다.</p>
+        <p>60대 이상 산악사고의 40%를 줄이기 위해, 어린이·노약자 동반 산행을 AI로 사전 진단합니다.</p>
       </div>
       <button class="icon-btn" type="button" title="새로고침" @click="loadEverything">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -278,6 +329,17 @@
           </li>
         </ol>
         <p class="detail-copy">{{ selectedCourse.agent_briefing }}</p>
+
+        <!-- 재난위험지구 -->
+        <div v-if="disasterZones.length" class="disaster-zone-panel">
+          <p class="disaster-zone-title">⚠️ 인근 재난위험지구 {{ disasterZones.length }}개</p>
+          <ul class="disaster-zone-list">
+            <li v-for="zone in disasterZones.slice(0, 4)" :key="zone.id">
+              <strong>{{ zone.district || zone.location }}</strong>
+              <span v-if="zone.risk_factor"> · {{ zone.risk_factor }}</span>
+            </li>
+          </ul>
+        </div>
       </section>
 
       </div><!-- /guide-right -->
@@ -320,16 +382,52 @@
         </div>
       </section>
 
+      <!-- ── 산행 시작 / 세이프링크 생성 패널 ── -->
       <section class="panel share-panel">
-        <textarea class="share-message" :value="safeLinkMessage" readonly aria-label="보호자 공유 메시지"></textarea>
-        <div class="share-actions">
-          <button class="primary-btn" type="button" :disabled="!selectedCourse" @click="shareSafeLink">
-            보호자에게 공유
+        <!-- 세이프링크 활성화 전 -->
+        <div v-if="!safeLinkActive && safeLinkStatus !== 'ended'">
+          <p class="safe-link-guide">코스를 선택한 뒤 산행을 시작하면 보호자 전용 실시간 위치 링크가 생성됩니다.</p>
+          <button
+            class="primary-btn wide-field"
+            type="button"
+            :disabled="!selectedCourse || safeLinkStatus === 'creating'"
+            @click="startHiking(selectedCourse)"
+          >
+            {{ safeLinkStatus === 'creating' ? '링크 생성 중…' : '산행 시작 &amp; 세이프링크 생성' }}
           </button>
-          <button class="outline-btn" type="button" :disabled="!selectedCourse" @click="copySafeLinkMessage">
-            문구 복사
-          </button>
+          <p v-if="safeLinkError" class="share-status error">{{ safeLinkError }}</p>
         </div>
+
+        <!-- 세이프링크 활성화 후 -->
+        <div v-else-if="safeLinkActive" class="safe-link-active-panel">
+          <div class="safe-link-live-badge">
+            <span class="status-dot dot-green"></span> 산행 중 · GPS 추적 활성
+            <span v-if="lastLocationTs" class="status-time">방금 전 갱신</span>
+          </div>
+          <p class="safe-link-url-label">보호자 링크 (공유하면 실시간 위치 확인 가능)</p>
+          <div class="safe-link-url-box">
+            <span class="safe-link-url-text">{{ safeLinkUrl }}</span>
+          </div>
+          <div class="share-actions">
+            <button class="primary-btn" type="button" @click="copyAndShareSafeLink">링크 공유</button>
+            <button class="outline-btn danger" type="button" @click="stopHiking">산행 종료</button>
+          </div>
+        </div>
+
+        <!-- 종료 후 -->
+        <div v-else class="safe-link-ended">
+          <p>산행이 종료되었습니다. 새 산행을 시작하려면 코스를 다시 선택하세요.</p>
+        </div>
+
+        <!-- 기존 문자 공유 -->
+        <details class="share-message-details" v-if="selectedCourse">
+          <summary>문자 공유 문구 보기</summary>
+          <textarea class="share-message" :value="safeLinkMessage" readonly aria-label="보호자 공유 메시지"></textarea>
+          <div class="share-actions">
+            <button class="outline-btn" type="button" @click="shareSafeLink">문자 공유</button>
+            <button class="outline-btn" type="button" @click="copySafeLinkMessage">문구 복사</button>
+          </div>
+        </details>
         <p v-if="shareStatus" class="share-status">{{ shareStatus }}</p>
       </section>
 
@@ -470,12 +568,66 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
-import { fetchCourses, fetchDataSources, fetchRecommendations } from './api';
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { fetchCourses, fetchDataSources, fetchRecommendations, fetchDisasterZones, getSafeLink } from './api';
 import { useLocation } from './composables/useLocation.js';
 import { useKakaoMap } from './composables/useKakaoMap.js';
+import { useSafeLink, useGuardianView } from './composables/useSafeLink.js';
 import { safetyClass, fallbackSafetyLabel, durationLabel, daylightLabel, daylightColor } from './utils/courseHelpers.js';
 import CourseCard from './components/CourseCard.vue';
+
+// ─── 보호자 뷰 감지 ───────────────────────────────────────────────────────
+const _hashMatch = window.location.hash.match(/^#\/safe\/(.+)$/);
+const _guardianSessionId = _hashMatch ? _hashMatch[1] : null;
+const isGuardianView = computed(() => !!_guardianSessionId);
+
+const guardianMapEl = ref(null);
+const guardianSession = ref(null);
+const guardianLoading = ref(true);
+const guardianPollError = ref('');
+let _guardianPollTimer = null;
+
+async function fetchGuardianSession() {
+  if (!_guardianSessionId) return;
+  try {
+    guardianSession.value = await getSafeLink(_guardianSessionId);
+    guardianPollError.value = '';
+    await nextTick();
+    if (guardianMapEl.value && guardianSession.value) {
+      renderGuardianMap(guardianMapEl.value, guardianSession.value);
+    }
+  } catch {
+    guardianPollError.value = '위치 정보를 불러오지 못했습니다.';
+  } finally {
+    guardianLoading.value = false;
+  }
+}
+
+function refreshGuardian() {
+  guardianLoading.value = true;
+  fetchGuardianSession();
+}
+
+const guardianLastUpdate = computed(() => {
+  const ts = guardianSession.value?.location_ts;
+  if (!ts) return '위치 미수신';
+  const elapsed = Math.floor(Date.now() / 1000 - ts);
+  if (elapsed < 60) return `${elapsed}초 전`;
+  return `${Math.floor(elapsed / 60)}분 전`;
+});
+
+const guardianStatusLabel = computed(() => {
+  if (!guardianSession.value) return '연결 중';
+  if (guardianSession.value.status === 'ended') return '산행 종료';
+  const d = guardianSession.value.safety_decision;
+  return d === 'not_recommended' ? '주의 필요' : d === 'caution' ? '주의 구간' : '정상 이동';
+});
+
+const guardianStatusClass = computed(() => {
+  if (!guardianSession.value || guardianSession.value.status === 'ended') return 'gray';
+  const d = guardianSession.value.safety_decision;
+  return d === 'not_recommended' ? 'red' : d === 'caution' ? 'yellow' : 'green';
+});
 
 // ─── 상태 ─────────────────────────────────────────────────────────────────
 const activeTab = ref('guide');
@@ -491,12 +643,14 @@ const agentSummary = ref('산과 출발 조건을 선택하면 실제 탐방로,
 const alternativeActions = ref([]);
 const detailMapEl = ref(null);
 const safeLinkMapEl = ref(null);
+const disasterZones = ref([]);
 const shareStatus = ref('');
 const weatherData = ref(null); // 실시간 날씨 데이터
 
 // ─── Composables ──────────────────────────────────────────────────────────
 const { location, gpsStatus, gpsError, detectGPS } = useLocation();
-const { mapStatus, safeLinkMapStatus, renderDetailMap, renderSafeLinkMap } = useKakaoMap();
+const { mapStatus, safeLinkMapStatus, renderDetailMap, renderSafeLinkMap, renderGuardianMap, addDisasterZoneOverlays } = useKakaoMap();
+const { sessionId: safeLinkSessionId, sessionStatus: safeLinkStatus, shareUrl: safeLinkUrl, isActive: safeLinkActive, errorMsg: safeLinkError, lastLocationTs, startHiking, stopHiking } = useSafeLink();
 
 // ─── 날짜/시간 초기값 ────────────────────────────────────────────────────
 const initialDepartureAt = addMinutes(new Date(), 5);
@@ -568,7 +722,18 @@ async function handleGPS() {
 }
 
 // ─── 라이프사이클 ─────────────────────────────────────────────────────────
-onMounted(() => { loadEverything(); });
+onMounted(() => {
+  if (isGuardianView.value) {
+    fetchGuardianSession();
+    _guardianPollTimer = setInterval(fetchGuardianSession, 20000);
+  } else {
+    loadEverything();
+  }
+});
+
+onUnmounted(() => {
+  if (_guardianPollTimer) clearInterval(_guardianPollTimer);
+});
 
 async function loadEverything() {
   await Promise.all([loadSources(), loadCourses()]);
@@ -597,13 +762,17 @@ async function submit() {
   loading.value = true;
   error.value = '';
   try {
-    const data = await fetchRecommendations({ profile, location: location.value });
+    const [data, zonesData] = await Promise.all([
+      fetchRecommendations({ profile, location: location.value }),
+      fetchDisasterZones(profile.mountainName).catch(() => ({ zones: [] })),
+    ]);
     recommendations.value = data.recommendations || [];
     alternatives.value = data.alternatives || [];
     resultState.value = data.result_state || 'has_recommendations';
     agentSummary.value = data.agent_summary || recommendations.value[0]?.agent_briefing || '';
     alternativeActions.value = data.alternative_actions || [];
     weatherData.value = data.weather || recommendations.value[0]?.weather || null;
+    disasterZones.value = zonesData.zones || [];
     selectedCourse.value = displayPrimaryCourses.value[0] || recommendations.value[0] || null;
     renderMaps();
   } catch (err) {
@@ -782,10 +951,34 @@ const safeLinkMessage = computed(() => {
 async function renderMaps() {
   await nextTick();
   if (activeTab.value === 'guide') {
-    renderDetailMap(detailMapEl.value, selectedCourse.value, selectedCourseRoutePoints.value);
+    renderDetailMap(detailMapEl.value, selectedCourse.value, selectedCourseRoutePoints.value, disasterZones.value);
   }
   if (activeTab.value === 'safeLink') {
     renderSafeLinkMap(safeLinkMapEl.value, selectedCourse.value, selectedCourseRoutePoints.value);
+  }
+}
+
+// ─── Safe Link 공유 ───────────────────────────────────────────────────────
+async function copyAndShareSafeLink() {
+  const url = safeLinkUrl.value;
+  if (!url) return;
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'ForestRx 세이프링크',
+        text: `${selectedCourse.value?.mountain} ${selectedCourse.value?.name} 산행 중입니다. 아래 링크에서 실시간 위치를 확인하세요.`,
+        url,
+      });
+      return;
+    } catch (err) {
+      if (err?.name === 'AbortError') return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    shareStatus.value = '보호자 링크를 복사했습니다.';
+  } catch {
+    shareStatus.value = '링크를 직접 복사해 주세요: ' + url;
   }
 }
 

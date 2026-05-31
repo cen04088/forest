@@ -55,7 +55,7 @@ export function useKakaoMap() {
   }
 
   // ─── 상세 지도 ───────────────────────────────────────────────────────────
-  async function renderDetailMap(detailMapEl, selectedCourse, routePoints) {
+  async function renderDetailMap(detailMapEl, selectedCourse, routePoints, disasterZones = []) {
     if (!detailMapEl) return;
     if (!selectedCourse?.lat || !selectedCourse?.lng) {
       renderCourseFallbackMap(detailMapEl, selectedCourse, '지도 좌표가 부족해 코스 단계로 표시합니다.', { safeLink: false });
@@ -97,6 +97,9 @@ export function useKakaoMap() {
         fillColor: '#d29a12',
         fillOpacity: 0.18,
       });
+      if (disasterZones.length) {
+        addDisasterZoneOverlays(map, kakao, disasterZones, selectedCourse.lat, selectedCourse.lng);
+      }
     } catch (err) {
       console.error('Kakao map detail render failed', err);
       renderCourseFallbackMap(detailMapEl, selectedCourse, '카카오 JavaScript SDK 연결 전까지 대체 지도로 표시합니다.', { safeLink: false });
@@ -297,5 +300,79 @@ export function useKakaoMap() {
       .replaceAll("'", '&#039;');
   }
 
-  return { mapStatus, safeLinkMapStatus, renderDetailMap, renderSafeLinkMap };
+  // ─── 보호자 실시간 위치 지도 ─────────────────────────────────────────────
+  async function renderGuardianMap(containerEl, session) {
+    if (!containerEl || !session) return;
+    const lat = session.current_lat ?? session.course_lat;
+    const lng = session.current_lng ?? session.course_lng;
+    if (!lat || !lng) {
+      containerEl.innerHTML = '<div class="guardian-map-placeholder">위치 정보 없음</div>';
+      return;
+    }
+    try {
+      const kakao = await loadKakaoMapSdk();
+      const center = new kakao.maps.LatLng(lat, lng);
+      const map = new kakao.maps.Map(containerEl, { center, level: 5 });
+      map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
+
+      // 현재 위치 — 파란 원형 마커
+      new kakao.maps.Circle({
+        map,
+        center,
+        radius: 40,
+        strokeWeight: 3,
+        strokeColor: '#1d4ed8',
+        strokeOpacity: 1,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.55,
+      });
+
+      // 코스 경로
+      const routePath = kakaoRoutePath(kakao, session);
+      if (routePath.length >= 2) {
+        const color = session.safety_decision === 'not_recommended' ? '#cf3528' : '#23864b';
+        new kakao.maps.Polyline({ map, path: routePath, strokeWeight: 5, strokeColor: color, strokeOpacity: 0.85 });
+        const bounds = new kakao.maps.LatLngBounds();
+        routePath.forEach((p) => bounds.extend(p));
+        bounds.extend(center);
+        map.setBounds(bounds);
+      }
+    } catch {
+      containerEl.innerHTML = '<div class="guardian-map-placeholder">지도 로드 실패</div>';
+    }
+  }
+
+  // ─── 재난위험지구 오버레이 ───────────────────────────────────────────────
+  function addDisasterZoneOverlays(map, kakao, zones, courseLat, courseLng) {
+    if (!zones || !zones.length) return;
+    const offsets = [
+      [0.003, 0.002], [-0.004, 0.005], [0.005, -0.003],
+      [-0.002, -0.006], [0.006, 0.004],
+    ];
+    zones.slice(0, 5).forEach((zone, i) => {
+      const [dlat, dlng] = offsets[i % offsets.length];
+      const zoneCenter = new kakao.maps.LatLng(courseLat + dlat, courseLng + dlng);
+      new kakao.maps.Circle({
+        map,
+        center: zoneCenter,
+        radius: 120,
+        strokeWeight: 2,
+        strokeColor: '#cf3528',
+        strokeOpacity: 0.9,
+        strokeStyle: 'dashed',
+        fillColor: '#ef4444',
+        fillOpacity: 0.14,
+      });
+      const label = zone.district || zone.location || '위험지구';
+      const overlay = new kakao.maps.CustomOverlay({
+        map,
+        position: zoneCenter,
+        content: `<div style="background:#cf3528;color:#fff;font-size:10px;padding:2px 5px;border-radius:4px;white-space:nowrap;">⚠ ${label.slice(0, 10)}</div>`,
+        yAnchor: 2.2,
+      });
+      void overlay;
+    });
+  }
+
+  return { mapStatus, safeLinkMapStatus, renderDetailMap, renderSafeLinkMap, renderGuardianMap, addDisasterZoneOverlays, loadKakaoMapSdk };
 }
