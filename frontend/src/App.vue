@@ -22,6 +22,11 @@
 
     <!-- ─── 탭바 ──────────────────────────────────────────────────────── -->
     <nav class="tabbar" aria-label="주요 화면">
+      <!-- 사이드바 브랜딩 (데스크톱에서만 표시) -->
+      <div class="sidebar-brand">
+        <p class="sidebar-logo-text">ForestRx</p>
+        <p class="sidebar-tagline">약자 동반 안전 산행</p>
+      </div>
       <button :class="{ active: activeTab === 'guide' }" type="button" @click="activeTab = 'guide'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
         <span>안전코스</span>
@@ -44,7 +49,10 @@
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- 안전코스 탭                                                         -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section v-if="activeTab === 'guide'" class="screen-stack">
+    <section v-if="activeTab === 'guide'" class="screen-stack guide-layout">
+
+      <!-- ── 왼쪽 컬럼: 입력 폼 + 날씨 조건 (데스크톱) ── -->
+      <div class="guide-left">
 
       <!-- 플래너 입력 폼 -->
       <section class="panel planner-panel">
@@ -111,30 +119,6 @@
         </form>
       </section>
 
-      <!-- 로딩 스켈레톤 -->
-      <section v-if="loading" class="panel">
-        <div class="skeleton-card">
-          <div class="skeleton-line short"></div>
-          <div class="skeleton-line full"></div>
-          <div class="skeleton-line medium"></div>
-        </div>
-        <div class="skeleton-card">
-          <div class="skeleton-line short"></div>
-          <div class="skeleton-line full"></div>
-          <div class="skeleton-line medium"></div>
-        </div>
-      </section>
-
-      <!-- 비추천 공지 -->
-      <article v-if="resultState === 'no_safe_course'" class="empty-state">
-        <span class="safety-badge red">비추천</span>
-        <h3>현재 조건에서 권장할 코스가 없습니다</h3>
-        <p>{{ agentSummary }}</p>
-        <div class="chip-row">
-          <button v-for="action in alternativeActions" :key="action" type="button">{{ action }}</button>
-        </div>
-      </article>
-
       <!-- ✅ 실시간 산행 조건 카드 -->
       <section v-if="weatherData && !loading" class="panel conditions-card">
         <div class="conditions-header">
@@ -167,6 +151,35 @@
           </div>
         </div>
       </section>
+
+      </div><!-- /guide-left -->
+
+      <!-- ── 오른쪽 컬럼: 결과 목록 (데스크톱) ── -->
+      <div class="guide-right">
+
+      <!-- 로딩 스켈레톤 -->
+      <section v-if="loading" class="panel">
+        <div class="skeleton-card">
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line full"></div>
+          <div class="skeleton-line medium"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line full"></div>
+          <div class="skeleton-line medium"></div>
+        </div>
+      </section>
+
+      <!-- 비추천 공지 -->
+      <article v-if="resultState === 'no_safe_course'" class="empty-state">
+        <span class="safety-badge red">비추천</span>
+        <h3>현재 조건에서 권장할 코스가 없습니다</h3>
+        <p>{{ agentSummary }}</p>
+        <div class="chip-row">
+          <button v-for="action in alternativeActions" :key="action" type="button">{{ action }}</button>
+        </div>
+      </article>
 
       <!-- 추천 코스 목록 -->
       <section v-if="!loading && recommendations.length" class="panel">
@@ -266,6 +279,8 @@
         </ol>
         <p class="detail-copy">{{ selectedCourse.agent_briefing }}</p>
       </section>
+
+      </div><!-- /guide-right -->
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->

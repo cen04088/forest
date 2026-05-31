@@ -1,22 +1,22 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
 
 :root {
-  --green: #11a361;
-  --green-deep: #0b5f36;
-  --green-soft: #e2f6ec;
+  --green: #16a34a;
+  --green-deep: #14532d;
+  --green-soft: #dcfce7;
   --amber: #d97706;
   --amber-soft: #fef3c7;
   --red: #dc2626;
   --red-soft: #fee2e2;
-  --ink: #111827;
-  --muted: #6b7280;
-  --line: #e5e7eb;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
   --paper: #ffffff;
-  --wash: #f3f4f6;
+  --wash: #f8fafc;
   --blue: #2563eb;
   --blue-soft: #dbeafe;
   color: var(--ink);
-  background: #e5e7eb;
+  background: #cdd9cf;
   font-family: "Pretendard", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -29,7 +29,7 @@
 body {
   min-width: 320px;
   margin: 0;
-  background: #dbe2dd;
+  background: #cdd9cf;
 }
 
 button,
@@ -55,10 +55,10 @@ p {
   min-height: 100vh;
   margin: 0 auto;
   overflow-x: hidden;
-  background: var(--wash);
+  background: #ffffff;
   color: var(--ink);
   padding: 18px 18px 106px;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06), 0 32px 64px rgba(0,0,0,0.04);
 }
 
 .app-header,
@@ -91,7 +91,7 @@ p {
   color: var(--green-deep);
   font-size: 31px;
   font-weight: 850;
-  letter-spacing: 0;
+  letter-spacing: -0.5px;
 }
 
 .app-header p:not(.eyebrow) {
@@ -105,10 +105,10 @@ p {
 
 .eyebrow {
   margin-bottom: 4px;
-  color: var(--blue);
-  font-size: 11px;
+  color: var(--green);
+  font-size: 10px;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: 1px;
   text-transform: uppercase;
 }
 
@@ -116,11 +116,17 @@ p {
   flex: 0 0 auto;
   width: 44px;
   height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 14px;
   background: var(--paper);
   color: var(--green-deep);
-  box-shadow: 0 8px 18px rgba(18, 66, 43, 0.09);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 6px 16px rgba(0,0,0,0.06);
 }
 
 .icon-btn svg {
@@ -205,12 +211,12 @@ p {
   transform: translateX(-50%);
   gap: 4px;
   padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 0.5px rgba(0,0,0,0.05);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
 }
 
 .tabbar button {
@@ -259,14 +265,14 @@ p {
 .alert-item,
 .source-row,
 .hotspot-row {
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
   background: var(--paper);
-  box-shadow: 0 8px 24px rgba(18, 66, 43, 0.08);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
 }
 
 .panel {
-  padding: 15px;
+  padding: 18px;
 }
 
 .subtle-panel {
@@ -283,9 +289,9 @@ p {
 
 .section-title h2 {
   color: var(--ink);
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 850;
-  letter-spacing: 0;
+  letter-spacing: -0.3px;
 }
 
 .mini-status,
@@ -344,18 +350,19 @@ p {
   min-height: 48px;
   border: 1.5px solid var(--line);
   border-radius: 12px;
-  background: #fcfdfc;
+  background: #fafcfa;
   color: var(--ink);
   padding: 0 14px;
   outline: none;
-  transition: all 0.2s ease;
+  font-size: 14px;
+  transition: all 0.15s ease;
 }
 
 .field input:focus,
 .field select:focus {
   border-color: var(--green);
   background: #fff;
-  box-shadow: 0 0 0 4px rgba(17, 163, 97, 0.1);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .wide-field {
@@ -371,38 +378,47 @@ p {
 }
 
 .primary-btn {
-  min-height: 50px;
+  min-height: 52px;
   border: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--green) 0%, var(--green-deep) 100%);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #22c55e 0%, var(--green) 55%, var(--green-deep) 100%);
   color: #fff;
-  box-shadow: 0 8px 16px rgba(17, 163, 97, 0.25);
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3), 0 1px 3px rgba(22, 163, 74, 0.15);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .primary-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 20px rgba(17, 163, 97, 0.35);
+  box-shadow: 0 8px 24px rgba(22, 163, 74, 0.38), 0 2px 8px rgba(22, 163, 74, 0.2);
 }
 
 .primary-btn:active:not(:disabled) {
   transform: scale(0.98);
-  box-shadow: 0 4px 10px rgba(17, 163, 97, 0.2);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
 }
 
 .primary-btn:disabled {
-  opacity: 0.64;
-  background: var(--muted);
+  opacity: 0.55;
+  background: #94a3b8;
   box-shadow: none;
 }
 
 .outline-btn {
   min-height: 38px;
-  border: 1px solid var(--line);
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
   border-radius: 999px;
   background: #fff;
   color: var(--green-deep);
   padding: 0 14px;
+  transition: all 0.15s ease;
+}
+
+.outline-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-soft);
 }
 
 .agent-brief {
@@ -417,10 +433,11 @@ p {
   height: 46px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  background: var(--green);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #22c55e 0%, var(--green) 100%);
   color: #fff;
   font-weight: 900;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.28);
 }
 
 .agent-brief strong {
@@ -446,22 +463,24 @@ p {
 
 .course-card {
   padding: 14px;
-  border: 1.5px solid var(--line);
-  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 18px;
   background: #fff;
   text-align: left;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: all 0.22s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 .course-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-  border-color: #d1d5db;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(22, 163, 74, 0.18);
 }
 
 .course-card.selected {
   border-color: var(--green);
-  box-shadow: 0 0 0 4px rgba(17, 163, 97, 0.1);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+  background: #f9fefb;
 }
 
 .course-card:active {
@@ -522,8 +541,9 @@ p {
   gap: 3px;
   min-width: 0;
   padding: 10px 8px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--wash);
+  border: 1px solid rgba(0, 0, 0, 0.04);
   color: var(--muted);
   font-size: 11px;
   font-weight: 850;
@@ -547,13 +567,20 @@ p {
 
 .risk-tags span,
 .chip-row button {
-  padding: 7px 10px;
-  border: 0;
+  padding: 7px 11px;
+  border: 1px solid rgba(0,0,0,0.05);
   border-radius: 999px;
-  background: #eef3f0;
-  color: #52615a;
+  background: #f0f7f2;
+  color: #3d5247;
   font-size: 12px;
   font-weight: 850;
+  transition: all 0.15s ease;
+}
+
+.chip-row button:hover {
+  background: var(--green-soft);
+  border-color: rgba(22,163,74,0.2);
+  color: var(--green-deep);
 }
 
 .alternative-row {
@@ -2023,9 +2050,9 @@ p {
    추천 1위 강조 카드
 ══════════════════════════════════════════════════════════════════════════ */
 .course-card.top-course {
-  border-color: rgba(17, 163, 97, 0.35);
-  background: linear-gradient(160deg, #f0fdf6 0%, #ffffff 60%);
-  box-shadow: 0 4px 20px rgba(17, 163, 97, 0.12);
+  border-color: rgba(22, 163, 74, 0.28);
+  background: linear-gradient(160deg, #f0fdf4 0%, #ffffff 55%);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.08), 0 6px 20px rgba(22, 163, 74, 0.08);
 }
 
 .top-banner {
@@ -2135,4 +2162,248 @@ p {
   font-size: 13px;
   color: var(--muted);
   margin: 2px 0 6px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   사이드바 브랜딩 — 모바일에서 숨김
+══════════════════════════════════════════════════════════════════════════ */
+.sidebar-brand {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   가이드 2컬럼 래퍼 — 모바일에서는 투명(display:contents)하게 단일 흐름 유지
+══════════════════════════════════════════════════════════════════════════ */
+.guide-left,
+.guide-right {
+  display: contents;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   반응형: 태블릿 (768px+)
+══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  .app-shell {
+    max-width: 640px;
+  }
+
+  .tabbar {
+    width: min(calc(100% - 48px), 560px);
+  }
+
+  .planner {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .conditions-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   반응형: 데스크톱 (1024px+) — 사이드바 + 2컬럼 레이아웃
+══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  body {
+    background: #bfcec2;
+  }
+
+  /* 앱 셸: 사이드바(240px) 공간 확보, 전체 너비 */
+  .app-shell {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 44px 56px 56px 288px;
+    box-shadow: none;
+    border-radius: 0;
+    background: #f4f7f5;
+  }
+
+  /* 앱 헤더 */
+  .app-header {
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 32px;
+  }
+
+  .app-header h1 {
+    font-size: 36px;
+    letter-spacing: -0.8px;
+  }
+
+  /* ── 사이드바 브랜딩 ── */
+  .sidebar-brand {
+    display: block;
+    padding: 0 14px 22px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .sidebar-logo-text {
+    font-size: 22px;
+    font-weight: 850;
+    color: var(--green-deep);
+    letter-spacing: -0.6px;
+  }
+
+  .sidebar-tagline {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 4px;
+    letter-spacing: 0.1px;
+  }
+
+  /* ── 사이드바 탭바 ── */
+  .tabbar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: none;
+    width: 244px;
+    height: 100vh;
+    border-radius: 0;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 28px 16px 36px;
+    gap: 4px;
+    border: none;
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    background: linear-gradient(180deg, #ffffff 0%, #f5fcf7 100%);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 4px 0 24px rgba(0,0,0,0.04);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .tabbar button {
+    flex: 0 0 auto;
+    min-height: 50px;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0 14px;
+    gap: 12px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .tabbar button:not(.active):hover {
+    background: rgba(0,0,0,0.04);
+    color: var(--ink);
+  }
+
+  .tabbar button.active {
+    background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+    color: var(--green-deep);
+    box-shadow: 0 1px 4px rgba(22, 163, 74, 0.12);
+  }
+
+  .tabbar button.active svg {
+    transform: none;
+    fill: rgba(22, 163, 74, 0.15);
+    stroke: var(--green-deep);
+  }
+
+  .tab-badge {
+    margin-left: auto;
+  }
+
+  /* ── 안전코스 탭: 2컬럼 레이아웃 ── */
+  .guide-layout {
+    display: grid !important;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* 왼쪽 컬럼: 폼 + 날씨 조건 (스크롤 시 고정) */
+  .guide-left {
+    display: grid;
+    gap: 20px;
+    position: sticky;
+    top: 24px;
+  }
+
+  /* 오른쪽 컬럼: 결과 목록 */
+  .guide-right {
+    display: grid;
+    gap: 20px;
+    min-width: 0;
+  }
+
+  /* 패널 패딩 확대 */
+  .panel {
+    padding: 24px;
+  }
+
+  /* 헤딩 크기 */
+  .section-title h2 {
+    font-size: 22px;
+  }
+
+  /* 조건 그리드: 항상 4열 */
+  .conditions-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* 플래너 폼: 2열 */
+  .planner {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* 지도 높이 확대 */
+  .kakao-map {
+    height: 380px !important;
+  }
+
+  /* 안전공유 탭 지도 */
+  .safe-link-map {
+    height: 320px;
+  }
+
+  /* 화면 전환 영역 최대 너비 제한 */
+  .screen-stack:not(.guide-layout) {
+    max-width: 860px;
+  }
+
+  /* 코스 카드 더 넓은 내부 패딩 */
+  .course-card {
+    padding: 18px;
+  }
+
+  /* 스크린 스택 간격 */
+  .screen-stack {
+    gap: 16px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   반응형: 넓은 데스크톱 (1440px+)
+══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1440px) {
+  .app-shell {
+    padding: 52px 80px 52px 316px;
+  }
+
+  .tabbar {
+    width: 252px;
+  }
+
+  .guide-layout {
+    grid-template-columns: 400px 1fr;
+    gap: 32px;
+  }
+
+  .guide-left {
+    gap: 24px;
+  }
+
+  .guide-right {
+    gap: 24px;
+  }
 }
