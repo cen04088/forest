@@ -65,28 +65,6 @@
       <span v-if="!(course.risk_factors || []).length" class="safe-tag">위험 요인 없음</span>
     </div>
 
-    <!-- ── 점수 상세 토글 ─────────────────────────────────────────── -->
-    <div v-if="course.scores" class="score-section">
-      <button class="score-toggle-btn" type="button" @click.stop="showScores = !showScores">
-        <span>점수 상세 보기</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path :d="showScores ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'" />
-        </svg>
-      </button>
-      <div v-if="showScores" class="score-bars">
-        <div v-for="(value, key) in course.scores" :key="key" class="score-bar-row">
-          <span class="score-bar-label">{{ scoreLabel(key) }}</span>
-          <div class="score-bar-track">
-            <div
-              class="score-bar-fill"
-              :class="scoreBarClass(value)"
-              :style="{ width: value + '%' }"
-            ></div>
-          </div>
-          <span class="score-bar-value">{{ Math.round(value) }}</span>
-        </div>
-      </div>
-    </div>
   </article>
 </template>
 
@@ -98,8 +76,6 @@ import {
   durationLabel,
   daylightLabel,
   sourceLabel,
-  scoreLabel,
-  scoreBarClass,
 } from '../utils/courseHelpers.js';
 
 const props = defineProps({
@@ -110,8 +86,6 @@ const props = defineProps({
 });
 
 defineEmits(['select', 'toggleFavorite']);
-
-const showScores = ref(false);
 
 // ── OSM 타일 미니맵 ──────────────────────────────────────────────────────
 const miniMap = computed(() => {
