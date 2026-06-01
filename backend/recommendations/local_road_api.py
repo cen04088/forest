@@ -95,7 +95,6 @@ def normalize_road_record(index, row, points):
         "crowding": 0.28,
         "highlights": build_road_highlights(row),
         "source": "road/WG_MT_WAY.shp",
-        "route_geometry": route_geometry,
         "road_risk": risk,
     }
 

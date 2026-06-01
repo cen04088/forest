@@ -16,8 +16,8 @@ class LocalRoadApiTests(TestCase):
         trails = load_local_road_trails()
 
         self.assertGreater(len(trails), 1000)
-        self.assertIn("route_geometry", trails[0])
-        self.assertGreaterEqual(len(trails[0]["route_geometry"]), 2)
+        self.assertIn("lat", trails[0])
+        self.assertIn("lng", trails[0])
 
     def test_fetch_local_road_trails_filters_by_mountain(self):
         result = fetch_local_road_trails(mountain_name="건봉산", size=5)

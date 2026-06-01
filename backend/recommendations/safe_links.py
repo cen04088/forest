@@ -17,7 +17,6 @@ def create(course: dict) -> dict:
         "duration_min": course.get("duration_min", 0),
         "course_lat": course.get("lat"),
         "course_lng": course.get("lng"),
-        "route_geometry": (course.get("route_geometry") or [])[:80],
         "current_lat": course.get("lat"),
         "current_lng": course.get("lng"),
         "location_ts": None,

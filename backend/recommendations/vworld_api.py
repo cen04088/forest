@@ -154,9 +154,8 @@ def normalize_vworld_feature(index, feature, mountain_name=""):
         "lat": center["lat"],
         "lng": center["lng"],
         "crowding": 0.28,
-        "highlights": ["브이월드 등산로 지오메트리", "카카오맵 경로 표시 가능", "위험 구간 시각화 후보"],
+        "highlights": ["브이월드 등산로 데이터", "위험 구간 시각화 후보"],
         "source": "브이월드_등산로_LT_L_FRSTCLIMB",
-        "route_geometry": route_geometry,
         "properties": safe_public_properties(properties),
     }
 

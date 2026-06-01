@@ -42,5 +42,5 @@ class VWorldTrailApiTests(TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual(result["total_count"], 1)
         self.assertEqual(result["items"][0]["source"], "브이월드_등산로_LT_L_FRSTCLIMB")
-        self.assertEqual(result["items"][0]["route_geometry"][0], {"lat": 37.65, "lng": 126.97})
         self.assertEqual(result["items"][0]["distance_km"], 1.2)
+        self.assertNotIn("route_geometry", result["items"][0])

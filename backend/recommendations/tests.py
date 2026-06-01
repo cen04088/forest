@@ -7,7 +7,6 @@ from django.test import Client, TestCase
 from .services import (
     data_quality_adjustment,
     daylight_margin_minutes,
-    merge_connected_geometry_courses,
     purpose_bonus,
     select_alternatives,
     time_buffer_range,
@@ -134,38 +133,3 @@ class RecommendationServiceTests(TestCase):
         self.assertEqual(clean_course_name("27.U2기지초입부~서이말등대(거제)"), "U2기지초입부~서이말등대(거제)")
         self.assertEqual(clean_course_name("17. 영원사~삼불사~약수암"), "영원사~삼불사~약수암")
 
-    def test_connected_geometry_segments_are_merged(self):
-        courses = [
-            {
-                "id": "a",
-                "source": "road/WG_MT_WAY.shp",
-                "mountain": "북한산",
-                "name": "A-B",
-                "difficulty": "easy",
-                "distance_km": 0.4,
-                "duration_min": 20,
-                "lat": 37.0,
-                "lng": 127.0,
-                "highlights": ["출발: A", "도착: B"],
-                "route_geometry": [{"lat": 37.0, "lng": 127.0}, {"lat": 37.001, "lng": 127.001}],
-            },
-            {
-                "id": "b",
-                "source": "road/WG_MT_WAY.shp",
-                "mountain": "북한산",
-                "name": "B-C",
-                "difficulty": "easy",
-                "distance_km": 0.5,
-                "duration_min": 20,
-                "lat": 37.001,
-                "lng": 127.001,
-                "highlights": ["출발: B", "도착: C"],
-                "route_geometry": [{"lat": 37.001, "lng": 127.001}, {"lat": 37.002, "lng": 127.002}],
-            },
-        ]
-
-        merged = merge_connected_geometry_courses(courses)
-
-        self.assertEqual(len(merged), 1)
-        self.assertEqual(merged[0]["distance_km"], 0.9)
-        self.assertEqual(merged[0]["segment_count"], 2)

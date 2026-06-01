@@ -311,7 +311,7 @@
         <div class="detail-map">
           <div ref="detailMapEl" class="kakao-map" aria-label="선택 코스 카카오 지도"></div>
           <div class="legend">
-            <span><i class="line green-line"></i>{{ selectedCourseRoutePoints.length >= 2 ? '등산로' : '위치' }}</span>
+            <span><i class="line green-line"></i>위치</span>
             <span><i class="line yellow-line"></i>주의</span>
           </div>
         </div>
@@ -320,13 +320,8 @@
           <span>{{ mapStatus }}</span>
         </div>
         <div class="route-summary">
-          <div>
-            <strong>{{ selectedCourseRoutePoints.length >= 2 ? '지도 경로 표시' : '코스 단계 표시' }}</strong>
-            <p>{{ routeDisplayMessage }}</p>
-          </div>
-          <span class="mini-status">
-            {{ selectedCourseRoutePoints.length >= 2 ? `${selectedCourseRoutePoints.length}점` : `${courseTimelineItems.length}단계` }}
-          </span>
+          <div><strong>코스 단계</strong></div>
+          <span class="mini-status">{{ courseTimelineItems.length }}단계</span>
         </div>
         <ol class="route-timeline" aria-label="코스 진행 단계">
           <li v-for="item in courseTimelineItems" :key="item.label + item.value">
@@ -1204,16 +1199,6 @@ const selectedCourseLng = computed(() => Number(selectedCourse.value?.lng));
 const hasSelectedCourseLocation = computed(
   () => Number.isFinite(selectedCourseLat.value) && Number.isFinite(selectedCourseLng.value),
 );
-const selectedCourseRoutePoints = computed(() =>
-  (selectedCourse.value?.route_geometry || []).filter(
-    (p) => Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)),
-  ),
-);
-const routeDisplayMessage = computed(() => {
-  if (!selectedCourse.value) return '코스를 선택하면 표시 방식이 정해집니다.';
-  if (selectedCourseRoutePoints.value.length >= 2) return '이 코스는 실제 선형 좌표가 있어 지도에 등산로 라인을 표시합니다.';
-  return '이 코스는 공공 데이터에 정확한 선형 좌표가 없어 출발·경유·도착 단계로 표시합니다.';
-});
 const courseTimelineItems = computed(() => {
   const highlights = selectedCourse.value?.highlights || [];
   const parsed = highlights.map(parseTimelineHighlight).filter(Boolean);
@@ -1260,10 +1245,10 @@ const safeLinkMessage = computed(() => {
 async function renderMaps() {
   await nextTick();
   if (activeTab.value === 'guide') {
-    renderDetailMap(detailMapEl.value, selectedCourse.value, selectedCourseRoutePoints.value, disasterZones.value);
+    renderDetailMap(detailMapEl.value, selectedCourse.value, disasterZones.value);
   }
   if (activeTab.value === 'safeLink') {
-    renderSafeLinkMap(safeLinkMapEl.value, selectedCourse.value, selectedCourseRoutePoints.value);
+    renderSafeLinkMap(safeLinkMapEl.value, selectedCourse.value);
   }
 }
 
