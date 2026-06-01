@@ -2414,13 +2414,13 @@ p {
 
   .sidebar-logo-img {
     display: block;
-    height: 90px;
+    height: 120px;
     width: auto;
     mix-blend-mode: multiply;
   }
 
   .sidebar-tagline {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--muted);
     font-weight: 600;
     margin-top: 4px;
