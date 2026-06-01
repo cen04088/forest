@@ -2,7 +2,7 @@
   <!-- ══ 보호자 전용 뷰 (URL에 #/safe/UUID 있을 때) ══════════════════════ -->
   <main v-if="isGuardianView" class="guardian-shell">
     <header class="guardian-header">
-      <span class="guardian-logo">올라</span>
+      <img src="/logo.png" alt="올라" class="guardian-logo-img" />
       <span :class="['guardian-status-chip', guardianStatusClass]">{{ guardianStatusLabel }}</span>
     </header>
 
@@ -55,7 +55,7 @@
     <header class="app-header">
       <div>
         <p class="eyebrow">AI 산행 안전 진단 · 연간 산악구조 8,000건+</p>
-        <h1>올라</h1>
+        <img src="/logo.png" alt="올라" class="app-logo" />
         <p>동반자가 있는 모든 산행은 더 꼼꼼한 준비가 필요합니다. 올라가 날씨·코스·위험 데이터를 종합해 안전 등급을 알려드립니다.</p>
       </div>
       <div class="header-actions">
@@ -82,7 +82,7 @@
     <nav class="tabbar" aria-label="주요 화면">
       <!-- 사이드바 브랜딩 (데스크톱에서만 표시) -->
       <div class="sidebar-brand">
-        <p class="sidebar-logo-text">올라</p>
+        <img src="/logo.png" alt="올라" class="sidebar-logo-img" />
         <p class="sidebar-tagline">함께 오르는 안전 산행</p>
       </div>
       <button :class="{ active: activeTab === 'guide' }" type="button" @click="activeTab = 'guide'">

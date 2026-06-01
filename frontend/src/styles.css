@@ -89,15 +89,12 @@ p {
   padding-top: 10px;
 }
 
-.app-header h1 {
-  margin-top: 3px;
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: -1px;
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 60%, #f97316 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.app-logo {
+  display: block;
+  height: 56px;
+  width: auto;
+  margin-top: 4px;
+  mix-blend-mode: multiply;
 }
 
 .app-header p:not(.eyebrow) {
@@ -2239,9 +2236,8 @@ p {
     margin-bottom: 32px;
   }
 
-  .app-header h1 {
-    font-size: 36px;
-    letter-spacing: -0.8px;
+  .app-logo {
+    height: 68px;
   }
 
   /* ── 사이드바 브랜딩 ── */
@@ -2252,11 +2248,11 @@ p {
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   }
 
-  .sidebar-logo-text {
-    font-size: 22px;
-    font-weight: 850;
-    color: var(--green-deep);
-    letter-spacing: -0.6px;
+  .sidebar-logo-img {
+    display: block;
+    height: 36px;
+    width: auto;
+    mix-blend-mode: multiply;
   }
 
   .sidebar-tagline {
@@ -2442,14 +2438,10 @@ p {
   z-index: 10;
 }
 
-.guardian-logo {
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #22c55e, #16a34a 60%, #f97316 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.guardian-logo-img {
+  height: 32px;
+  width: auto;
+  mix-blend-mode: multiply;
 }
 
 .guardian-status-chip {
