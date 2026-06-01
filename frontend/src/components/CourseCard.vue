@@ -13,7 +13,7 @@
       <span class="top-reason">{{ topReason }}</span>
     </div>
 
-    <!-- ── 안전 등급 + 취약자 동반 여부 ──────────────────────────── -->
+    <!-- ── 안전 등급 + 즐겨찾기 ──────────────────────────────────── -->
     <div class="course-meta">
       <div class="meta-left">
         <span v-if="rank && rank > 1" class="rank-badge">{{ rank }}위</span>
@@ -21,7 +21,15 @@
           {{ course.safety_label || fallbackSafetyLabel(course) }}
         </span>
       </div>
-      <span class="vulnerable-label">{{ course.safe_for_vulnerable ? '✅ 취약자 동반 가능' : '⚠️ 취약자 주의' }}</span>
+      <div class="meta-right">
+        <span class="vulnerable-label">{{ course.safe_for_vulnerable ? '✅ 취약자 동반 가능' : '⚠️ 취약자 주의' }}</span>
+        <button
+          :class="['fav-heart-btn', { favorited: isFavorite }]"
+          type="button"
+          :title="isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'"
+          @click.stop="$emit('toggleFavorite', course)"
+        >{{ isFavorite ? '♥' : '♡' }}</button>
+      </div>
     </div>
 
     <!-- ── 코스명 ──────────────────────────────────────────────────── -->
@@ -89,9 +97,10 @@ const props = defineProps({
   course: { type: Object, required: true },
   isSelected: { type: Boolean, default: false },
   rank: { type: Number, default: null },
+  isFavorite: { type: Boolean, default: false },
 });
 
-defineEmits(['select']);
+defineEmits(['select', 'toggleFavorite']);
 
 const showScores = ref(false);
 

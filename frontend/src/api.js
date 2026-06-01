@@ -45,8 +45,8 @@ export async function apiMe(token) {
 
 // ── 커뮤니티 ──────────────────────────────────────────────────────────────────
 
-export async function fetchPosts({ category = "", mountain = "", page = 1 } = {}, token) {
-  const params = new URLSearchParams({ category, mountain, page });
+export async function fetchPosts({ category = "", mountain = "", search = "", page = 1 } = {}, token) {
+  const params = new URLSearchParams({ category, mountain, search, page });
   return request(`/posts/?${params}`, { headers: authHeaders(token) });
 }
 
@@ -178,4 +178,68 @@ export async function endSafeLink(id) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "end" }),
   });
+}
+
+// ── 내 활동 ───────────────────────────────────────────────────────────────────
+
+export async function fetchMyPosts(token, page = 1) {
+  return request(`/my-posts/?page=${page}`, { headers: authHeaders(token) });
+}
+
+export async function fetchLikedPosts(token) {
+  return request("/liked-posts/", { headers: authHeaders(token) });
+}
+
+// ── 산행 기록 ─────────────────────────────────────────────────────────────────
+
+export async function fetchHikingRecords(token) {
+  return request("/hiking-records/", { headers: authHeaders(token) });
+}
+
+export async function createHikingRecord(data, token) {
+  return request("/hiking-records/", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteHikingRecord(id, token) {
+  return request(`/hiking-records/${id}/`, { method: "DELETE", headers: authHeaders(token) });
+}
+
+// ── 즐겨찾기 ──────────────────────────────────────────────────────────────────
+
+export async function fetchFavorites(token) {
+  return request("/favorites/", { headers: authHeaders(token) });
+}
+
+export async function addFavorite(data, token) {
+  return request("/favorites/", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function removeFavorite(courseId, token) {
+  return request(`/favorites/${encodeURIComponent(courseId)}/`, { method: "DELETE", headers: authHeaders(token) });
+}
+
+// ── 긴급 연락처 ───────────────────────────────────────────────────────────────
+
+export async function fetchEmergencyContacts(token) {
+  return request("/emergency-contacts/", { headers: authHeaders(token) });
+}
+
+export async function addEmergencyContact(data, token) {
+  return request("/emergency-contacts/", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function removeEmergencyContact(id, token) {
+  return request(`/emergency-contacts/${id}/`, { method: "DELETE", headers: authHeaders(token) });
 }

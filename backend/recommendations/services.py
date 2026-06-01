@@ -126,7 +126,7 @@ def safety_grade(score):
 
 
 def is_vulnerable_companion(profile):
-    return profile.get("companion") in {"family", "child", "senior", "vulnerable"}
+    return profile.get("companion") in {"family", "vulnerable"}
 
 
 def compute_weights(profile):
@@ -183,30 +183,19 @@ def safety_decision_for_course(course, profile, weather, weather_score, fit_scor
     elif wildfire in {"medium", "high"}:
         yellow_flags.append("산불 위험을 확인하고 입산 안내를 따라야 합니다")
 
-    companion = profile.get("companion", "solo")
-    if companion == "child":
+    if vulnerable:
         if course.get("difficulty") == "hard":
-            red_flags.append("어린이 동반 산행에 어려운 코스는 위험합니다")
+            red_flags.append("어린이·노약자 동반 산행에 난이도가 높습니다")
         elif course.get("difficulty") == "medium":
-            yellow_flags.append("어린이 동반 시 중급 코스는 보호자 동행이 필요합니다")
-        if int(course.get("duration_min", 0)) > 90:
-            yellow_flags.append("어린이 동반 산행에 코스 시간이 길 수 있습니다")
-    elif vulnerable:
-        if course.get("difficulty") == "hard":
-            red_flags.append("보행 취약자 동반 산행에 난이도가 높습니다")
-        elif course.get("difficulty") == "medium":
-            yellow_flags.append("보행 취약자 동반 시 일부 구간에서 보호자 확인이 필요합니다")
-        if companion == "senior" and int(course.get("duration_min", 0)) > 150:
-            yellow_flags.append("노약자 동반 장시간 코스는 체력 부담이 됩니다")
+            yellow_flags.append("어린이·노약자 동반 시 일부 구간에서 보호자 확인이 필요합니다")
+        if int(course.get("duration_min", 0)) > 120:
+            yellow_flags.append("어린이·노약자 동반 산행에 코스 시간이 길 수 있습니다")
         elif int(course.get("duration_min", 0)) > int(profile.get("availableMinutes", 180)) + 15:
             yellow_flags.append("선택한 시간보다 코스가 길어 피로 누적 가능성이 있습니다")
 
-    # 동반자 유형별 고도 임계값 분리
     elevation = int(course.get("elevation_gain_m", 0))
-    if companion == "child":
-        elev_red, elev_yellow = 400, 200
-    elif vulnerable:
-        elev_red, elev_yellow = 500, 300
+    if vulnerable:
+        elev_red, elev_yellow = 400, 250
     else:
         elev_red, elev_yellow = 900, 500
     if elevation >= elev_red:

@@ -60,3 +60,46 @@ class PostLike(models.Model):
     class Meta:
         unique_together = ("post", "user")
         db_table = "recommendations_postlike"
+
+
+class HikingRecord(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="hiking_records")
+    mountain = models.CharField(max_length=100, blank=True)
+    course_name = models.CharField(max_length=200)
+    hiked_date = models.DateField()
+    duration_min = models.PositiveIntegerField(default=0)
+    weather_summary = models.CharField(max_length=100, blank=True)
+    safety_label = models.CharField(max_length=20, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-hiked_date", "-created_at"]
+        db_table = "recommendations_hikingrecord"
+
+
+class FavoriteCourse(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorites")
+    course_id = models.CharField(max_length=100)
+    course_name = models.CharField(max_length=200)
+    mountain = models.CharField(max_length=100, blank=True)
+    distance_km = models.FloatField(null=True, blank=True)
+    duration_min = models.PositiveIntegerField(null=True, blank=True)
+    difficulty = models.CharField(max_length=20, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "course_id")
+        ordering = ["-created_at"]
+        db_table = "recommendations_favoritecourse"
+
+
+class EmergencyContact(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="emergency_contacts")
+    name = models.CharField(max_length=50)
+    phone = models.CharField(max_length=20)
+    relation = models.CharField(max_length=30, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        db_table = "recommendations_emergencycontact"

@@ -31,4 +31,16 @@ urlpatterns = [
     path("posts/<int:post_id>/like/", cv.post_like),
     path("posts/<int:post_id>/comments/", cv.post_comments),
     path("comments/<int:comment_id>/", cv.comment_detail),
+    # 내 활동
+    path("my-posts/", cv.my_posts),
+    path("liked-posts/", cv.liked_posts),
+    # 산행 기록
+    path("hiking-records/", cv.hiking_records),
+    path("hiking-records/<int:record_id>/", cv.hiking_record_detail),
+    # 즐겨찾기
+    path("favorites/", cv.favorite_courses),
+    path("favorites/<str:course_id>/", cv.favorite_course_detail),
+    # 긴급 연락처
+    path("emergency-contacts/", cv.emergency_contacts),
+    path("emergency-contacts/<int:contact_id>/", cv.emergency_contact_detail),
 ]

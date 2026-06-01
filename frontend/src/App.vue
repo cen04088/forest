@@ -170,6 +170,15 @@
               <option :value="240">4시간</option>
             </select>
           </label>
+          <div class="field wide-field">
+            <span>동반자 유형</span>
+            <div class="segment-group wrap">
+              <label v-for="type in companionTypes" :key="type.value" class="segment-btn">
+                <input type="radio" v-model="profile.companion" :value="type.value" name="companion_form" @change="submit" />
+                <span>{{ type.label }}</span>
+              </label>
+            </div>
+          </div>
           <button class="primary-btn wide-field" :class="{ loading }" type="submit" :disabled="loading">
             {{ loading ? '안전 등급 계산 중…' : '동반자 기준 안전코스 찾기' }}
           </button>
@@ -268,7 +277,9 @@
             :course="course"
             :rank="index + 1"
             :is-selected="selectedCourse?.id === course.id"
+            :is-favorite="favorites.some((f) => f.course_id === course.id)"
             @select="selectCourse"
+            @toggle-favorite="toggleFavorite"
           />
         </div>
       </section>
@@ -411,7 +422,7 @@
           </div>
           <div class="share-actions">
             <button class="primary-btn" type="button" @click="copyAndShareSafeLink">링크 공유</button>
-            <button class="outline-btn danger" type="button" @click="stopHiking">산행 종료</button>
+            <button class="outline-btn danger" type="button" @click="stopHikingAndRecord">산행 종료</button>
           </div>
         </div>
 
@@ -466,6 +477,16 @@
             <button v-else class="outline-btn" type="button" @click="showAuthModal = true">로그인 후 글쓰기</button>
           </div>
 
+          <div class="community-search-row">
+            <input
+              v-model="communitySearch"
+              type="search"
+              placeholder="제목·내용 검색…"
+              class="community-search-input"
+              @keydown.enter="loadPosts(1)"
+            />
+            <button class="outline-btn" type="button" @click="loadPosts(1)">검색</button>
+          </div>
           <div class="filter-row">
             <button :class="{ active: communityCategory === '' }" type="button" @click="filterCategory('')">전체</button>
             <button :class="{ active: communityCategory === 'review' }" type="button" @click="filterCategory('review')">등산 후기</button>
@@ -609,22 +630,18 @@
     <!-- 내정보 탭                                                           -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <section v-else class="screen-stack">
+
+      <!-- ─── 로그인 유도 (미로그인) ─── -->
+      <div v-if="!authUser" class="panel mypage-login-prompt">
+        <p>로그인하면 산행 기록, 즐겨찾기, 긴급 연락처를 저장할 수 있습니다.</p>
+        <button class="primary-btn" type="button" @click="showAuthModal = true">로그인 / 회원가입</button>
+      </div>
+
+      <!-- ─── 프로필 설정 ─── -->
       <section class="panel profile-settings">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">My Info</p>
-            <h2>내정보</h2>
-          </div>
+        <div class="section-title compact">
+          <div><p class="eyebrow">My Info</p><h2>개인 설정</h2></div>
           <span class="mini-status">{{ myProfileStatus }}</span>
-        </div>
-        <div class="field">
-          <span>동반 유형</span>
-          <div class="segment-group wrap">
-            <label v-for="type in companionTypes" :key="type.value" class="segment-btn">
-              <input type="radio" v-model="profile.companion" :value="type.value" name="companion" />
-              <span>{{ type.label }}</span>
-            </label>
-          </div>
         </div>
         <div class="field">
           <span>산행 경험</span>
@@ -644,19 +661,109 @@
         </div>
       </section>
 
+      <!-- ─── 즐겨찾기 코스 ─── -->
+      <section class="panel">
+        <div class="section-title compact">
+          <div><p class="eyebrow">Favorites</p><h2>즐겨찾기 코스</h2></div>
+          <span class="mini-status">{{ favorites.length }}개</span>
+        </div>
+        <div v-if="!authUser" class="mypage-login-needed">로그인 후 이용 가능합니다.</div>
+        <div v-else-if="favorites.length === 0" class="community-empty"><p>즐겨찾기한 코스가 없습니다.<br>코스 카드의 ♡ 버튼으로 추가하세요.</p></div>
+        <div v-else class="fav-list">
+          <div v-for="fav in favorites" :key="fav.course_id" class="fav-item">
+            <div class="fav-info">
+              <strong>{{ fav.course_name }}</strong>
+              <small>{{ fav.mountain }} · {{ fav.distance_km ?? '-' }}km · {{ fav.duration_min ? durationLabel(fav.duration_min) : '-' }}</small>
+            </div>
+            <button class="fav-remove-btn" type="button" title="즐겨찾기 해제" @click="removeFav(fav.course_id)">✕</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 산행 기록 ─── -->
+      <section class="panel">
+        <div class="section-title compact">
+          <div><p class="eyebrow">History</p><h2>산행 기록</h2></div>
+          <span class="mini-status">{{ hikingRecords.length }}회</span>
+        </div>
+        <div v-if="!authUser" class="mypage-login-needed">로그인 후 이용 가능합니다.</div>
+        <div v-else-if="hikingRecords.length === 0" class="community-empty"><p>아직 산행 기록이 없습니다.<br>산행 종료 시 자동으로 저장됩니다.</p></div>
+        <div v-else class="hiking-record-list">
+          <div v-for="rec in hikingRecords" :key="rec.id" class="hiking-record-item">
+            <div class="record-info">
+              <strong>{{ rec.mountain ? rec.mountain + ' ' : '' }}{{ rec.course_name }}</strong>
+              <small>{{ rec.hiked_date }} · {{ rec.duration_min ? durationLabel(rec.duration_min) : '-' }}</small>
+              <span v-if="rec.safety_label" :class="['safety-badge', rec.safety_label === '추천' ? 'green' : rec.safety_label === '주의' ? 'yellow' : 'gray']" style="font-size:11px">{{ rec.safety_label }}</span>
+            </div>
+            <button class="fav-remove-btn" type="button" @click="removeRecord(rec.id)">✕</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 내가 쓴 글 ─── -->
+      <section v-if="authUser" class="panel">
+        <div class="section-title compact">
+          <div><p class="eyebrow">My Posts</p><h2>내가 쓴 글</h2></div>
+          <span class="mini-status">{{ myPostsTotal }}개</span>
+        </div>
+        <div v-if="myPostsLoading" class="community-loading">불러오는 중…</div>
+        <div v-else-if="myPosts.length === 0" class="community-empty"><p>아직 작성한 글이 없습니다.</p></div>
+        <div v-else>
+          <div
+            v-for="post in myPosts"
+            :key="post.id"
+            class="mypost-item"
+            @click="goToPost(post.id)"
+          >
+            <span class="category-tag">{{ post.category_label }}</span>
+            <strong>{{ post.title }}</strong>
+            <small>{{ formatRelativeTime(post.created_at) }} · 👍 {{ post.like_count }} · 💬 {{ post.comment_count }}</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 긴급 연락처 ─── -->
+      <section class="panel">
+        <div class="section-title compact">
+          <div><p class="eyebrow">Emergency</p><h2>긴급 연락처</h2></div>
+          <span class="mini-status">{{ emergencyContacts.length }}명</span>
+        </div>
+        <div v-if="!authUser" class="mypage-login-needed">로그인 후 이용 가능합니다.</div>
+        <div v-else>
+          <div v-for="contact in emergencyContacts" :key="contact.id" class="contact-item">
+            <div class="contact-info">
+              <strong>{{ contact.name }}</strong>
+              <span v-if="contact.relation" class="contact-relation">{{ contact.relation }}</span>
+              <a :href="`tel:${contact.phone}`" class="contact-phone">{{ contact.phone }}</a>
+            </div>
+            <button class="fav-remove-btn" type="button" @click="removeContact(contact.id)">✕</button>
+          </div>
+          <form class="contact-add-form" @submit.prevent="addContact">
+            <input v-model="contactForm.name" type="text" placeholder="이름" required />
+            <input v-model="contactForm.phone" type="tel" placeholder="전화번호" required />
+            <input v-model="contactForm.relation" type="text" placeholder="관계 (선택)" />
+            <button class="outline-btn" type="submit" :disabled="contactLoading">추가</button>
+          </form>
+          <p v-if="contactError" class="auth-error">{{ contactError }}</p>
+        </div>
+      </section>
+
+      <!-- ─── 출발 전 체크리스트 ─── -->
       <section class="panel guardian-checklist">
         <div class="section-title compact">
-          <div>
-            <p class="eyebrow">Checklist</p>
-            <h2>출발 전 체크리스트</h2>
-          </div>
-          <span class="mini-status">내 저장</span>
+          <div><p class="eyebrow">Checklist</p><h2>출발 전 체크리스트</h2></div>
+          <span class="mini-status">{{ checkedCount }}/{{ checklistItems.length }}</span>
         </div>
-        <label v-for="item in guardianChecklist" :key="item" class="custom-check-item">
-          <input type="checkbox" class="hidden-check" />
+        <label v-for="(item, i) in checklistItems" :key="item.id" class="custom-check-item">
+          <input type="checkbox" class="hidden-check" v-model="item.checked" @change="saveChecklist" />
           <span class="check-box"></span>
-          <span>{{ item }}</span>
+          <span>{{ item.text }}</span>
+          <button class="checklist-del-btn" type="button" @click.prevent="removeChecklistItem(i)">✕</button>
         </label>
+        <div class="checklist-add-row">
+          <input v-model="newChecklistText" type="text" placeholder="새 항목 추가…" @keydown.enter.prevent="addChecklistItem" />
+          <button class="outline-btn" type="button" @click="addChecklistItem">추가</button>
+        </div>
       </section>
     </section>
     <!-- ─── 로그인/회원가입 모달 ────────────────────────────────────────── -->
@@ -703,6 +810,9 @@ import {
   fetchCourses, fetchDataSources, fetchRecommendations, fetchDisasterZones, getSafeLink,
   apiRegister, apiLogin, apiLogout, apiMe,
   fetchPosts, fetchPost, createPost, updatePost, deletePost, likePost, createComment, deleteComment,
+  fetchMyPosts, fetchHikingRecords, createHikingRecord, deleteHikingRecord,
+  fetchFavorites, addFavorite, removeFavorite,
+  fetchEmergencyContacts, addEmergencyContact, removeEmergencyContact,
 } from './api';
 import { useLocation } from './composables/useLocation.js';
 import { useKakaoMap } from './composables/useKakaoMap.js';
@@ -819,9 +929,7 @@ const guardianChecklist = [
 ];
 
 const companionTypes = [
-  { value: 'vulnerable', label: '어린이 또는 노약자 동반' },
-  { value: 'child', label: '어린이 동반' },
-  { value: 'senior', label: '노약자 동반' },
+  { value: 'vulnerable', label: '어린이·노약자 동반' },
   { value: 'family', label: '가족 동반' },
   { value: 'solo', label: '혼자 산행' },
 ];
@@ -840,6 +948,7 @@ const communityView = ref('list'); // 'list' | 'detail' | 'write' | 'edit'
 const communityPosts = ref([]);
 const communityPost = ref(null);
 const communityCategory = ref('');
+const communitySearch = ref('');
 const communityPage = ref(1);
 const communityTotal = ref(0);
 const communityLoading = ref(false);
@@ -848,6 +957,37 @@ const communityCommentInput = ref('');
 const writeForm = reactive({ title: '', content: '', category: 'general', mountain: '', course_name: '' });
 const writeError = ref('');
 const writeLoading = ref(false);
+
+// ─── 내정보 상태 ──────────────────────────────────────────────────────────
+const favorites = ref([]);
+const hikingRecords = ref([]);
+const myPosts = ref([]);
+const myPostsTotal = ref(0);
+const myPostsLoading = ref(false);
+const emergencyContacts = ref([]);
+const contactForm = reactive({ name: '', phone: '', relation: '' });
+const contactLoading = ref(false);
+const contactError = ref('');
+
+// ─── 체크리스트 ───────────────────────────────────────────────────────────
+const DEFAULT_CHECKLIST = [
+  '아이와 보호자 연락처를 서로 확인했어요',
+  '물, 간식, 보조배터리를 챙겼어요',
+  '입산 통제와 날씨 변화를 한 번 더 확인했어요',
+  '해 지기 전에 내려오는 계획을 세웠어요',
+];
+
+function loadChecklistFromStorage() {
+  try {
+    const saved = localStorage.getItem('forestRx_checklist');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return DEFAULT_CHECKLIST.map((text, i) => ({ id: i, text, checked: false }));
+}
+
+const checklistItems = ref(loadChecklistFromStorage());
+const newChecklistText = ref('');
+const checkedCount = computed(() => checklistItems.value.filter((i) => i.checked).length);
 
 // ─── GPS 버튼 ─────────────────────────────────────────────────────────────
 const gpsBtnTitle = computed(() => {
@@ -874,12 +1014,136 @@ onMounted(async () => {
     await loadMe();
     loadEverything();
     loadPosts();
+    if (authToken.value) { loadMyPageData(); loadMyPosts(); }
   }
 });
 
 onUnmounted(() => {
   if (_guardianPollTimer) clearInterval(_guardianPollTimer);
 });
+
+// ─── 내정보 데이터 로드 ───────────────────────────────────────────────────
+async function loadMyPageData() {
+  if (!authToken.value) return;
+  const [favsData, recordsData, contactsData] = await Promise.allSettled([
+    fetchFavorites(authToken.value),
+    fetchHikingRecords(authToken.value),
+    fetchEmergencyContacts(authToken.value),
+  ]);
+  if (favsData.status === 'fulfilled') favorites.value = favsData.value.favorites || [];
+  if (recordsData.status === 'fulfilled') hikingRecords.value = recordsData.value.records || [];
+  if (contactsData.status === 'fulfilled') emergencyContacts.value = contactsData.value.contacts || [];
+}
+
+async function loadMyPosts() {
+  if (!authToken.value) return;
+  myPostsLoading.value = true;
+  try {
+    const data = await fetchMyPosts(authToken.value);
+    myPosts.value = data.posts || [];
+    myPostsTotal.value = data.total || 0;
+  } catch {}
+  finally { myPostsLoading.value = false; }
+}
+
+// ─── 즐겨찾기 함수 ────────────────────────────────────────────────────────
+async function toggleFavorite(course) {
+  if (!authUser.value) { showAuthModal.value = true; return; }
+  const isFav = favorites.value.some((f) => f.course_id === course.id);
+  if (isFav) {
+    await removeFavorite(course.id, authToken.value).catch(() => {});
+    favorites.value = favorites.value.filter((f) => f.course_id !== course.id);
+  } else {
+    try {
+      await addFavorite({
+        course_id: course.id,
+        course_name: course.name,
+        mountain: course.mountain,
+        distance_km: course.distance_km,
+        duration_min: course.duration_min,
+        difficulty: course.difficulty,
+      }, authToken.value);
+      favorites.value.unshift({
+        course_id: course.id,
+        course_name: course.name,
+        mountain: course.mountain,
+        distance_km: course.distance_km,
+        duration_min: course.duration_min,
+        difficulty: course.difficulty,
+      });
+    } catch {}
+  }
+}
+
+async function removeFav(courseId) {
+  await removeFavorite(courseId, authToken.value).catch(() => {});
+  favorites.value = favorites.value.filter((f) => f.course_id !== courseId);
+}
+
+// ─── 산행 기록 함수 ───────────────────────────────────────────────────────
+async function saveHikingRecord(course) {
+  if (!authToken.value || !course) return;
+  try {
+    const rec = await createHikingRecord({
+      mountain: course.mountain || '',
+      course_name: course.name || '',
+      hiked_date: new Date().toISOString().slice(0, 10),
+      duration_min: course.duration_min || 0,
+      weather_summary: weatherData.value
+        ? `${weatherData.value.temperature_c}°C, 강수 ${weatherData.value.rainfall_mm}mm`
+        : '',
+      safety_label: course.safety_label || '',
+    }, authToken.value);
+    hikingRecords.value.unshift(rec);
+  } catch {}
+}
+
+async function removeRecord(id) {
+  await deleteHikingRecord(id, authToken.value).catch(() => {});
+  hikingRecords.value = hikingRecords.value.filter((r) => r.id !== id);
+}
+
+// ─── 긴급 연락처 함수 ─────────────────────────────────────────────────────
+async function addContact() {
+  contactLoading.value = true;
+  contactError.value = '';
+  try {
+    const contact = await addEmergencyContact(contactForm, authToken.value);
+    emergencyContacts.value.push(contact);
+    contactForm.name = ''; contactForm.phone = ''; contactForm.relation = '';
+  } catch (err) { contactError.value = err.message; }
+  finally { contactLoading.value = false; }
+}
+
+async function removeContact(id) {
+  await removeEmergencyContact(id, authToken.value).catch(() => {});
+  emergencyContacts.value = emergencyContacts.value.filter((c) => c.id !== id);
+}
+
+// ─── 체크리스트 함수 ──────────────────────────────────────────────────────
+function saveChecklist() {
+  try { localStorage.setItem('forestRx_checklist', JSON.stringify(checklistItems.value)); } catch {}
+}
+
+function addChecklistItem() {
+  const text = newChecklistText.value.trim();
+  if (!text) return;
+  const id = Date.now();
+  checklistItems.value.push({ id, text, checked: false });
+  newChecklistText.value = '';
+  saveChecklist();
+}
+
+function removeChecklistItem(index) {
+  checklistItems.value.splice(index, 1);
+  saveChecklist();
+}
+
+// ─── 커뮤니티 → 내정보 탭 연동 ───────────────────────────────────────────
+function goToPost(id) {
+  activeTab.value = 'community';
+  openPost(id);
+}
 
 // ─── 인증 함수 ────────────────────────────────────────────────────────────
 async function loadMe() {
@@ -902,6 +1166,7 @@ async function login() {
     showAuthModal.value = false;
     authForm.username = ''; authForm.password = '';
     if (communityView.value === 'list') loadPosts();
+    loadMyPageData(); loadMyPosts();
   } catch (err) { authError.value = err.message; }
   finally { authLoading.value = false; }
 }
@@ -916,6 +1181,7 @@ async function register() {
     localStorage.setItem('auth_token', data.token);
     showAuthModal.value = false;
     authForm.username = ''; authForm.password = ''; authForm.nickname = ''; authForm.email = '';
+    loadMyPageData(); loadMyPosts();
   } catch (err) { authError.value = err.message; }
   finally { authLoading.value = false; }
 }
@@ -927,6 +1193,10 @@ async function logout() {
   localStorage.removeItem('auth_token');
   showAuthModal.value = false;
   communityView.value = 'list';
+  favorites.value = [];
+  hikingRecords.value = [];
+  myPosts.value = [];
+  emergencyContacts.value = [];
   loadPosts();
 }
 
@@ -936,7 +1206,7 @@ async function loadPosts(page = 1) {
   communityError.value = '';
   communityPage.value = page;
   try {
-    const data = await fetchPosts({ category: communityCategory.value, page }, authToken.value);
+    const data = await fetchPosts({ category: communityCategory.value, search: communitySearch.value, page }, authToken.value);
     communityPosts.value = data.posts;
     communityTotal.value = data.total;
   } catch (err) { communityError.value = err.message; }
@@ -1113,7 +1383,10 @@ function selectCourse(course) {
 
 // ─── 감시자 ───────────────────────────────────────────────────────────────
 watch([selectedCourse, activeTab], () => { renderMaps(); });
-watch(activeTab, (tab) => { if (tab === 'community' && communityPosts.value.length === 0) loadPosts(); });
+watch(activeTab, (tab) => {
+  if (tab === 'community' && communityPosts.value.length === 0) loadPosts();
+  if (tab === 'myPage' && authUser.value && myPosts.value.length === 0) loadMyPosts();
+});
 watch(() => [profile.departureDate, profile.departureTime], () => { ensureFutureDepartureTime(); });
 
 // ─── 계산 속성 ────────────────────────────────────────────────────────────
@@ -1150,8 +1423,6 @@ const wildfireLabel = computed(() => {
 const companionChipLabel = computed(() => {
   const map = {
     vulnerable: '👨‍👧 어린이·노약자 동반 기준',
-    child:      '🧒 어린이 동반 기준',
-    senior:     '🧓 노약자 동반 기준',
     family:     '👨‍👩‍👦 가족 동반 기준',
     solo:       '🧍 개인 산행 기준',
   };
@@ -1240,6 +1511,12 @@ const safeLinkMessage = computed(() => {
     '현장 통제, 기상 변화, 입산 제한 여부를 함께 확인해 주세요.',
   ].join('\n');
 });
+
+// ─── 산행 종료 + 기록 저장 ───────────────────────────────────────────────
+async function stopHikingAndRecord() {
+  await stopHiking();
+  await saveHikingRecord(selectedCourse.value);
+}
 
 // ─── 지도 렌더링 ──────────────────────────────────────────────────────────
 async function renderMaps() {
