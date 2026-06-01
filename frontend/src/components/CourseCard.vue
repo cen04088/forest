@@ -55,8 +55,6 @@
     <!-- ── 칩 메트릭 ──────────────────────────────────────────────── -->
     <div class="metric-row-compact">
       <span title="하산 여유">⏱️ {{ daylightLabel(course.daylight_margin_min) }}</span>
-      <span title="접근 거리">📍 {{ course.distance_from_user_km ?? '-' }}km</span>
-      <span title="데이터 출처">ℹ️ {{ course.sourceLabel || sourceLabel(course) }}</span>
     </div>
 
     <!-- ── 위험 요인 태그 ──────────────────────────────────────────── -->
@@ -75,7 +73,6 @@ import {
   fallbackSafetyLabel,
   durationLabel,
   daylightLabel,
-  sourceLabel,
 } from '../utils/courseHelpers.js';
 
 const props = defineProps({

@@ -30,6 +30,50 @@ MOUNTAIN_CROWDING = {
 _DEFAULT_CROWDING = 0.40
 
 
+# ── 등산로 노드 유형 판별 ─────────────────────────────────────────────────
+# 실제 탐방로 입구로 쓰이는 키워드 (주차장, 매표소, 사찰 입구 등)
+_ENTRANCE_KEYWORDS = frozenset({
+    "입구", "매표소", "탐방안내소", "탐방지원센터", "탐방로입구",
+    "분소", "주차장", "광장", "마을", "집결지", "기점", "들머리",
+    "시점", "게이트", "관리소", "휴양림", "야영장", "캠핑장",
+    "버스정류장", "터미널", "역전", "ic",
+    # 사찰·문화재 입구 (주요 탐방로 시작점으로 쓰임)
+    "사입구", "암입구",
+})
+# 입구 역할을 하는 독립 단어 (완전 매칭)
+_ENTRANCE_WORDS = frozenset({
+    "소공원", "백무동", "화엄사", "내소사", "개암사", "갑사",
+    "동학사", "신원사", "대원사", "거림", "중산리", "성삼재",
+    "피아골", "뱀사골", "북한산성", "우이동", "도봉산역",
+    "송추", "효자동", "원효광장", "불광계곡", "구기분소",
+    "자하교", "탕춘대", "육모정", "증심교",
+})
+# 산 중간 지점 키워드 (시작점으로 부적절)
+_SUMMIT_KEYWORDS = frozenset({
+    "정상", "봉", "대피소", "산장", "쉼터", "능선", "갈림길",
+    "분기점", "삼거리", "사거리", "전망대", "헬기장", "재",
+    "고개", "바위", "평전", "암문", "약수터", "샘터",
+})
+
+
+def _is_entrance(text: str) -> bool:
+    """텍스트가 등산로 입구를 나타내는지 판별한다."""
+    t = text.strip()
+    if not t:
+        return False
+    if t in _ENTRANCE_WORDS:
+        return True
+    return any(kw in t for kw in _ENTRANCE_KEYWORDS)
+
+
+def _is_summit_or_intermediate(text: str) -> bool:
+    """텍스트가 정상·능선 등 중간 지점을 나타내는지 판별한다."""
+    t = text.strip()
+    if not t:
+        return False
+    return any(kw in t for kw in _SUMMIT_KEYWORDS)
+
+
 TRAIL_CSV_PATH = settings.BASE_DIR.parent / "국립공원공단_탐방로_20240911.csv"
 DISASTER_RISK_CSV_PATH = settings.BASE_DIR.parent / "국립공원공단_재난위험지구_20240904.csv"
 KEY_FILE_PATH = settings.BASE_DIR.parent / "key.txt"
@@ -128,6 +172,19 @@ def normalize_trail_row(index, row):
     if not name or distance_km < 0.5 or distance_km > 25:
         return None
 
+    # ── 입구 방향 보정 ────────────────────────────────────────────────────
+    # 시작이 중간지점이고 종착이 입구이면 방향을 반전한다
+    start_is_entrance = _is_entrance(start)
+    end_is_entrance = _is_entrance(end)
+    start_is_mid = _is_summit_or_intermediate(start)
+
+    if not start_is_entrance and end_is_entrance and start_is_mid:
+        # 종착(입구) → 시작(중간)으로 오는 구간을 뒤집는다
+        start, end = end, start
+        start_is_entrance = True
+
+    has_entrance_start = start_is_entrance
+
     up_minutes = parse_int(row.get("소요시간_상행"))
     down_minutes = parse_int(row.get("소요시간_하행"))
     duration_min = max(up_minutes, down_minutes, estimate_duration(distance_km))
@@ -158,6 +215,7 @@ def normalize_trail_row(index, row):
         "source": "국립공원공단_탐방로_20240911+좌표보강" if coordinates else "국립공원공단_탐방로_20240911",
         "segment_nodes": build_segment_nodes(start, waypoint, end),
         "segment_count": 1,
+        "has_entrance_start": has_entrance_start,
         "dedupe_key": dedupe_key,
     }
 
@@ -232,8 +290,20 @@ def build_merged_course(component):
             degree[end] = degree.get(end, 0) + 1
 
     endpoints = [node for node in all_nodes if degree.get(normalize_node(node), 0) == 1]
-    start = endpoints[0] if endpoints else all_nodes[0]
-    end = endpoints[-1] if len(endpoints) > 1 else all_nodes[-1]
+    ep0 = endpoints[0] if endpoints else all_nodes[0]
+    ep1 = endpoints[-1] if len(endpoints) > 1 else all_nodes[-1]
+
+    # 두 끝점 중 입구에 해당하는 쪽을 시작(start)으로 배치한다
+    ep0_entrance = _is_entrance(ep0)
+    ep1_entrance = _is_entrance(ep1)
+    ep0_mid = _is_summit_or_intermediate(ep0)
+
+    if (ep1_entrance and not ep0_entrance) or (ep0_mid and not _is_summit_or_intermediate(ep1)):
+        start, end = ep1, ep0
+    else:
+        start, end = ep0, ep1
+
+    has_entrance_start = _is_entrance(start)
     waypoints = [node for node in all_nodes if node not in {start, end}]
     distance_km = round(sum(float(segment.get("distance_km") or 0) for segment in component), 2)
     duration_min = sum(int(segment.get("duration_min") or 0) for segment in component)
@@ -253,6 +323,7 @@ def build_merged_course(component):
         "lng": round(sum(lng_values) / len(lng_values), 6) if lng_values else None,
         "highlights": build_merged_highlights(start, waypoints, end, len(component)),
         "segment_count": len(component),
+        "has_entrance_start": has_entrance_start,
     }
 
 

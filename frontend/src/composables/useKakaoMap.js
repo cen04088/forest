@@ -92,26 +92,17 @@ export function useKakaoMap() {
           map, path: routePath,
           strokeWeight: 4, strokeColor: routeColor, strokeOpacity: 0.85, strokeStyle: 'solid',
         });
-        // 시작점(입구) 마커
-        new kakao.maps.Marker({ map, position: trailhead, title: `${selectedCourse.name} 입구` });
-        // 종점 마커
-        const endPoint = geometry[geometry.length - 1];
-        new kakao.maps.Marker({
-          map,
-          position: new kakao.maps.LatLng(endPoint.lat, endPoint.lng),
-          title: '종점',
-        });
-        // 경로 전체가 보이도록 범위 조정
+        // 경로 전체가 화면에 꽉 차도록 자동 확대
         const bounds = new kakao.maps.LatLngBounds();
         routePath.forEach((p) => bounds.extend(p));
         if (hasUserLoc) bounds.extend(new kakao.maps.LatLng(userLocation.lat, userLocation.lng));
         map.setBounds(bounds);
       } else {
-        new kakao.maps.Marker({ map, position: trailhead, title: selectedCourse.name });
+        // 경로 없는 경우: 산 중심만 표시
         new kakao.maps.Circle({
-          map, center: trailhead, radius: 180,
-          strokeWeight: 2, strokeColor: '#d29a12', strokeOpacity: 0.9, strokeStyle: 'dashed',
-          fillColor: '#d29a12', fillOpacity: 0.18,
+          map, center: trailhead, radius: 400,
+          strokeWeight: 2, strokeColor: routeColor, strokeOpacity: 0.6, strokeStyle: 'dashed',
+          fillColor: routeColor, fillOpacity: 0.08,
         });
       }
 

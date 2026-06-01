@@ -489,6 +489,10 @@ def data_quality_adjustment(course):
         adjustment -= 28
     else:
         adjustment += 5
+    # 등산로 입구에서 시작하지 않는 코스는 감점
+    # has_entrance_start 가 명시적으로 False 인 경우만 감점 (미설정 코스는 패스)
+    if course.get("has_entrance_start") is False:
+        adjustment -= 22
     return adjustment
 
 
