@@ -83,34 +83,42 @@ p {
   gap: 14px;
 }
 
-/* ── 히어로 헤더 (duna.com 스타일) ─────────────────────────────────────── */
+/* ── 히어로 헤더 ─────────────────────────────────────────────────────── */
 .app-hero {
-  background: linear-gradient(145deg, #052e16 0%, #14532d 35%, #166534 65%, #1a6b3a 100%);
+  background-color: #052e16; /* 이미지 로딩 전 fallback */
+  background-image:
+    linear-gradient(
+      170deg,
+      rgba(3, 28, 12, 0.78) 0%,
+      rgba(8, 52, 25, 0.68) 40%,
+      rgba(3, 28, 12, 0.82) 100%
+    ),
+    url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80');
+  /*
+   * 산 사진 교체 옵션 (아래 중 하나로 교체):
+   * 안개 낀 산 계곡  : photo-1464822759023-fed622ff2c3b  ← 현재
+   * 능선 등산객       : photo-1551632811-561732d1e306
+   * 설악산 스타일 암봉: photo-1506905925346-21bda4d32df4
+   * 새벽 산 일출      : photo-1483728642387-6c3bdd6c93e5
+   */
+  background-size: cover;
+  background-position: center 45%;
+  background-repeat: no-repeat;
   border-radius: 20px;
   overflow: hidden;
   margin-bottom: 16px;
   position: relative;
 }
 
-/* 배경 텍스처 느낌 - 미묘한 빛 번짐 */
-.app-hero::before {
-  content: '';
-  position: absolute;
-  top: -40%;
-  right: -10%;
-  width: 60%;
-  height: 160%;
-  background: radial-gradient(ellipse, rgba(134,239,172,0.12) 0%, transparent 70%);
-  pointer-events: none;
-}
+/* 하단 자연스러운 페이드 */
 .app-hero::after {
   content: '';
   position: absolute;
-  bottom: -30%;
-  left: -5%;
-  width: 50%;
-  height: 100%;
-  background: radial-gradient(ellipse, rgba(251,191,36,0.07) 0%, transparent 65%);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, rgba(3,28,12,0.45));
   pointer-events: none;
 }
 
