@@ -56,9 +56,6 @@
 
       <!-- 상단 네비 바 -->
       <div class="hero-nav">
-        <div class="hero-logo-pill">
-          <img src="/logo.png" alt="올라" class="hero-logo-img" />
-        </div>
         <div class="hero-nav-actions">
           <button v-if="authUser" class="hero-auth-btn" type="button" @click="showAuthModal = true">
             <span class="auth-avatar">{{ authUser.nickname[0] }}</span>
@@ -75,7 +72,6 @@
 
       <!-- 히어로 바디 -->
       <div class="hero-body">
-        <p class="hero-eyebrow">AI 산행 안전 진단</p>
         <h1 class="hero-title">
           동반자와 함께하는<br>
           <span class="hero-title-accent">모든 산행을 안전하게</span>
