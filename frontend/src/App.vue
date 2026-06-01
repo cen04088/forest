@@ -2,7 +2,7 @@
   <!-- ══ 보호자 전용 뷰 (URL에 #/safe/UUID 있을 때) ══════════════════════ -->
   <main v-if="isGuardianView" class="guardian-shell">
     <header class="guardian-header">
-      <span class="guardian-logo">ForestRx</span>
+      <span class="guardian-logo">올라</span>
       <span :class="['guardian-status-chip', guardianStatusClass]">{{ guardianStatusLabel }}</span>
     </header>
 
@@ -54,9 +54,9 @@
     <!-- ─── 헤더 ──────────────────────────────────────────────────────── -->
     <header class="app-header">
       <div>
-        <p class="eyebrow">산악사고 예방 안전 진단 · 연간 산악구조 8,000건+</p>
-        <h1>ForestRx</h1>
-        <p>60대 이상 산악사고의 40%를 줄이기 위해, 어린이·노약자 동반 산행을 AI로 사전 진단합니다.</p>
+        <p class="eyebrow">AI 산행 안전 진단 · 연간 산악구조 8,000건+</p>
+        <h1>올라</h1>
+        <p>동반자가 있는 모든 산행은 더 꼼꼼한 준비가 필요합니다. 올라가 날씨·코스·위험 데이터를 종합해 안전 등급을 알려드립니다.</p>
       </div>
       <div class="header-actions">
         <button v-if="authUser" class="auth-user-btn" type="button" @click="showAuthModal = true">
@@ -82,8 +82,8 @@
     <nav class="tabbar" aria-label="주요 화면">
       <!-- 사이드바 브랜딩 (데스크톱에서만 표시) -->
       <div class="sidebar-brand">
-        <p class="sidebar-logo-text">ForestRx</p>
-        <p class="sidebar-tagline">약자 동반 안전 산행</p>
+        <p class="sidebar-logo-text">올라</p>
+        <p class="sidebar-tagline">함께 오르는 안전 산행</p>
       </div>
       <button :class="{ active: activeTab === 'guide' }" type="button" @click="activeTab = 'guide'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
@@ -988,7 +988,7 @@ const DEFAULT_CHECKLIST = [
 
 function loadChecklistFromStorage() {
   try {
-    const saved = localStorage.getItem('forestRx_checklist');
+    const saved = localStorage.getItem('olla_checklist');
     if (saved) return JSON.parse(saved);
   } catch {}
   return DEFAULT_CHECKLIST.map((text, i) => ({ id: i, text, checked: false }));
@@ -1131,7 +1131,7 @@ async function removeContact(id) {
 
 // ─── 체크리스트 함수 ──────────────────────────────────────────────────────
 function saveChecklist() {
-  try { localStorage.setItem('forestRx_checklist', JSON.stringify(checklistItems.value)); } catch {}
+  try { localStorage.setItem('olla_checklist', JSON.stringify(checklistItems.value)); } catch {}
 }
 
 function addChecklistItem() {
@@ -1521,7 +1521,7 @@ const safeLinkMessage = computed(() => {
     ? `카카오맵 위치: ${kakaoMapUrl.value}`
     : '카카오맵 위치: 좌표 정보 없음';
   return [
-    '[ForestRx 안전공유]',
+    '[올라 안전공유]',
     `산/코스: ${course.mountain} · ${course.name}`,
     `안전 등급: ${course.safety_label || fallbackSafetyLabel(course)}`,
     `예상 산행: 약 ${durationLabel(course.duration_min)} / 거리 ${course.distance_km}km`,
@@ -1556,7 +1556,7 @@ async function copyAndShareSafeLink() {
   if (navigator.share) {
     try {
       await navigator.share({
-        title: 'ForestRx 세이프링크',
+        title: '올라 세이프링크',
         text: `${selectedCourse.value?.mountain} ${selectedCourse.value?.name} 산행 중입니다. 아래 링크에서 실시간 위치를 확인하세요.`,
         url,
       });
@@ -1587,7 +1587,7 @@ async function copySafeLinkMessage() {
 async function shareSafeLink() {
   if (!selectedCourse.value) return;
   const sharePayload = {
-    title: 'ForestRx 안전공유',
+    title: '올라 안전공유',
     text: safeLinkMessage.value,
     url: hasSelectedCourseLocation.value ? kakaoMapUrl.value : window.location.href,
   };
