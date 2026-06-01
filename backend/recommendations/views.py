@@ -21,12 +21,14 @@ from . import safe_links as safe_link_store
 
 @require_GET
 def health(request):
+    key = load_public_service_key()
     return JsonResponse(
         {
             "status": "ok",
             "service": "ForestRx API",
             "public_trail_courses": len(load_public_trail_courses()),
-            "public_service_key_loaded": bool(load_public_service_key()),
+            "public_service_key_loaded": bool(key),
+            "public_service_key_prefix": (key[:6] + "...") if key else None,
             "fallback_mountain_coordinates": len(MOUNTAIN_COORDINATES),
         }
     )

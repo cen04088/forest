@@ -186,13 +186,15 @@
       </section>
 
       <!-- ✅ 실시간 산행 조건 카드 -->
-      <section v-if="weatherData && !loading" class="panel conditions-card">
+      <section v-if="weatherData" class="panel conditions-card">
         <div class="conditions-header">
           <div>
             <p class="eyebrow">오늘의 조건</p>
             <h2>실시간 산행 환경</h2>
           </div>
-          <span class="live-badge">● LIVE</span>
+          <span :class="weatherData?.source === 'mock' ? 'live-badge mock-badge' : 'live-badge'">
+            {{ weatherData?.source === 'mock' ? '추정 데이터' : '● LIVE' }}
+          </span>
         </div>
         <div class="conditions-grid">
           <div class="condition-item">
@@ -236,6 +238,13 @@
           <div class="skeleton-line medium"></div>
         </div>
       </section>
+
+      <!-- 준비 화면 (검색 전) -->
+      <article v-if="resultState === 'idle' && !loading" class="empty-state idle-state">
+        <span class="idle-icon">⛰️</span>
+        <h3>안전 코스를 찾아드릴게요</h3>
+        <p>산과 출발 조건, 동반자 유형을 설정한 후<br>검색 버튼을 누르면<br>날씨 · 일몰 · 재난 데이터를 종합해<br>안전 등급을 계산합니다.</p>
+      </article>
 
       <!-- 비추천 공지 -->
       <article v-if="resultState === 'no_safe_course'" class="empty-state">
@@ -807,7 +816,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import {
-  fetchCourses, fetchDataSources, fetchRecommendations, fetchDisasterZones, getSafeLink,
+  fetchCourses, fetchDataSources, fetchRecommendations, fetchDisasterZones, getSafeLink, fetchWeather,
   apiRegister, apiLogin, apiLogout, apiMe,
   fetchPosts, fetchPost, createPost, updatePost, deletePost, likePost, createComment, deleteComment,
   fetchMyPosts, fetchHikingRecords, createHikingRecord, deleteHikingRecord,
@@ -1314,7 +1323,17 @@ async function loadEverything() {
     profile.mountainName = mountainOptions.value[0].name;
   }
   syncLocationToSelectedMountain();
-  await submit();
+  loadWeather();
+  // 자동 검색하지 않음 — 사용자가 버튼을 눌러야 시작
+}
+
+async function loadWeather() {
+  const mountain = mountainOptions.value.find((m) => m.name === profile.mountainName);
+  const lat = location.value?.lat ?? mountain?.lat ?? 37.5665;
+  const lng = location.value?.lng ?? mountain?.lng ?? 126.978;
+  try {
+    weatherData.value = await fetchWeather({ lat, lng });
+  } catch {}
 }
 
 async function loadSources() {
@@ -1344,7 +1363,7 @@ async function submit() {
     resultState.value = data.result_state || 'has_recommendations';
     agentSummary.value = data.agent_summary || recommendations.value[0]?.agent_briefing || '';
     alternativeActions.value = data.alternative_actions || [];
-    weatherData.value = data.weather || recommendations.value[0]?.weather || null;
+    weatherData.value = data.weather || recommendations.value[0]?.weather || weatherData.value;
     disasterZones.value = zonesData.zones || [];
     selectedCourse.value = displayPrimaryCourses.value[0] || recommendations.value[0] || null;
     renderMaps();
@@ -1357,7 +1376,8 @@ async function submit() {
 
 function handleMountainChange() {
   syncLocationToSelectedMountain();
-  submit();
+  loadWeather();
+  // 산 변경만으로는 검색하지 않음
 }
 
 function ensureFutureDepartureTime() {

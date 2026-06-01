@@ -1,3 +1,4 @@
+import logging
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -12,6 +13,8 @@ from .mountain_weather_api import fetch_mountain_weather
 from .sun_api import fetch_sun_times
 from .wildfire_api import fetch_wildfire_risk
 
+logger = logging.getLogger(__name__)
+
 
 KMA_ULTRA_SHORT_NOWCAST_URL = (
     "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
@@ -21,11 +24,15 @@ KMA_ULTRA_SHORT_NOWCAST_URL = (
 def fetch_current_weather(lat, lng, timeout=8):
     service_key = load_public_service_key()
     if not service_key:
+        logger.warning("[Weather] PUBLIC_SERVICE_KEY not set — using mock data")
         return {**MOCK_WEATHER, "source": "mock"}
 
     nx, ny = lat_lng_to_kma_grid(lat, lng)
     base_date, base_time = kma_nowcast_base_datetime()
+    logger.info("[Weather] Calling KMA nowcast nx=%s ny=%s date=%s time=%s", nx, ny, base_date, base_time)
     result = _cached_fetch_current_weather(nx, ny, base_date, base_time, service_key, timeout)
+    if result is None:
+        logger.warning("[Weather] KMA nowcast returned None — using mock data (key prefix: %s...)", service_key[:8])
     weather = result if result else {**MOCK_WEATHER, "source": "mock"}
     sun_times = fetch_sun_times(lat, lng, timeout=timeout)
     if sun_times.get("sunset"):
@@ -73,10 +80,21 @@ def _cached_fetch_current_weather(nx, ny, base_date, base_time, service_key, tim
     try:
         with urllib.request.urlopen(url, timeout=timeout) as response:
             body = response.read()
-    except Exception:
+    except Exception as exc:
+        logger.error("[Weather] KMA HTTP error: %s", exc)
         return None
 
-    return parse_kma_nowcast_xml(body, nx=nx, ny=ny, base_date=base_date, base_time=base_time)
+    result = parse_kma_nowcast_xml(body, nx=nx, ny=ny, base_date=base_date, base_time=base_time)
+    if result is None:
+        # 오류 원인 확인용 로그
+        try:
+            root = ET.fromstring(body)
+            code = root.findtext(".//resultCode") or "?"
+            msg = root.findtext(".//resultMsg") or "?"
+            logger.error("[Weather] KMA result code=%s msg=%s", code, msg)
+        except Exception:
+            logger.error("[Weather] KMA response not parseable: %s", body[:200])
+    return result
 
 
 def parse_kma_nowcast_xml(body, nx=None, ny=None, base_date="", base_time=""):

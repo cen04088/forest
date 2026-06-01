@@ -2799,6 +2799,15 @@ p {
 .checklist-add-row input { flex: 1; padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; }
 .checklist-add-row input:focus { outline: none; border-color: var(--green); }
 
+/* ── 날씨 mock 배지 ──────────────────────────────────────────────────────── */
+.mock-badge { background: #64748b !important; }
+
+/* ── 준비 화면 (검색 전 idle state) ─────────────────────────────────────── */
+.idle-state { text-align: center; padding: 40px 24px; }
+.idle-icon { font-size: 52px; display: block; margin-bottom: 16px; }
+.idle-state h3 { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+.idle-state p { font-size: 14px; color: #64748b; line-height: 1.8; }
+
 /* PWA 설치 배너 */
 .pwa-install-banner { display: flex; align-items: center; justify-content: space-between; background: var(--green); color: #fff; padding: 10px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; }
 .pwa-install-banner button { background: #fff; color: var(--green); border: none; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
