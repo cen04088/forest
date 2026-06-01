@@ -91,7 +91,7 @@ p {
 
 .app-logo {
   display: block;
-  height: 56px;
+  height: 140px;
   width: auto;
   margin-top: 4px;
   mix-blend-mode: multiply;
@@ -2237,7 +2237,7 @@ p {
   }
 
   .app-logo {
-    height: 68px;
+    height: 170px;
   }
 
   /* ── 사이드바 브랜딩 ── */
@@ -2250,7 +2250,7 @@ p {
 
   .sidebar-logo-img {
     display: block;
-    height: 36px;
+    height: 90px;
     width: auto;
     mix-blend-mode: multiply;
   }
@@ -2439,7 +2439,7 @@ p {
 }
 
 .guardian-logo-img {
-  height: 32px;
+  height: 80px;
   width: auto;
   mix-blend-mode: multiply;
 }
