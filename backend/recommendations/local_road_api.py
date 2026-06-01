@@ -75,7 +75,7 @@ def normalize_road_record(index, row, points):
     distance_km = round(distance_km or route_length_km(route_geometry), 2)
     duration_min = max(round(distance_km * 34), 20)
     difficulty = normalize_difficulty(row.get("PMNTN_DFFL"), distance_km, duration_min)
-    center = route_geometry[len(route_geometry) // 2]
+    trailhead = route_geometry[0]  # 첫 번째 좌표 = 등산로 입구
 
     mountain = row.get("MNTN_NM") or "등산로"
     name = clean_course_name(row.get("PMNTN_NM") or row.get("PMNTN_MAIN") or f"{mountain} 등산로")
@@ -90,8 +90,9 @@ def normalize_road_record(index, row, points):
         "distance_km": distance_km,
         "duration_min": duration_min,
         "elevation_gain_m": round(distance_km * {"easy": 35, "medium": 65, "hard": 95}[difficulty]),
-        "lat": center["lat"],
-        "lng": center["lng"],
+        "lat": trailhead["lat"],
+        "lng": trailhead["lng"],
+        "route_geometry": route_geometry,
         "crowding": 0.28,
         "highlights": build_road_highlights(row),
         "source": "road/WG_MT_WAY.shp",

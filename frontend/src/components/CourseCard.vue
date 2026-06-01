@@ -7,6 +7,15 @@
     @keydown.enter="$emit('select', course)"
     @keydown.space.prevent="$emit('select', course)"
   >
+    <!-- ── 미니맵 ────────────────────────────────────────────────── -->
+    <div v-if="miniMap" class="course-minimap" :style="miniMap.style">
+      <span :class="['minimap-pin', `pin-${course.difficulty}`]"></span>
+      <span class="minimap-attr">© OpenStreetMap</span>
+    </div>
+    <div v-else-if="course.lat && course.lng" class="course-minimap course-minimap--loading">
+      <span class="minimap-placeholder">🗺️ 지도 로딩 중</span>
+    </div>
+
     <!-- ── 1위 강조 배너 ──────────────────────────────────────────── -->
     <div v-if="rank === 1" class="top-banner">
       <span class="top-badge">🏆 오늘의 추천 1위</span>
@@ -103,6 +112,38 @@ const props = defineProps({
 defineEmits(['select', 'toggleFavorite']);
 
 const showScores = ref(false);
+
+// ── OSM 타일 미니맵 ──────────────────────────────────────────────────────
+const miniMap = computed(() => {
+  const lat = props.course.lat;
+  const lng = props.course.lng;
+  if (!lat || !lng) return null;
+
+  const zoom = 14;
+  const n = Math.pow(2, zoom);
+  const globalX = ((lng + 180) / 360) * n * 256;
+  const sinLat = Math.sin((lat * Math.PI) / 180);
+  const globalY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * n * 256;
+  const tx = Math.floor(globalX / 256);
+  const ty = Math.floor(globalY / 256);
+  const px = Math.floor(globalX % 256); // 타일 내 픽셀 X (0-255)
+  const py = Math.floor(globalY % 256); // 타일 내 픽셀 Y (0-255)
+
+  // 좌표를 중앙에 두기 위해 2×2 타일 배치
+  const tile = (x, y) => `url(https://tile.openstreetmap.org/${zoom}/${x}/${y}.png)`;
+  const bgImage = [tile(tx, ty), tile(tx + 1, ty), tile(tx, ty + 1), tile(tx + 1, ty + 1)].join(', ');
+  const pos = (dx, dy) => `calc(50% - ${px}px + ${dx}px) calc(50% - ${py}px + ${dy}px)`;
+  const bgPosition = [pos(0, 0), pos(256, 0), pos(0, 256), pos(256, 256)].join(', ');
+
+  return {
+    style: {
+      backgroundImage: bgImage,
+      backgroundSize: '256px 256px',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: bgPosition,
+    },
+  };
+});
 
 // ── 핵심 이유 칩 생성 ────────────────────────────────────────────────────
 const reasonChips = computed(() => {

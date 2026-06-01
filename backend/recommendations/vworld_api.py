@@ -132,7 +132,7 @@ def normalize_vworld_feature(index, feature, mountain_name=""):
 
     name = first_text(properties, ["mntil_nm", "mntilnm", "mtn_nm", "mntn_nm", "name", "road_name", "명칭"])
     course_name = clean_course_name(name or (f"{mountain_name} 등산로" if mountain_name else "브이월드 등산로"))
-    center = route_center(route_geometry)
+    trailhead = route_start(route_geometry)
     distance_km = first_float(properties, ["length", "len", "shape_leng", "st_length"])
     if distance_km is None:
         distance_km = route_length_km(route_geometry)
@@ -141,6 +141,7 @@ def normalize_vworld_feature(index, feature, mountain_name=""):
 
     duration_min = max(round((distance_km or 1.5) * 34), 20)
     difficulty = infer_difficulty(distance_km or 0, duration_min)
+    simplified_geometry = simplify_route_geometry(route_geometry, max_points=60)
 
     return {
         "id": f"vworld-{index}-{course_name}",
@@ -151,8 +152,9 @@ def normalize_vworld_feature(index, feature, mountain_name=""):
         "distance_km": round(distance_km or 0, 2),
         "duration_min": duration_min,
         "elevation_gain_m": round((distance_km or 1.5) * {"easy": 35, "medium": 65, "hard": 95}[difficulty]),
-        "lat": center["lat"],
-        "lng": center["lng"],
+        "lat": trailhead["lat"],
+        "lng": trailhead["lng"],
+        "route_geometry": simplified_geometry,
         "crowding": 0.28,
         "highlights": ["브이월드 등산로 데이터", "위험 구간 시각화 후보"],
         "source": "브이월드_등산로_LT_L_FRSTCLIMB",
@@ -184,9 +186,25 @@ def coordinates_to_lat_lng(coordinates):
     return points
 
 
+def route_start(points):
+    """등산로 시작점(입구)을 반환한다. 첫 번째 좌표가 트레일헤드에 해당한다."""
+    return {"lat": points[0]["lat"], "lng": points[0]["lng"]}
+
+
 def route_center(points):
     midpoint = points[len(points) // 2]
     return {"lat": midpoint["lat"], "lng": midpoint["lng"]}
+
+
+def simplify_route_geometry(points, max_points=60):
+    """경로 좌표를 max_points 이하로 균등 샘플링한다 (페이로드 크기 제한)."""
+    if len(points) <= max_points:
+        return points
+    step = max(1, len(points) // max_points)
+    simplified = points[::step]
+    if simplified[-1] != points[-1]:
+        simplified = simplified + [points[-1]]
+    return simplified
 
 
 def route_length_km(points):

@@ -34,8 +34,13 @@ export function useKakaoMap() {
     return kakaoMapLoadPromise;
   }
 
+  // ─── 난이도별 경로 색상 ──────────────────────────────────────────────────
+  function difficultyColor(difficulty) {
+    return { easy: '#22c55e', medium: '#f97316', hard: '#ef4444' }[difficulty] ?? '#22c55e';
+  }
+
   // ─── 상세 지도 ───────────────────────────────────────────────────────────
-  async function renderDetailMap(detailMapEl, selectedCourse, disasterZones = []) {
+  async function renderDetailMap(detailMapEl, selectedCourse, disasterZones = [], userLocation = null) {
     if (!detailMapEl) return;
     if (!selectedCourse?.lat || !selectedCourse?.lng) {
       renderCourseFallbackMap(detailMapEl, selectedCourse, '지도 좌표가 부족해 코스 단계로 표시합니다.');
@@ -45,15 +50,71 @@ export function useKakaoMap() {
     mapStatus.value = '카카오 지도를 불러오는 중입니다.';
     try {
       const kakao = await loadKakaoMapSdk();
-      const center = new kakao.maps.LatLng(selectedCourse.lat, selectedCourse.lng);
-      const map = new kakao.maps.Map(detailMapEl, { center, level: 5 });
+      const trailhead = new kakao.maps.LatLng(selectedCourse.lat, selectedCourse.lng);
+      const geometry = selectedCourse.route_geometry;
+      const hasRoute = Array.isArray(geometry) && geometry.length >= 2;
+      const routeColor = difficultyColor(selectedCourse.difficulty);
+
+      const map = new kakao.maps.Map(detailMapEl, { center: trailhead, level: hasRoute ? 6 : 5 });
       map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
-      new kakao.maps.Marker({ map, position: center, title: selectedCourse.name });
-      new kakao.maps.Circle({
-        map, center, radius: 180,
-        strokeWeight: 2, strokeColor: '#d29a12', strokeOpacity: 0.9, strokeStyle: 'dashed',
-        fillColor: '#d29a12', fillOpacity: 0.18,
-      });
+
+      // ── 사용자 현재 위치 ──────────────────────────────────────────────
+      const hasUserLoc = userLocation?.lat && userLocation?.lng;
+      if (hasUserLoc) {
+        const userPos = new kakao.maps.LatLng(userLocation.lat, userLocation.lng);
+        // 파란 원 (현재 위치)
+        new kakao.maps.Circle({
+          map, center: userPos, radius: 60,
+          strokeWeight: 2, strokeColor: '#1d4ed8', strokeOpacity: 1,
+          fillColor: '#3b82f6', fillOpacity: 0.55,
+        });
+        // 현재 위치 라벨
+        new kakao.maps.CustomOverlay({
+          map, position: userPos,
+          content: '<div style="background:#1d4ed8;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;white-space:nowrap;margin-bottom:4px;">📍 현재 위치</div>',
+          yAnchor: 2.8,
+        });
+        // 현재 위치 → 트레일헤드 점선
+        new kakao.maps.Polyline({
+          map,
+          path: [userPos, trailhead],
+          strokeWeight: 2,
+          strokeColor: '#1d4ed8',
+          strokeOpacity: 0.5,
+          strokeStyle: 'shortdot',
+        });
+      }
+
+      if (hasRoute) {
+        // 실제 등산로 경로 선 (난이도 색상)
+        const routePath = geometry.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
+        new kakao.maps.Polyline({
+          map, path: routePath,
+          strokeWeight: 4, strokeColor: routeColor, strokeOpacity: 0.85, strokeStyle: 'solid',
+        });
+        // 시작점(입구) 마커
+        new kakao.maps.Marker({ map, position: trailhead, title: `${selectedCourse.name} 입구` });
+        // 종점 마커
+        const endPoint = geometry[geometry.length - 1];
+        new kakao.maps.Marker({
+          map,
+          position: new kakao.maps.LatLng(endPoint.lat, endPoint.lng),
+          title: '종점',
+        });
+        // 경로 전체가 보이도록 범위 조정
+        const bounds = new kakao.maps.LatLngBounds();
+        routePath.forEach((p) => bounds.extend(p));
+        if (hasUserLoc) bounds.extend(new kakao.maps.LatLng(userLocation.lat, userLocation.lng));
+        map.setBounds(bounds);
+      } else {
+        new kakao.maps.Marker({ map, position: trailhead, title: selectedCourse.name });
+        new kakao.maps.Circle({
+          map, center: trailhead, radius: 180,
+          strokeWeight: 2, strokeColor: '#d29a12', strokeOpacity: 0.9, strokeStyle: 'dashed',
+          fillColor: '#d29a12', fillOpacity: 0.18,
+        });
+      }
+
       mapStatus.value = '';
       if (disasterZones.length) addDisasterZoneOverlays(map, kakao, disasterZones, selectedCourse.lat, selectedCourse.lng);
     } catch (err) {
@@ -74,10 +135,23 @@ export function useKakaoMap() {
     safeLinkMapStatus.value = '카카오 지도를 불러오는 중입니다.';
     try {
       const kakao = await loadKakaoMapSdk();
-      const center = new kakao.maps.LatLng(selectedCourse.lat, selectedCourse.lng);
-      const map = new kakao.maps.Map(safeLinkMapEl, { center, level: 5 });
+      const trailhead = new kakao.maps.LatLng(selectedCourse.lat, selectedCourse.lng);
+      const geometry = selectedCourse.route_geometry;
+      const hasRoute = Array.isArray(geometry) && geometry.length >= 2;
+      const map = new kakao.maps.Map(safeLinkMapEl, { center: trailhead, level: hasRoute ? 6 : 5 });
       map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
-      new kakao.maps.Marker({ map, position: center, title: '공유 대상 현재 위치' });
+
+      if (hasRoute) {
+        const routePath = geometry.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
+        new kakao.maps.Polyline({
+          map, path: routePath,
+          strokeWeight: 4, strokeColor: '#22c55e', strokeOpacity: 0.7, strokeStyle: 'solid',
+        });
+        const bounds = new kakao.maps.LatLngBounds();
+        routePath.forEach((p) => bounds.extend(p));
+        map.setBounds(bounds);
+      }
+      new kakao.maps.Marker({ map, position: trailhead, title: '등산로 입구' });
       safeLinkMapStatus.value = '';
     } catch (err) {
       console.error('Kakao map Safe Link render failed', err);

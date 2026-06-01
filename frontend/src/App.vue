@@ -196,6 +196,23 @@
             {{ weatherData?.source === 'mock' ? '추정 데이터' : '● LIVE' }}
           </span>
         </div>
+
+        <!-- 날씨 안전도 게이지 -->
+        <div class="weather-safety-gauge">
+          <div class="gauge-label-row">
+            <span class="gauge-label">기상 안전도</span>
+            <span :class="['gauge-badge', weatherSafetyClass]">{{ weatherSafetyLabel }}</span>
+          </div>
+          <div class="gauge-track">
+            <div
+              class="gauge-fill"
+              :class="weatherSafetyClass"
+              :style="{ width: weatherSafetyScore + '%' }"
+            ></div>
+          </div>
+          <span class="gauge-score">{{ weatherSafetyScore }}점</span>
+        </div>
+
         <div class="conditions-grid">
           <div class="condition-item">
             <span class="condition-icon">{{ weatherIcon }}</span>
@@ -208,14 +225,28 @@
             <strong class="condition-value">{{ weatherData.sunset || '확인 중' }}</strong>
           </div>
           <div class="condition-item">
+            <span class="condition-icon">💧</span>
+            <span class="condition-label">강수량</span>
+            <strong :class="['condition-value', weatherData.rainfall_mm > 0 ? 'warning' : '']">
+              {{ weatherData.rainfall_mm ?? 0 }}mm
+            </strong>
+          </div>
+          <div class="condition-item">
+            <span class="condition-icon">💨</span>
+            <span class="condition-label">풍속</span>
+            <strong :class="['condition-value', weatherData.wind_speed_ms >= 5 ? 'warning' : '']">
+              {{ weatherData.wind_speed_ms }}m/s
+            </strong>
+          </div>
+          <div class="condition-item">
+            <span class="condition-icon">💦</span>
+            <span class="condition-label">습도</span>
+            <strong class="condition-value">{{ weatherData.humidity_pct ?? '-' }}%</strong>
+          </div>
+          <div class="condition-item">
             <span class="condition-icon">🔥</span>
             <span class="condition-label">산불 위험</span>
             <strong :class="['condition-value', wildfireClass]">{{ wildfireLabel }}</strong>
-          </div>
-          <div v-if="weatherData.wind_speed_ms >= 5" class="condition-item">
-            <span class="condition-icon">💨</span>
-            <span class="condition-label">풍속</span>
-            <strong class="condition-value warning">{{ weatherData.wind_speed_ms }}m/s</strong>
           </div>
         </div>
       </section>
@@ -240,11 +271,85 @@
       </section>
 
       <!-- 준비 화면 (검색 전) -->
-      <article v-if="resultState === 'idle' && !loading" class="empty-state idle-state">
-        <span class="idle-icon">⛰️</span>
-        <h3>안전 코스를 찾아드릴게요</h3>
-        <p>산과 출발 조건, 동반자 유형을 설정한 후<br>검색 버튼을 누르면<br>날씨 · 일몰 · 재난 데이터를 종합해<br>안전 등급을 계산합니다.</p>
-      </article>
+      <div v-if="resultState === 'idle' && !loading" class="idle-screen">
+
+        <!-- 통계 배너 -->
+        <div class="idle-stats">
+          <div class="idle-stat">
+            <span class="idle-stat-num">8,000<span class="idle-stat-unit">건+</span></span>
+            <span class="idle-stat-label">연간 산악구조 출동</span>
+          </div>
+          <div class="idle-stat">
+            <span class="idle-stat-num">{{ publicCourses.length || 631 }}<span class="idle-stat-unit">개</span></span>
+            <span class="idle-stat-label">분석 탐방로</span>
+          </div>
+          <div class="idle-stat">
+            <span class="idle-stat-num">3<span class="idle-stat-unit">단계</span></span>
+            <span class="idle-stat-label">추천·주의·비추천</span>
+          </div>
+        </div>
+
+        <!-- 빠른 산 선택 -->
+        <div class="idle-quick-mountains">
+          <p class="idle-section-label">⚡ 인기 산 바로 선택</p>
+          <div class="mountain-chip-row">
+            <button
+              v-for="m in quickMountains"
+              :key="m"
+              class="mountain-chip"
+              :class="{ active: profile.mountainName === m }"
+              type="button"
+              @click="selectQuickMountain(m)"
+            >{{ m }}</button>
+          </div>
+        </div>
+
+        <!-- 사용 방법 -->
+        <div class="idle-how">
+          <p class="idle-section-label">📋 이용 방법</p>
+          <div class="how-steps">
+            <div class="how-step">
+              <span class="how-num">1</span>
+              <span class="how-text">산 선택<br><small>날씨 자동 로드</small></span>
+            </div>
+            <div class="how-arrow">→</div>
+            <div class="how-step">
+              <span class="how-num">2</span>
+              <span class="how-text">조건 입력<br><small>동반자·시간</small></span>
+            </div>
+            <div class="how-arrow">→</div>
+            <div class="how-step">
+              <span class="how-num">3</span>
+              <span class="how-text">안전 등급<br><small>추천 코스 확인</small></span>
+            </div>
+            <div class="how-arrow">→</div>
+            <div class="how-step">
+              <span class="how-num">4</span>
+              <span class="how-text">보호자 공유<br><small>세이프 링크</small></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 오늘의 안전 팁 -->
+        <div class="idle-tip">
+          <span class="idle-tip-icon">💡</span>
+          <span class="idle-tip-text">{{ dailyTip }}</span>
+        </div>
+
+        <!-- 데이터 출처 -->
+        <div class="idle-sources">
+          <p class="idle-section-label">📡 연동 데이터</p>
+          <div class="source-chips">
+            <span class="source-chip">기상청 초단기실황</span>
+            <span class="source-chip">한국천문연구원 일몰</span>
+            <span class="source-chip">산림청 산불예보</span>
+            <span class="source-chip">국립공원 탐방로</span>
+            <span class="source-chip">재난위험지구</span>
+            <span class="source-chip">브이월드 등산로</span>
+          </div>
+        </div>
+
+      </div>
 
       <!-- 비추천 공지 -->
       <article v-if="resultState === 'no_safe_course'" class="empty-state">
@@ -1439,6 +1544,54 @@ const wildfireLabel = computed(() => {
   return { low: '낮음', medium: '중간', high: '높음', very_high: '매우 높음' }[weatherData.value?.wildfire_risk] || '낮음';
 });
 
+const weatherSafetyScore = computed(() => {
+  const w = weatherData.value;
+  if (!w) return 100;
+  let score = 100;
+  const rainfall = parseFloat(w.rainfall_mm ?? 0);
+  const wind = parseFloat(w.wind_speed_ms ?? 0);
+  const temp = parseFloat(w.temperature_c ?? 15);
+  if (rainfall >= 10) score -= 45;
+  else if (rainfall > 0) score -= 20;
+  if (wind >= 8) score -= 30;
+  else if (wind >= 5) score -= 15;
+  if (temp <= 0 || temp >= 32) score -= 20;
+  if (rainfall >= 5 && wind >= 5) score -= 20;
+  if (temp <= 2 && rainfall > 0) score -= 15;
+  if (temp >= 30 && wind < 2) score -= 10;
+  return Math.max(score, 0);
+});
+
+const weatherSafetyLabel = computed(() => {
+  const s = weatherSafetyScore.value;
+  if (s >= 80) return '산행 적합';
+  if (s >= 55) return '주의 필요';
+  return '산행 부적합';
+});
+
+const weatherSafetyClass = computed(() => {
+  const s = weatherSafetyScore.value;
+  if (s >= 80) return 'safe';
+  if (s >= 55) return 'caution';
+  return 'danger';
+});
+
+const quickMountains = ['관악산', '북한산', '청계산', '도봉산', '남산', '수락산', '설악산', '지리산'];
+
+const dailyTip = computed(() => {
+  const h = new Date().getHours();
+  if (h < 6)  return '이른 새벽 산행은 일출 후 시작하세요. 저체온과 시야 확보가 중요합니다.';
+  if (h < 10) return '오전 이른 출발이 가장 안전합니다. 일몰 전 여유 있는 하산을 꼭 지켜주세요.';
+  if (h < 14) return '한낮 산행 시 충분한 수분 보충과 그늘 휴식을 챙기세요. 자외선 차단도 필수입니다.';
+  if (h < 17) return '오후 출발 시 일몰 시간을 반드시 확인하세요. 올라가 하산 여유 시간을 자동으로 계산합니다.';
+  return '일몰이 가까운 시간입니다. 오늘 산행은 내일 아침으로 연기하거나 짧은 산책 코스를 선택하세요.';
+});
+
+function selectQuickMountain(mountainName) {
+  profile.mountainName = mountainName;
+  handleMountainChange();
+}
+
 // 동반자 칩 라벨
 const companionChipLabel = computed(() => {
   const map = {
@@ -1542,7 +1695,7 @@ async function stopHikingAndRecord() {
 async function renderMaps() {
   await nextTick();
   if (activeTab.value === 'guide') {
-    renderDetailMap(detailMapEl.value, selectedCourse.value, disasterZones.value);
+    renderDetailMap(detailMapEl.value, selectedCourse.value, disasterZones.value, location.value);
   }
   if (activeTab.value === 'safeLink') {
     renderSafeLinkMap(safeLinkMapEl.value, selectedCourse.value);
