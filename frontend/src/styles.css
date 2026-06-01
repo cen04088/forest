@@ -86,37 +86,42 @@ p {
 }
 
 .app-header {
-  padding-top: 10px;
+  margin: -18px -18px 16px;
+  padding: 20px 18px 18px;
+  background: linear-gradient(145deg, #e8f8ed 0%, #d4f0dc 60%, #edf9ee 100%);
+  border-radius: 0 0 24px 24px;
 }
 
 /* 헤더 로고 이미지 */
 .app-header-left {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .app-logo {
-  width: 130px;
+  width: 120px;
   height: auto;
   object-fit: contain;
   display: block;
+  mix-blend-mode: multiply;
 }
 
 .app-tagline {
-  max-width: 310px;
-  color: var(--muted);
+  max-width: 290px;
+  color: #4a6b4e;
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 /* 사이드바 로고 */
 .sidebar-logo-img {
-  width: 90px;
+  width: 80px;
   height: auto;
   object-fit: contain;
   display: block;
+  mix-blend-mode: multiply;
 }
 
 .app-header p:not(.eyebrow) {
@@ -2454,7 +2459,7 @@ p {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: var(--paper);
+  background: linear-gradient(145deg, #e8f8ed 0%, #d4f0dc 100%);
   border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
@@ -2465,6 +2470,7 @@ p {
   width: 72px;
   height: auto;
   object-fit: contain;
+  mix-blend-mode: multiply;
 }
 
 .guardian-status-chip {
