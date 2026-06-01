@@ -2645,3 +2645,97 @@ p {
 .disaster-zone-list span {
   color: var(--muted);
 }
+
+/* ── 헤더 인증 버튼 ─────────────────────────────────────────────────────── */
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.login-btn {
+  padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--green);
+  background: transparent; color: var(--green); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.login-btn:hover { background: var(--green-soft); }
+.auth-user-btn {
+  display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px;
+  border-radius: 20px; border: 1.5px solid #e2e8f0; background: #f8fafc;
+  cursor: pointer; font-size: 13px; color: #334155;
+}
+.auth-user-btn:hover { border-color: var(--green); }
+.auth-avatar {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--green);
+  color: #fff; font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.auth-nickname { font-weight: 600; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── 인증 모달 ──────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 16px;
+}
+.auth-modal {
+  background: #fff; border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 360px;
+  position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.18);
+}
+.modal-close {
+  position: absolute; top: 14px; right: 14px; background: none; border: none;
+  font-size: 18px; color: #94a3b8; cursor: pointer; line-height: 1; padding: 4px;
+}
+.modal-close:hover { color: #334155; }
+.auth-tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1.5px solid #e2e8f0; }
+.auth-tabs button {
+  flex: 1; padding: 9px; background: #f8fafc; border: none; font-size: 14px;
+  font-weight: 600; color: #64748b; cursor: pointer; transition: background .15s, color .15s;
+}
+.auth-tabs button.active { background: var(--green); color: #fff; }
+.auth-form .field { margin-bottom: 12px; }
+.auth-error {
+  background: #fee2e2; color: #991b1b; border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; margin-bottom: 12px;
+}
+.auth-logout-row { text-align: center; margin-top: 12px; }
+
+/* ── 커뮤니티 목록 ──────────────────────────────────────────────────────── */
+.community-loading { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; }
+.community-empty { text-align: center; padding: 48px 16px; color: var(--muted); }
+.community-empty p { margin-bottom: 16px; }
+.post-mountain { font-size: 12px; color: var(--green); background: var(--green-soft); padding: 2px 8px; border-radius: 12px; margin-left: auto; white-space: nowrap; }
+.category-tag { font-size: 11px; background: #f1f5f9; color: #475569; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+.pagination-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; font-size: 14px; color: #64748b; }
+
+/* ── 게시글 상세 ─────────────────────────────────────────────────────────── */
+.post-detail-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.back-btn { background: none; border: none; color: var(--green); font-size: 14px; font-weight: 600; cursor: pointer; padding: 0; }
+.back-btn:hover { text-decoration: underline; }
+.post-detail-title { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 8px; line-height: 1.4; }
+.post-detail-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 20px; align-items: center; }
+.post-detail-content { font-size: 15px; line-height: 1.8; color: #334155; white-space: pre-wrap; margin-bottom: 20px; }
+.post-detail-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; margin-bottom: 24px; }
+.like-btn {
+  padding: 7px 16px; border-radius: 20px; border: 1.5px solid #e2e8f0;
+  background: #f8fafc; color: #475569; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.like-btn:hover, .like-btn.liked { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+.outline-btn.danger { border-color: var(--red); color: var(--red); }
+.outline-btn.danger:hover { background: var(--red-soft); }
+
+/* ── 댓글 ────────────────────────────────────────────────────────────────── */
+.comments-section h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: #1e293b; }
+.comment-item { padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+.comment-item:last-child { border-bottom: none; }
+.comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.comment-author { font-size: 13px; font-weight: 700; color: #334155; }
+.comment-time { font-size: 12px; color: var(--muted); }
+.comment-delete { margin-left: auto; background: none; border: none; font-size: 12px; color: var(--muted); cursor: pointer; }
+.comment-delete:hover { color: var(--red); }
+.comment-content { font-size: 14px; color: #475569; line-height: 1.6; }
+.comment-form { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.comment-form textarea { padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; }
+.comment-form textarea:focus { outline: none; border-color: var(--green); }
+.comment-login-prompt { text-align: center; padding: 20px; margin-top: 16px; }
+
+/* ── 글쓰기 폼 ───────────────────────────────────────────────────────────── */
+.write-form { display: grid; gap: 12px; }
+.write-form textarea { padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; width: 100%; box-sizing: border-box; }
+.write-form textarea:focus { outline: none; border-color: var(--green); }

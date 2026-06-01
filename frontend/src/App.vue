@@ -58,11 +58,18 @@
         <h1>ForestRx</h1>
         <p>60대 이상 산악사고의 40%를 줄이기 위해, 어린이·노약자 동반 산행을 AI로 사전 진단합니다.</p>
       </div>
-      <button class="icon-btn" type="button" title="새로고침" @click="loadEverything">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 3v4h-4M6 21v-4h4" />
-        </svg>
-      </button>
+      <div class="header-actions">
+        <button v-if="authUser" class="auth-user-btn" type="button" @click="showAuthModal = true">
+          <span class="auth-avatar">{{ authUser.nickname[0] }}</span>
+          <span class="auth-nickname">{{ authUser.nickname }}</span>
+        </button>
+        <button v-else class="login-btn" type="button" @click="showAuthModal = true">로그인</button>
+        <button class="icon-btn" type="button" title="새로고침" @click="loadEverything">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 3v4h-4M6 21v-4h4" />
+          </svg>
+        </button>
+      </div>
     </header>
 
     <!-- ─── 에러 배너 ──────────────────────────────────────────────────── -->
@@ -89,7 +96,6 @@
       <button :class="{ active: activeTab === 'community' }" type="button" @click="activeTab = 'community'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         <span>커뮤니티</span>
-        <span class="tab-badge">준비중</span>
       </button>
       <button :class="{ active: activeTab === 'myPage' }" type="button" @click="activeTab = 'myPage'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -449,65 +455,159 @@
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 커뮤니티 탭 (준비중)                                                -->
+    <!-- 커뮤니티 탭                                                          -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <section v-else-if="activeTab === 'community'" class="screen-stack">
-      <section class="panel">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">Community</p>
-            <h2>동반 산행 커뮤니티</h2>
+
+      <!-- ── 목록 뷰 ── -->
+      <template v-if="communityView === 'list'">
+        <section class="panel community-feed">
+          <div class="section-title compact">
+            <div>
+              <p class="eyebrow">Community</p>
+              <h2>동반 산행 커뮤니티</h2>
+            </div>
+            <button v-if="authUser" class="primary-btn" type="button" @click="openWrite">글쓰기</button>
+            <button v-else class="outline-btn" type="button" @click="showAuthModal = true">로그인 후 글쓰기</button>
           </div>
-          <span class="mini-status">후기 기반</span>
-        </div>
 
-        <!-- 준비중 배너 -->
-        <div class="coming-soon-banner">
-          <p class="coming-soon-icon">🏗️</p>
-          <strong>커뮤니티 기능 준비 중</strong>
-          <p>약자 동반 산행 후기, 현장 정보 공유 기능을 개발하고 있습니다.<br>아래는 서비스 오픈 시 제공될 샘플입니다.</p>
-        </div>
-
-        <div class="community-hero">
-          <p>약자 동반 산행 후기</p>
-          <h3>아이, 부모님과 다녀온 안전 정보를 함께 모아요</h3>
-          <span>화장실, 쉼터, 계단, 급경사처럼 실제 동반자가 체감한 정보를 코스 추천에 보태는 공간입니다.</span>
-        </div>
-      </section>
-
-      <section class="panel community-feed">
-        <div class="section-title compact">
-          <div>
-            <p class="eyebrow">Reviews</p>
-            <h2>최근 동반 산행 후기</h2>
+          <div class="filter-row">
+            <button :class="{ active: communityCategory === '' }" type="button" @click="filterCategory('')">전체</button>
+            <button :class="{ active: communityCategory === 'review' }" type="button" @click="filterCategory('review')">등산 후기</button>
+            <button :class="{ active: communityCategory === 'question' }" type="button" @click="filterCategory('question')">질문</button>
+            <button :class="{ active: communityCategory === 'safety' }" type="button" @click="filterCategory('safety')">안전 제보</button>
+            <button :class="{ active: communityCategory === 'general' }" type="button" @click="filterCategory('general')">자유</button>
           </div>
-          <button class="outline-btn" type="button" disabled>후기 쓰기 (준비중)</button>
-        </div>
 
-        <div class="filter-row">
-          <button :class="{ active: activeCommunityFilter === '전체' }" @click="activeCommunityFilter = '전체'">전체</button>
-          <button :class="{ active: activeCommunityFilter === '어린이' }" @click="activeCommunityFilter = '어린이'">🧒 어린이</button>
-          <button :class="{ active: activeCommunityFilter === '노약자' }" @click="activeCommunityFilter = '노약자'">🧓 노약자</button>
-          <button :class="{ active: activeCommunityFilter === '주의' }" @click="activeCommunityFilter = '주의'">⚠️ 주의</button>
-        </div>
+          <div v-if="communityLoading" class="community-loading">게시글을 불러오는 중입니다…</div>
+          <div v-else-if="communityError" class="error-banner">{{ communityError }}</div>
+          <div v-else-if="communityPosts.length === 0" class="community-empty">
+            <p>아직 게시글이 없습니다.</p>
+            <button v-if="authUser" class="primary-btn" type="button" @click="openWrite">첫 글 작성하기</button>
+          </div>
 
-        <article v-for="post in filteredCommunityPosts" :key="post.title" class="community-post-modern">
-          <div class="post-header">
-            <div class="post-avatar">{{ post.author[0] }}</div>
-            <div class="post-meta">
-              <strong>{{ post.author }}</strong>
-              <span>{{ post.time }} · <span :class="['safety-text', post.color]">{{ post.tag }}</span></span>
+          <article
+            v-for="post in communityPosts"
+            :key="post.id"
+            class="community-post-modern"
+            style="cursor:pointer"
+            @click="openPost(post.id)"
+          >
+            <div class="post-header">
+              <div class="post-avatar">{{ post.author[0] }}</div>
+              <div class="post-meta">
+                <strong>{{ post.author }}</strong>
+                <span>{{ formatRelativeTime(post.created_at) }} · <span class="category-tag">{{ post.category_label }}</span></span>
+              </div>
+              <span v-if="post.mountain" class="post-mountain">⛰️ {{ post.mountain }}</span>
+            </div>
+            <div class="post-content">
+              <strong>{{ post.title }}</strong>
+              <p>{{ post.content.length > 120 ? post.content.slice(0, 120) + '…' : post.content }}</p>
+            </div>
+            <div class="post-actions">
+              <span>👍 {{ post.like_count }}</span>
+              <span>💬 {{ post.comment_count }}</span>
+              <span>👀 {{ post.view_count }}</span>
+            </div>
+          </article>
+
+          <div v-if="communityTotal > 15" class="pagination-row">
+            <button class="outline-btn" type="button" :disabled="communityPage === 1" @click="loadPosts(communityPage - 1)">이전</button>
+            <span>{{ communityPage }} / {{ Math.ceil(communityTotal / 15) }}</span>
+            <button class="outline-btn" type="button" :disabled="communityPage * 15 >= communityTotal" @click="loadPosts(communityPage + 1)">다음</button>
+          </div>
+        </section>
+      </template>
+
+      <!-- ── 상세 뷰 ── -->
+      <template v-else-if="communityView === 'detail' && communityPost">
+        <section class="panel">
+          <div class="post-detail-nav">
+            <button class="back-btn" type="button" @click="communityView = 'list'">← 목록</button>
+            <span class="category-tag">{{ communityPost.category_label }}</span>
+          </div>
+          <h2 class="post-detail-title">{{ communityPost.title }}</h2>
+          <div class="post-detail-meta">
+            <span>{{ communityPost.author }}</span>
+            <span>{{ formatRelativeTime(communityPost.created_at) }}</span>
+            <span v-if="communityPost.mountain">⛰️ {{ communityPost.mountain }}</span>
+            <span>👀 {{ communityPost.view_count }}</span>
+          </div>
+          <div class="post-detail-content">{{ communityPost.content }}</div>
+          <div class="post-detail-actions">
+            <button
+              :class="['like-btn', { liked: communityPost.is_liked }]"
+              type="button"
+              @click="toggleLike"
+            >👍 {{ communityPost.is_liked ? '좋아요 취소' : '좋아요' }} {{ communityPost.like_count }}</button>
+            <template v-if="communityPost.is_owner">
+              <button class="outline-btn" type="button" @click="openEdit">수정</button>
+              <button class="outline-btn danger" type="button" @click="removePost">삭제</button>
+            </template>
+          </div>
+
+          <!-- 댓글 -->
+          <div class="comments-section">
+            <h3>댓글 {{ communityPost.comments?.length ?? 0 }}개</h3>
+            <div v-for="c in communityPost.comments" :key="c.id" class="comment-item">
+              <div class="comment-header">
+                <span class="comment-author">{{ c.author }}</span>
+                <span class="comment-time">{{ formatRelativeTime(c.created_at) }}</span>
+                <button v-if="c.is_owner" class="comment-delete" type="button" @click="removeComment(c.id)">삭제</button>
+              </div>
+              <p class="comment-content">{{ c.content }}</p>
+            </div>
+            <div v-if="authUser" class="comment-form">
+              <textarea v-model="communityCommentInput" placeholder="댓글을 입력하세요…" rows="2"></textarea>
+              <button class="primary-btn" type="button" :disabled="!communityCommentInput.trim()" @click="submitComment">댓글 달기</button>
+            </div>
+            <div v-else class="comment-login-prompt">
+              <button class="outline-btn" type="button" @click="showAuthModal = true">로그인 후 댓글 작성</button>
             </div>
           </div>
-          <div class="post-content">
-            <strong>{{ post.title }}</strong>
-            <p>{{ post.body }}</p>
+        </section>
+      </template>
+
+      <!-- ── 작성/수정 뷰 ── -->
+      <template v-else-if="communityView === 'write' || communityView === 'edit'">
+        <section class="panel">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">{{ communityView === 'edit' ? 'Edit' : 'Write' }}</p>
+              <h2>{{ communityView === 'edit' ? '게시글 수정' : '게시글 작성' }}</h2>
+            </div>
+            <button class="outline-btn" type="button" @click="communityView = communityPost ? 'detail' : 'list'">취소</button>
           </div>
-          <div class="post-actions">
-            <button class="like-btn" type="button">👍 유용해요 {{ post.likes }}</button>
-          </div>
-        </article>
-      </section>
+          <div v-if="writeError" class="error-banner" role="alert">{{ writeError }}</div>
+          <form class="write-form" @submit.prevent="submitWrite">
+            <label class="field">
+              <span>카테고리</span>
+              <select v-model="writeForm.category">
+                <option value="review">등산 후기</option>
+                <option value="question">질문</option>
+                <option value="safety">안전 제보</option>
+                <option value="general">자유게시판</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>관련 산 (선택)</span>
+              <input v-model="writeForm.mountain" type="text" placeholder="예: 북한산" />
+            </label>
+            <label class="field wide-field">
+              <span>제목</span>
+              <input v-model="writeForm.title" type="text" placeholder="제목을 입력하세요" required />
+            </label>
+            <label class="field wide-field">
+              <span>내용</span>
+              <textarea v-model="writeForm.content" placeholder="내용을 입력하세요" rows="8" required></textarea>
+            </label>
+            <button class="primary-btn wide-field" type="submit" :disabled="writeLoading">
+              {{ writeLoading ? '저장 중…' : (communityView === 'edit' ? '수정 완료' : '게시하기') }}
+            </button>
+          </form>
+        </section>
+      </template>
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -564,12 +664,51 @@
         </label>
       </section>
     </section>
+    <!-- ─── 로그인/회원가입 모달 ────────────────────────────────────────── -->
+    <div v-if="showAuthModal" class="modal-overlay" role="dialog" aria-modal="true" @click.self="showAuthModal = false">
+      <div class="auth-modal">
+        <button class="modal-close" type="button" aria-label="닫기" @click="showAuthModal = false">✕</button>
+        <div class="auth-tabs">
+          <button :class="{ active: authMode === 'login' }" type="button" @click="authMode = 'login'; authError = ''">로그인</button>
+          <button :class="{ active: authMode === 'register' }" type="button" @click="authMode = 'register'; authError = ''">회원가입</button>
+        </div>
+        <form class="auth-form" @submit.prevent="authMode === 'login' ? login() : register()">
+          <div v-if="authError" class="auth-error">{{ authError }}</div>
+          <label class="field">
+            <span>아이디</span>
+            <input v-model="authForm.username" type="text" placeholder="아이디 (3자 이상)" autocomplete="username" required />
+          </label>
+          <label v-if="authMode === 'register'" class="field">
+            <span>닉네임</span>
+            <input v-model="authForm.nickname" type="text" placeholder="닉네임 (미입력 시 아이디 사용)" />
+          </label>
+          <label class="field">
+            <span>비밀번호</span>
+            <input v-model="authForm.password" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" required />
+          </label>
+          <label v-if="authMode === 'register'" class="field">
+            <span>이메일 (선택)</span>
+            <input v-model="authForm.email" type="email" placeholder="이메일" />
+          </label>
+          <button class="primary-btn wide-field" type="submit" :disabled="authLoading">
+            {{ authLoading ? '처리 중…' : (authMode === 'login' ? '로그인' : '가입하기') }}
+          </button>
+          <p v-if="authUser" class="auth-logout-row">
+            <button class="outline-btn" type="button" @click="logout">로그아웃</button>
+          </p>
+        </form>
+      </div>
+    </div>
   </main>
 </template>
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { fetchCourses, fetchDataSources, fetchRecommendations, fetchDisasterZones, getSafeLink } from './api';
+import {
+  fetchCourses, fetchDataSources, fetchRecommendations, fetchDisasterZones, getSafeLink,
+  apiRegister, apiLogin, apiLogout, apiMe,
+  fetchPosts, fetchPost, createPost, updatePost, deletePost, likePost, createComment, deleteComment,
+} from './api';
 import { useLocation } from './composables/useLocation.js';
 import { useKakaoMap } from './composables/useKakaoMap.js';
 import { useSafeLink, useGuardianView } from './composables/useSafeLink.js';
@@ -692,18 +831,28 @@ const companionTypes = [
   { value: 'solo', label: '혼자 산행' },
 ];
 
-const activeCommunityFilter = ref('전체');
+// ─── 인증 상태 ────────────────────────────────────────────────────────────
+const authToken = ref(localStorage.getItem('auth_token') || '');
+const authUser = ref(null);
+const showAuthModal = ref(false);
+const authMode = ref('login');
+const authForm = reactive({ username: '', password: '', nickname: '', email: '' });
+const authLoading = ref(false);
+const authError = ref('');
 
-const rawCommunityPosts = [
-  { author: '초코아빠', time: '2시간 전', likes: 12, title: '초등학생과 90분 코스로 다녀왔어요', body: '초입 화장실 이후에는 쉼터 간격이 길어 물을 미리 챙기는 편이 좋았습니다.', tag: '어린이', color: 'green' },
-  { author: '산좋아', time: '5시간 전', likes: 8, title: '부모님과 갈 때 계단 구간은 우회가 좋아요', body: '초반 경사는 완만하지만 중간 데크 계단이 길어 쉬는 시간을 넉넉히 잡았습니다.', tag: '노약자', color: 'yellow' },
-  { author: '비오는날', time: '하루 전', likes: 24, title: '비 온 다음날은 흙길보다 포장 접근로 추천', body: '미끄러운 구간이 있어 유모차나 보행 보조가 필요한 동반자는 대체 코스가 안전했습니다.', tag: '주의', color: 'yellow' },
-];
-
-const filteredCommunityPosts = computed(() => {
-  if (activeCommunityFilter.value === '전체') return rawCommunityPosts;
-  return rawCommunityPosts.filter((post) => post.tag === activeCommunityFilter.value);
-});
+// ─── 커뮤니티 상태 ────────────────────────────────────────────────────────
+const communityView = ref('list'); // 'list' | 'detail' | 'write' | 'edit'
+const communityPosts = ref([]);
+const communityPost = ref(null);
+const communityCategory = ref('');
+const communityPage = ref(1);
+const communityTotal = ref(0);
+const communityLoading = ref(false);
+const communityError = ref('');
+const communityCommentInput = ref('');
+const writeForm = reactive({ title: '', content: '', category: 'general', mountain: '', course_name: '' });
+const writeError = ref('');
+const writeLoading = ref(false);
 
 // ─── GPS 버튼 ─────────────────────────────────────────────────────────────
 const gpsBtnTitle = computed(() => {
@@ -722,18 +871,177 @@ async function handleGPS() {
 }
 
 // ─── 라이프사이클 ─────────────────────────────────────────────────────────
-onMounted(() => {
+onMounted(async () => {
   if (isGuardianView.value) {
     fetchGuardianSession();
     _guardianPollTimer = setInterval(fetchGuardianSession, 20000);
   } else {
+    await loadMe();
     loadEverything();
+    loadPosts();
   }
 });
 
 onUnmounted(() => {
   if (_guardianPollTimer) clearInterval(_guardianPollTimer);
 });
+
+// ─── 인증 함수 ────────────────────────────────────────────────────────────
+async function loadMe() {
+  if (!authToken.value) return;
+  try {
+    const data = await apiMe(authToken.value);
+    authUser.value = data.user;
+    if (!data.user) { authToken.value = ''; localStorage.removeItem('auth_token'); }
+  } catch { authToken.value = ''; localStorage.removeItem('auth_token'); }
+}
+
+async function login() {
+  authLoading.value = true;
+  authError.value = '';
+  try {
+    const data = await apiLogin({ username: authForm.username, password: authForm.password });
+    authToken.value = data.token;
+    authUser.value = data.user;
+    localStorage.setItem('auth_token', data.token);
+    showAuthModal.value = false;
+    authForm.username = ''; authForm.password = '';
+    if (communityView.value === 'list') loadPosts();
+  } catch (err) { authError.value = err.message; }
+  finally { authLoading.value = false; }
+}
+
+async function register() {
+  authLoading.value = true;
+  authError.value = '';
+  try {
+    const data = await apiRegister({ username: authForm.username, password: authForm.password, nickname: authForm.nickname, email: authForm.email });
+    authToken.value = data.token;
+    authUser.value = data.user;
+    localStorage.setItem('auth_token', data.token);
+    showAuthModal.value = false;
+    authForm.username = ''; authForm.password = ''; authForm.nickname = ''; authForm.email = '';
+  } catch (err) { authError.value = err.message; }
+  finally { authLoading.value = false; }
+}
+
+async function logout() {
+  await apiLogout(authToken.value).catch(() => {});
+  authToken.value = '';
+  authUser.value = null;
+  localStorage.removeItem('auth_token');
+  showAuthModal.value = false;
+  communityView.value = 'list';
+  loadPosts();
+}
+
+// ─── 커뮤니티 함수 ────────────────────────────────────────────────────────
+async function loadPosts(page = 1) {
+  communityLoading.value = true;
+  communityError.value = '';
+  communityPage.value = page;
+  try {
+    const data = await fetchPosts({ category: communityCategory.value, page }, authToken.value);
+    communityPosts.value = data.posts;
+    communityTotal.value = data.total;
+  } catch (err) { communityError.value = err.message; }
+  finally { communityLoading.value = false; }
+}
+
+async function openPost(id) {
+  communityLoading.value = true;
+  try {
+    communityPost.value = await fetchPost(id, authToken.value);
+    communityView.value = 'detail';
+  } catch (err) { communityError.value = err.message; }
+  finally { communityLoading.value = false; }
+}
+
+function openWrite() {
+  Object.assign(writeForm, { title: '', content: '', category: 'general', mountain: '', course_name: '' });
+  writeError.value = '';
+  communityPost.value = null;
+  communityView.value = 'write';
+}
+
+function openEdit() {
+  Object.assign(writeForm, {
+    title: communityPost.value.title,
+    content: communityPost.value.content,
+    category: communityPost.value.category,
+    mountain: communityPost.value.mountain,
+    course_name: communityPost.value.course_name,
+  });
+  writeError.value = '';
+  communityView.value = 'edit';
+}
+
+async function submitWrite() {
+  writeLoading.value = true;
+  writeError.value = '';
+  try {
+    if (communityView.value === 'edit') {
+      communityPost.value = await updatePost(communityPost.value.id, writeForm, authToken.value);
+      communityView.value = 'detail';
+    } else {
+      const post = await createPost(writeForm, authToken.value);
+      await loadPosts();
+      communityPost.value = await fetchPost(post.id, authToken.value);
+      communityView.value = 'detail';
+    }
+  } catch (err) { writeError.value = err.message; }
+  finally { writeLoading.value = false; }
+}
+
+async function toggleLike() {
+  if (!authUser.value) { showAuthModal.value = true; return; }
+  try {
+    const data = await likePost(communityPost.value.id, authToken.value);
+    communityPost.value.is_liked = data.is_liked;
+    communityPost.value.like_count = data.like_count;
+  } catch {}
+}
+
+async function submitComment() {
+  if (!communityCommentInput.value.trim()) return;
+  try {
+    const comment = await createComment(communityPost.value.id, communityCommentInput.value, authToken.value);
+    communityPost.value.comments.push(comment);
+    communityPost.value.comment_count = (communityPost.value.comment_count || 0) + 1;
+    communityCommentInput.value = '';
+  } catch (err) { communityError.value = err.message; }
+}
+
+async function removeComment(id) {
+  try {
+    await deleteComment(id, authToken.value);
+    communityPost.value.comments = communityPost.value.comments.filter((c) => c.id !== id);
+    communityPost.value.comment_count = Math.max(0, (communityPost.value.comment_count || 1) - 1);
+  } catch {}
+}
+
+async function removePost() {
+  if (!confirm('게시글을 삭제하시겠습니까?')) return;
+  try {
+    await deletePost(communityPost.value.id, authToken.value);
+    communityPost.value = null;
+    communityView.value = 'list';
+    loadPosts();
+  } catch (err) { communityError.value = err.message; }
+}
+
+function filterCategory(cat) {
+  communityCategory.value = cat;
+  loadPosts(1);
+}
+
+function formatRelativeTime(isoString) {
+  const diff = Math.floor((Date.now() - new Date(isoString)) / 1000);
+  if (diff < 60) return '방금 전';
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  return `${Math.floor(diff / 86400)}일 전`;
+}
 
 async function loadEverything() {
   await Promise.all([loadSources(), loadCourses()]);
@@ -810,6 +1118,7 @@ function selectCourse(course) {
 
 // ─── 감시자 ───────────────────────────────────────────────────────────────
 watch([selectedCourse, activeTab], () => { renderMaps(); });
+watch(activeTab, (tab) => { if (tab === 'community' && communityPosts.value.length === 0) loadPosts(); });
 watch(() => [profile.departureDate, profile.departureTime], () => { ensureFutureDepartureTime(); });
 
 // ─── 계산 속성 ────────────────────────────────────────────────────────────

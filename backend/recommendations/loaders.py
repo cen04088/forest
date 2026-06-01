@@ -7,7 +7,27 @@ from pathlib import Path
 from django.conf import settings
 
 from .data import COURSES
-from .mountain_coordinates import find_mountain_coordinates
+from .mountain_coordinates import (
+    MOUNTAIN_ALIASES,
+    MOUNTAIN_COORDINATES,
+    AMBIGUOUS_MOUNTAIN_NAMES,
+    find_mountain_coordinates,
+)
+
+# 산별 실제 혼잡도 기본값 (데이터 기반 없음 → 통계 기반 추정)
+MOUNTAIN_CROWDING = {
+    "북한산": 0.82, "도봉산": 0.78, "남산": 0.80, "인왕산": 0.72,
+    "관악산": 0.75, "청계산": 0.65, "아차산": 0.70, "용마산": 0.50,
+    "수락산": 0.38, "불암산": 0.42, "마니산": 0.55,
+    "설악산": 0.68, "한라산": 0.70, "지리산": 0.55, "계룡산": 0.55,
+    "내장산": 0.58, "오대산": 0.48, "덕유산": 0.45, "속리산": 0.52,
+    "주왕산": 0.48, "가야산": 0.55, "치악산": 0.45, "소백산": 0.40,
+    "무등산": 0.58, "월출산": 0.42, "월악산": 0.42, "가리왕산": 0.30,
+    "팔공산": 0.60, "두륜산": 0.40, "조계산": 0.45,
+    "한려해상": 0.35, "다도해해상": 0.30, "태안해안": 0.35, "변산반도": 0.40,
+    "태백산": 0.40, "함백산": 0.32, "두타산": 0.35,
+}
+_DEFAULT_CROWDING = 0.40
 
 
 TRAIL_CSV_PATH = settings.BASE_DIR.parent / "국립공원공단_탐방로_20240911.csv"
@@ -104,12 +124,16 @@ def normalize_trail_row(index, row):
     end = clean_text(row.get("구간_종착지점"))
     distance_km = parse_distance_km(row.get("탐방로길이"))
 
-    if not name or distance_km <= 0:
+    # 너무 짧거나(100m급 단편) 비현실적으로 긴 구간 제거
+    if not name or distance_km < 0.5 or distance_km > 25:
         return None
 
     up_minutes = parse_int(row.get("소요시간_상행"))
     down_minutes = parse_int(row.get("소요시간_하행"))
     duration_min = max(up_minutes, down_minutes, estimate_duration(distance_km))
+    # 소요시간 이상값(10시간 초과) → 거리 기반으로 재추정
+    if duration_min > 600:
+        duration_min = estimate_duration(distance_km)
     difficulty = infer_difficulty(distance_km, duration_min)
 
     dedupe_key = "|".join([name, start, waypoint, end, str(distance_km)])
@@ -129,7 +153,7 @@ def normalize_trail_row(index, row):
         "elevation_gain_m": infer_elevation_gain(distance_km, difficulty),
         "lat": coordinates["lat"] if coordinates else None,
         "lng": coordinates["lng"] if coordinates else None,
-        "crowding": 0.35,
+        "crowding": MOUNTAIN_CROWDING.get(mountain, _DEFAULT_CROWDING),
         "highlights": build_highlights(start, waypoint, end),
         "source": "국립공원공단_탐방로_20240911+좌표보강" if coordinates else "국립공원공단_탐방로_20240911",
         "segment_nodes": build_segment_nodes(start, waypoint, end),
@@ -308,50 +332,21 @@ def infer_elevation_gain(distance_km, difficulty):
 
 
 def infer_mountain_name(*parts):
+    """시작·경유·종착 지점 텍스트에서 산 이름을 추론한다.
+    MOUNTAIN_COORDINATES와 MOUNTAIN_ALIASES를 단일 소스로 사용한다."""
     joined = " ".join(part for part in parts if part)
-    known_names = [
-        "북한산",
-        "도봉산",
-        "지리산",
-        "월출산",
-        "한려해상",
-        "태안해안",
-        "덕유산",
-        "변산반도",
-        "소백산",
-        "오대산",
-        "가야산",
-        "치악산",
-        "설악산",
-        "월악산",
-        "계룡산",
-        "무등산",
-        "내장산",
-        "속리산",
-        "주왕산",
-    ]
-    for mountain in known_names:
+
+    # 1. MOUNTAIN_COORDINATES 이름 직접 매칭 (모호한 이름 제외)
+    for mountain in MOUNTAIN_COORDINATES:
+        if mountain in AMBIGUOUS_MOUNTAIN_NAMES:
+            continue
         if mountain in joined:
             return mountain
 
-    if any(keyword in joined for keyword in ["도봉", "우이", "송추", "오봉"]):
-        return "북한산"
-    if any(keyword in joined for keyword in ["권금성", "소공원", "비선대", "대청봉", "울산바위"]):
-        return "설악산"
-    if any(keyword in joined for keyword in ["백무동", "중산리", "세석", "연하천"]):
-        return "지리산"
-    if any(keyword in joined for keyword in ["갑사", "동학사", "신원사"]):
-        return "계룡산"
-    if any(keyword in joined for keyword in ["백양", "구암사", "내장사"]):
-        return "내장산"
-    if any(keyword in joined for keyword in ["월정사", "상원사", "두로령"]):
-        return "오대산"
-    if any(keyword in joined for keyword in ["하늘재", "부봉", "마패봉"]):
-        return "월악산"
-    if any(keyword in joined for keyword in ["관매도", "하조도", "홍도", "흑산도"]):
-        return "다도해해상"
-    if any(keyword in joined for keyword in ["해금강", "거제", "매물도", "한산도"]):
-        return "한려해상"
+    # 2. MOUNTAIN_ALIASES 키워드 매칭
+    for mountain, aliases in MOUNTAIN_ALIASES.items():
+        if any(alias in joined for alias in aliases):
+            return mountain
 
     return "국립공원"
 

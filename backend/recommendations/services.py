@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from .disaster_risk import disaster_risk_level, disaster_risk_messages, find_course_disaster_risks
 from .forest_api import fetch_forest_spatial_data, forest_spatial_items_to_courses
-from .loaders import load_public_trail_courses
+from .loaders import load_public_trail_courses, load_disaster_risk_zones
 from .local_road_api import fetch_local_road_trails
 from .weather_api import fetch_current_weather, merge_mountain_weather
 from .vworld_api import fetch_vworld_trails
@@ -26,26 +26,32 @@ def haversine_km(lat1, lng1, lat2, lng2):
 
 def weather_safety_score(weather):
     score = 100
+    rainfall = float(weather.get("rainfall_mm") or 0)
+    wind = float(weather.get("wind_speed_ms") or 0)
+    temp = float(weather.get("temperature_c") or 15)
 
-    if weather["rainfall_mm"] >= 10:
+    if rainfall >= 10:
         score -= 45
-    elif weather["rainfall_mm"] > 0:
+    elif rainfall > 0:
         score -= 20
 
-    if weather["wind_speed_ms"] >= 8:
+    if wind >= 8:
         score -= 30
-    elif weather["wind_speed_ms"] >= 5:
+    elif wind >= 5:
         score -= 15
 
-    if weather["temperature_c"] <= 0 or weather["temperature_c"] >= 32:
+    if temp <= 0 or temp >= 32:
         score -= 20
 
-    if weather["wildfire_risk"] == "very_high":
-        score -= 45
-    elif weather["wildfire_risk"] == "high":
-        score -= 30
-    elif weather["wildfire_risk"] == "medium":
-        score -= 12
+    # 복합 위험: 비+강풍 동시 발생은 단순 합산보다 훨씬 위험
+    if rainfall >= 5 and wind >= 5:
+        score -= 20
+    # 영하권 강수: 결빙/블랙아이스 위험
+    if temp <= 2 and rainfall > 0:
+        score -= 15
+    # 폭염+무풍: 열사병 위험
+    if temp >= 30 and wind < 2:
+        score -= 10
 
     return max(score, 0)
 
@@ -123,6 +129,23 @@ def is_vulnerable_companion(profile):
     return profile.get("companion") in {"family", "child", "senior", "vulnerable"}
 
 
+def compute_weights(profile):
+    """맥락(취약자 동반·산행 목적)에 따라 점수 가중치를 동적으로 결정한다."""
+    vulnerable = is_vulnerable_companion(profile)
+    purpose = profile.get("purpose", "balanced")
+    if vulnerable:
+        # 취약자 동반: 체력 적합성·시간 여유 최우선, 접근성 비중 축소
+        return {"fit": 0.45, "weather": 0.25, "time": 0.25, "access": 0.05}
+    if purpose == "healing":
+        # 힐링: 기상·접근성 중시, 체력 소모 최소화
+        return {"fit": 0.25, "weather": 0.35, "access": 0.25, "time": 0.15}
+    if purpose == "workout":
+        # 운동: 체력 적합성 최우선
+        return {"fit": 0.40, "weather": 0.25, "access": 0.20, "time": 0.15}
+    # 기본(balanced·전망 등)
+    return {"fit": 0.35, "weather": 0.30, "access": 0.20, "time": 0.15}
+
+
 def safety_decision_for_course(course, profile, weather, weather_score, fit_score, time_score, daylight_margin):
     red_flags = []
     yellow_flags = []
@@ -160,17 +183,35 @@ def safety_decision_for_course(course, profile, weather, weather_score, fit_scor
     elif wildfire in {"medium", "high"}:
         yellow_flags.append("산불 위험을 확인하고 입산 안내를 따라야 합니다")
 
-    if vulnerable and course.get("difficulty") == "hard":
-        red_flags.append("보행 취약자 동반 산행에 난이도가 높습니다")
-    elif vulnerable and course.get("difficulty") == "medium":
-        yellow_flags.append("보행 취약자 동반 시 일부 구간에서 보호자 확인이 필요합니다")
+    companion = profile.get("companion", "solo")
+    if companion == "child":
+        if course.get("difficulty") == "hard":
+            red_flags.append("어린이 동반 산행에 어려운 코스는 위험합니다")
+        elif course.get("difficulty") == "medium":
+            yellow_flags.append("어린이 동반 시 중급 코스는 보호자 동행이 필요합니다")
+        if int(course.get("duration_min", 0)) > 90:
+            yellow_flags.append("어린이 동반 산행에 코스 시간이 길 수 있습니다")
+    elif vulnerable:
+        if course.get("difficulty") == "hard":
+            red_flags.append("보행 취약자 동반 산행에 난이도가 높습니다")
+        elif course.get("difficulty") == "medium":
+            yellow_flags.append("보행 취약자 동반 시 일부 구간에서 보호자 확인이 필요합니다")
+        if companion == "senior" and int(course.get("duration_min", 0)) > 150:
+            yellow_flags.append("노약자 동반 장시간 코스는 체력 부담이 됩니다")
+        elif int(course.get("duration_min", 0)) > int(profile.get("availableMinutes", 180)) + 15:
+            yellow_flags.append("선택한 시간보다 코스가 길어 피로 누적 가능성이 있습니다")
 
-    if vulnerable and int(course.get("duration_min", 0)) > int(profile.get("availableMinutes", 180)) + 15:
-        yellow_flags.append("선택한 시간보다 코스가 길어 피로 누적 가능성이 있습니다")
-
-    if int(course.get("elevation_gain_m", 0)) >= 900:
+    # 동반자 유형별 고도 임계값 분리
+    elevation = int(course.get("elevation_gain_m", 0))
+    if companion == "child":
+        elev_red, elev_yellow = 400, 200
+    elif vulnerable:
+        elev_red, elev_yellow = 500, 300
+    else:
+        elev_red, elev_yellow = 900, 500
+    if elevation >= elev_red:
         red_flags.append("누적 고도 상승량이 큽니다")
-    elif int(course.get("elevation_gain_m", 0)) >= 500:
+    elif elevation >= elev_yellow:
         yellow_flags.append("고도 상승 구간이 있어 체력 안배가 필요합니다")
 
     if red_flags:
@@ -182,13 +223,18 @@ def safety_decision_for_course(course, profile, weather, weather_score, fit_scor
             "safe_for_vulnerable": False,
         }
 
-    if len(yellow_flags) >= 2 or weather_score < 80 or fit_score < 65 or time_score < 70:
+    # 취약자 동반 시 '주의' 발동 기준을 강화
+    caution_yellow = 1 if vulnerable else 2
+    caution_weather = 85 if vulnerable else 80
+    caution_fit = 75 if vulnerable else 65
+    caution_time = 75 if vulnerable else 70
+    if len(yellow_flags) >= caution_yellow or weather_score < caution_weather or fit_score < caution_fit or time_score < caution_time:
         return {
             "safety_decision": "caution",
             "safety_label": "주의",
             "safety_color": "yellow",
             "risk_factors": yellow_flags or ["기상, 시간, 체력 조건 확인이 필요합니다"],
-            "safe_for_vulnerable": not vulnerable or fit_score >= 65,
+            "safe_for_vulnerable": not vulnerable or fit_score >= caution_fit,
         }
 
     return {
@@ -209,7 +255,6 @@ def recommend_courses(payload):
     location = payload.get("location") or {"lat": 37.5665, "lng": 126.978}
     weather = fetch_current_weather(location["lat"], location["lng"])
     courses = [dict(course) for course in load_public_trail_courses()]
-    disaster_zones = None
 
     mountain_name = (profile.get("mountainName") or "").strip()
     query_lat = location.get("lat")
@@ -224,6 +269,7 @@ def recommend_courses(payload):
             query_lng = mtn_coords["lng"]
 
     weather_score = weather_safety_score(weather)
+    all_disaster_zones = load_disaster_risk_zones()  # lru_cache — 한 번만 IO 발생
     if mountain_name:
         local_road_result = fetch_local_road_trails(
             query_lat,
@@ -248,7 +294,7 @@ def recommend_courses(payload):
 
     recommendations = []
     for course in courses:
-        course["disaster_risk_zones"] = find_course_disaster_risks(course, disaster_zones)
+        course["disaster_risk_zones"] = find_course_disaster_risks(course, all_disaster_zones)
         fit = fitness_score(course, profile)
         access, distance = accessibility_score(course, location["lat"], location["lng"], profile)
         time_fit = time_fit_score(course, profile, weather)
@@ -259,8 +305,10 @@ def recommend_courses(payload):
             departure_time=profile.get("departureTime"),
         )
         safety = safety_decision_for_course(course, profile, weather, weather_score, fit, time_fit, daylight_margin)
-        total = fit * 0.35 + weather_score * 0.3 + access * 0.2 + time_fit * 0.15
+        w = compute_weights(profile)
+        total = fit * w["fit"] + weather_score * w["weather"] + access * w["access"] + time_fit * w["time"]
         total -= course["crowding"] * 8
+        total -= disaster_zone_penalty(course)
         total += mountain_preference_bonus(course, mountain_name)
         total += purpose_bonus(course, profile)
         total += transport_bonus(course, distance, profile)
@@ -298,7 +346,7 @@ def recommend_courses(payload):
         others = [item for item in recommendations if item not in matched]
         recommendations = matched + others
     top3 = recommendations[:3]
-    alternatives = select_alternatives(recommendations, top3)
+    alternatives = select_alternatives(recommendations, top3, profile)
     no_safe_course = bool(recommendations) and all(item["safety_decision"] == "not_recommended" for item in recommendations[:8])
 
     return {
@@ -588,18 +636,40 @@ def is_generic_mountain_name(name):
     return str(name or "").replace(" ", "") in {"국립공원", "등산로", "브이월드등산로"}
 
 
-def select_alternatives(recommendations, top_courses):
+def disaster_zone_penalty(course):
+    """매칭된 재난위험지구 수·위험도에 따른 총점 감점."""
+    zones = course.get("disaster_risk_zones") or []
+    if not zones:
+        return 0
+    high_risk_keywords = {"추락", "낙석", "급경사", "붕괴", "고립"}
+    high = sum(1 for z in zones if any(kw in (z.get("risk_factor") or "") for kw in high_risk_keywords))
+    caution = len(zones) - high
+    return high * 6 + caution * 2
+
+
+def select_alternatives(recommendations, top_courses, profile=None):
+    profile = profile or {}
+    purpose = profile.get("purpose", "balanced")
+    available = int(profile.get("availableMinutes", 180))
     top_ids = {course["id"] for course in top_courses}
     candidates = [course for course in recommendations if course["id"] not in top_ids]
 
+    # 목적별 난이도 선호도 — 기존처럼 항상 easy를 선호하지 않음
+    purpose_difficulty = {
+        "workout": {"hard": 40, "medium": 30, "easy": 10},
+        "healing": {"easy": 40, "medium": 20, "hard": 0},
+        "view":    {"easy": 30, "medium": 30, "hard": 15},
+    }.get(purpose, {"easy": 30, "medium": 25, "hard": 10})
+
     def alternative_rank(course):
         daylight = course.get("daylight_margin_min")
-        daylight_score = daylight if daylight is not None else 0
+        daylight_score = max(0, daylight) if daylight is not None else 0
         distance = course.get("distance_from_user_km")
         access_score = max(0, 80 - distance * 2) if distance is not None else 40
-        difficulty_bonus = {"easy": 45, "medium": 20, "hard": 0}.get(course.get("difficulty"), 0)
-        duration_bonus = max(0, 180 - int(course.get("duration_min", 0))) * 0.4
-        return difficulty_bonus + duration_bonus + daylight_score * 0.25 + access_score
+        difficulty_score = purpose_difficulty.get(course.get("difficulty"), 20)
+        duration = int(course.get("duration_min", 0))
+        time_fit = max(0, 50 - abs(duration - available) * 0.5)
+        return difficulty_score + time_fit + daylight_score * 0.25 + access_score
 
     candidates.sort(key=alternative_rank, reverse=True)
     return candidates[:2]

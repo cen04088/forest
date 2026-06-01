@@ -4,10 +4,90 @@ async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, options);
 
   if (!response.ok) {
-    throw new Error("데이터를 불러오지 못했습니다.");
+    // 인증/커뮤니티 오류는 서버 메시지를 그대로 던짐
+    let msg = "데이터를 불러오지 못했습니다.";
+    try { msg = (await response.json()).error || msg; } catch {}
+    throw new Error(msg);
   }
 
   return response.json();
+}
+
+function authHeaders(token) {
+  return token ? { "Content-Type": "application/json", "X-Auth-Token": token } : { "Content-Type": "application/json" };
+}
+
+// ── 인증 ─────────────────────────────────────────────────────────────────────
+
+export async function apiRegister({ username, password, nickname, email }) {
+  return request("/auth/register/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password, nickname, email }),
+  });
+}
+
+export async function apiLogin({ username, password }) {
+  return request("/auth/login/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+export async function apiLogout(token) {
+  return request("/auth/logout/", { method: "POST", headers: authHeaders(token) });
+}
+
+export async function apiMe(token) {
+  return request("/auth/me/", { headers: authHeaders(token) });
+}
+
+// ── 커뮤니티 ──────────────────────────────────────────────────────────────────
+
+export async function fetchPosts({ category = "", mountain = "", page = 1 } = {}, token) {
+  const params = new URLSearchParams({ category, mountain, page });
+  return request(`/posts/?${params}`, { headers: authHeaders(token) });
+}
+
+export async function fetchPost(id, token) {
+  return request(`/posts/${id}/`, { headers: authHeaders(token) });
+}
+
+export async function createPost(data, token) {
+  return request("/posts/", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updatePost(id, data, token) {
+  return request(`/posts/${id}/`, {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deletePost(id, token) {
+  return request(`/posts/${id}/`, { method: "DELETE", headers: authHeaders(token) });
+}
+
+export async function likePost(id, token) {
+  return request(`/posts/${id}/like/`, { method: "POST", headers: authHeaders(token) });
+}
+
+export async function createComment(postId, content, token) {
+  return request(`/posts/${postId}/comments/`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ content }),
+  });
+}
+
+export async function deleteComment(id, token) {
+  return request(`/comments/${id}/`, { method: "DELETE", headers: authHeaders(token) });
 }
 
 export async function fetchCourses() {
