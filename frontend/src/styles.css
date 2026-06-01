@@ -89,15 +89,34 @@ p {
   padding-top: 10px;
 }
 
-.app-header h1 {
-  margin-top: 3px;
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: -1px;
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 60%, #f97316 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* 헤더 로고 이미지 */
+.app-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.app-logo {
+  width: 130px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.app-tagline {
+  max-width: 310px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* 사이드바 로고 */
+.sidebar-logo-img {
+  width: 90px;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .app-header p:not(.eyebrow) {
@@ -2442,14 +2461,10 @@ p {
   z-index: 10;
 }
 
-.guardian-logo {
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #22c55e, #16a34a 60%, #f97316 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.guardian-logo-img {
+  width: 72px;
+  height: auto;
+  object-fit: contain;
 }
 
 .guardian-status-chip {
