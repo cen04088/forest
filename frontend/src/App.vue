@@ -53,22 +53,118 @@
   <main v-else class="app-shell">
     <!-- ─── 헤더 ──────────────────────────────────────────────────────── -->
     <header class="app-header">
-      <div>
+      <div class="header-text">
         <p class="eyebrow">AI 산행 안전 진단 · 연간 산악구조 8,000건+</p>
         <img src="/logo.png" alt="올라" class="app-logo" />
         <p>동반자가 있는 모든 산행은 더 꼼꼼한 준비가 필요합니다. 올라가 날씨·코스·위험 데이터를 종합해 안전 등급을 알려드립니다.</p>
       </div>
-      <div class="header-actions">
-        <button v-if="authUser" class="auth-user-btn" type="button" @click="showAuthModal = true">
-          <span class="auth-avatar">{{ authUser.nickname[0] }}</span>
-          <span class="auth-nickname">{{ authUser.nickname }}</span>
-        </button>
-        <button v-else class="login-btn" type="button" @click="showAuthModal = true">로그인</button>
-        <button class="icon-btn" type="button" title="새로고침" @click="loadEverything">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 3v4h-4M6 21v-4h4" />
-          </svg>
-        </button>
+
+      <!-- 해 + 산 일러스트 -->
+      <div class="header-illust" aria-hidden="true">
+        <svg viewBox="0 0 160 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- 하늘 그라디언트 -->
+          <defs>
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#bef264" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#86efac" stop-opacity="0.04"/>
+            </linearGradient>
+            <linearGradient id="sunGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fde68a"/>
+              <stop offset="100%" stop-color="#f97316"/>
+            </linearGradient>
+            <linearGradient id="mtn1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#16a34a"/>
+              <stop offset="100%" stop-color="#15803d"/>
+            </linearGradient>
+            <linearGradient id="mtn2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#22c55e"/>
+              <stop offset="100%" stop-color="#16a34a"/>
+            </linearGradient>
+            <linearGradient id="mtn3" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#4ade80"/>
+              <stop offset="100%" stop-color="#22c55e"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 배경 -->
+          <rect width="160" height="140" rx="16" fill="url(#skyGrad)"/>
+
+          <!-- 햇살 -->
+          <g opacity="0.35" stroke="#f97316" stroke-width="1.5" stroke-linecap="round">
+            <line x1="120" y1="28" x2="120" y2="18"/>
+            <line x1="120" y1="52" x2="120" y2="62"/>
+            <line x1="108" y1="40" x2="98"  y2="40"/>
+            <line x1="132" y1="40" x2="142" y2="40"/>
+            <line x1="111.5" y1="31.5" x2="104.4" y2="24.4"/>
+            <line x1="128.5" y1="48.5" x2="135.6" y2="55.6"/>
+            <line x1="128.5" y1="31.5" x2="135.6" y2="24.4"/>
+            <line x1="111.5" y1="48.5" x2="104.4" y2="55.6"/>
+          </g>
+
+          <!-- 태양 -->
+          <circle cx="120" cy="40" r="13" fill="url(#sunGrad)" opacity="0.9"/>
+          <circle cx="120" cy="40" r="9"  fill="#fef3c7" opacity="0.6"/>
+
+          <!-- 구름 -->
+          <g opacity="0.55" fill="white">
+            <ellipse cx="44" cy="38" rx="18" ry="10"/>
+            <ellipse cx="34" cy="42" rx="12" ry="8"/>
+            <ellipse cx="56" cy="42" rx="10" ry="7"/>
+          </g>
+
+          <!-- 뒷 산 (가장 어두운) -->
+          <path d="M0 140 L0 90 L30 55 L60 88 L90 45 L130 90 L160 72 L160 140 Z"
+                fill="url(#mtn1)" opacity="0.45"/>
+
+          <!-- 중간 산 -->
+          <path d="M0 140 L0 105 L25 75 L55 100 L80 60 L110 95 L140 70 L160 85 L160 140 Z"
+                fill="url(#mtn2)" opacity="0.7"/>
+
+          <!-- 앞 산 (가장 밝은) -->
+          <path d="M0 140 L0 118 L20 100 L50 115 L72 85 L95 112 L120 92 L145 108 L160 98 L160 140 Z"
+                fill="url(#mtn3)" opacity="0.9"/>
+
+          <!-- 등산객 실루엣 -->
+          <g fill="#15803d" opacity="0.8">
+            <!-- 몸 -->
+            <circle cx="73" cy="80" r="3"/>
+            <line x1="73" y1="83" x2="73" y2="91" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- 다리 -->
+            <line x1="73" y1="91" x2="70" y2="97" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="73" y1="91" x2="76" y2="97" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- 팔 (스틱) -->
+            <line x1="73" y1="85" x2="69" y2="90" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="69" y1="90" x2="67" y2="95" stroke="#15803d" stroke-width="1.4" stroke-linecap="round"/>
+          </g>
+
+          <!-- 나무들 -->
+          <g fill="#15803d" opacity="0.7">
+            <polygon points="18,115 22,105 26,115"/>
+            <rect x="21" y="115" width="2" height="5" rx="0.5"/>
+            <polygon points="30,118 34,108 38,118"/>
+            <rect x="33" y="118" width="2" height="4" rx="0.5"/>
+          </g>
+          <g fill="#16a34a" opacity="0.6">
+            <polygon points="130,110 134,99 138,110"/>
+            <rect x="133" y="110" width="2" height="5" rx="0.5"/>
+            <polygon points="142,107 146,97 150,107"/>
+            <rect x="145" y="107" width="2" height="4" rx="0.5"/>
+          </g>
+        </svg>
+
+        <!-- 로그인·새로고침 버튼 -->
+        <div class="header-actions">
+          <button v-if="authUser" class="auth-user-btn" type="button" @click="showAuthModal = true">
+            <span class="auth-avatar">{{ authUser.nickname[0] }}</span>
+            <span class="auth-nickname">{{ authUser.nickname }}</span>
+          </button>
+          <button v-else class="login-btn" type="button" @click="showAuthModal = true">로그인</button>
+          <button class="icon-btn" type="button" title="새로고침" @click="loadEverything">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 3v4h-4M6 21v-4h4" />
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
 

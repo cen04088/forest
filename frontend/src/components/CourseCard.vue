@@ -88,6 +88,8 @@ const props = defineProps({
 defineEmits(['select', 'toggleFavorite']);
 
 // ── OSM 타일 미니맵 ──────────────────────────────────────────────────────
+const TILE_DISPLAY = 160; // 렌더 크기(px). 2×2 = 320px → 컨테이너를 항상 가득 덮음
+
 const miniMap = computed(() => {
   const lat = props.course.lat;
   const lng = props.course.lng;
@@ -100,19 +102,22 @@ const miniMap = computed(() => {
   const globalY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * n * 256;
   const tx = Math.floor(globalX / 256);
   const ty = Math.floor(globalY / 256);
-  const px = Math.floor(globalX % 256); // 타일 내 픽셀 X (0-255)
-  const py = Math.floor(globalY % 256); // 타일 내 픽셀 Y (0-255)
 
-  // 좌표를 중앙에 두기 위해 2×2 타일 배치
+  // 타일 내 원본 픽셀(0-255)을 TILE_DISPLAY 스케일로 변환
+  const px = Math.round((globalX % 256) * (TILE_DISPLAY / 256));
+  const py = Math.round((globalY % 256) * (TILE_DISPLAY / 256));
+  const td = TILE_DISPLAY;
+
+  // 2×2 타일: 총 320×320px → 어떤 컨테이너 크기에서도 빈 틈 없음
   const tile = (x, y) => `url(https://tile.openstreetmap.org/${zoom}/${x}/${y}.png)`;
   const bgImage = [tile(tx, ty), tile(tx + 1, ty), tile(tx, ty + 1), tile(tx + 1, ty + 1)].join(', ');
   const pos = (dx, dy) => `calc(50% - ${px}px + ${dx}px) calc(50% - ${py}px + ${dy}px)`;
-  const bgPosition = [pos(0, 0), pos(256, 0), pos(0, 256), pos(256, 256)].join(', ');
+  const bgPosition = [pos(0, 0), pos(td, 0), pos(0, td), pos(td, td)].join(', ');
 
   return {
     style: {
       backgroundImage: bgImage,
-      backgroundSize: '256px 256px',
+      backgroundSize: `${td}px ${td}px`,
       backgroundRepeat: 'no-repeat',
       backgroundPosition: bgPosition,
     },

@@ -87,6 +87,24 @@ p {
 
 .app-header {
   padding-top: 10px;
+  align-items: flex-start;
+}
+.header-text {
+  flex: 1;
+  min-width: 0;
+}
+.header-illust {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.header-illust svg {
+  width: 150px;
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(34,197,94,0.12);
 }
 
 .app-logo {
@@ -95,6 +113,11 @@ p {
   width: auto;
   margin-top: 4px;
   mix-blend-mode: multiply;
+}
+
+/* 모바일: 일러스트 소형화 */
+@media (max-width: 480px) {
+  .header-illust svg { width: 100px; }
 }
 
 .app-header p:not(.eyebrow) {
@@ -2766,7 +2789,7 @@ p {
 .course-minimap {
   position: relative;
   width: 100%;
-  height: 92px;
+  height: 110px;
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 10px;
