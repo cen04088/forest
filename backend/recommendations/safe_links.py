@@ -39,12 +39,12 @@ def _to_dict(session, include_trail=False) -> dict:
     }
     if include_trail:
         from .models import LocationLog
-        logs = (
+        logs = list(
             LocationLog.objects.filter(session=session)
             .order_by("recorded_at")
             .values("lat", "lng", "recorded_at")
         )
-        data["trail"] = list(logs[-_MAX_TRAIL_POINTS:])
+        data["trail"] = logs[-_MAX_TRAIL_POINTS:]
     return data
 
 

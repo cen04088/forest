@@ -164,10 +164,13 @@ def disaster_zones(request):
 
 
 @require_GET
-def safe_link_by_code(request, code):
+def safe_link_by_code(request):
+    code = request.GET.get("code", "").strip().upper()
+    if not code:
+        return JsonResponse({"error": "코드를 입력해 주세요."}, status=400)
     session = safe_link_store.get_by_code(code)
     if not session:
-        return JsonResponse({"error": "코드를 찾을 수 없습니다."}, status=404)
+        return JsonResponse({"error": f"코드 '{code}'를 찾을 수 없습니다."}, status=404)
     return JsonResponse(session, json_dumps_params={"ensure_ascii": False})
 
 

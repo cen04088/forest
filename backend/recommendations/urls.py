@@ -20,7 +20,7 @@ urlpatterns = [
     path("osm-trails/", views.osm_trails),
     path("disaster-zones/", views.disaster_zones),
     path("safe-links/", views.safe_link_create),
-    path("safe-links/code/<str:code>/", views.safe_link_by_code),
+    path("safe-links/by-code/", views.safe_link_by_code),
     path("safe-links/<str:session_id>/", views.safe_link_detail),
     # 인증
     path("auth/register/", cv.auth_register),
