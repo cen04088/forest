@@ -1,11 +1,27 @@
+import random
+import string
 import time
 
-_MAX_TRAIL_POINTS = 200  # 보호자 화면에 전달할 최대 궤적 포인트 수
+_MAX_TRAIL_POINTS = 200
+
+# 읽기 쉬운 문자만 사용 (0/O/I/1 제외)
+_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def _generate_code() -> str:
+    """충돌 없는 6자리 공유 코드를 생성한다."""
+    from .models import SafeLinkSession
+    for _ in range(20):
+        code = "".join(random.choices(_CODE_CHARS, k=6))
+        if not SafeLinkSession.objects.filter(share_code=code, status="hiking").exists():
+            return code
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 
 def _to_dict(session, include_trail=False) -> dict:
     data = {
         "id": str(session.id),
+        "share_code": session.share_code,
         "course_name": session.course_name,
         "mountain": session.mountain,
         "safety_label": session.safety_label,
@@ -23,7 +39,11 @@ def _to_dict(session, include_trail=False) -> dict:
     }
     if include_trail:
         from .models import LocationLog
-        logs = LocationLog.objects.filter(session=session).order_by("recorded_at").values("lat", "lng", "recorded_at")
+        logs = (
+            LocationLog.objects.filter(session=session)
+            .order_by("recorded_at")
+            .values("lat", "lng", "recorded_at")
+        )
         data["trail"] = list(logs[-_MAX_TRAIL_POINTS:])
     return data
 
@@ -31,6 +51,7 @@ def _to_dict(session, include_trail=False) -> dict:
 def create(course: dict) -> dict:
     from .models import SafeLinkSession
     session = SafeLinkSession.objects.create(
+        share_code=_generate_code(),
         course_name=course.get("name", ""),
         mountain=course.get("mountain", ""),
         safety_label=course.get("safety_label", ""),
@@ -51,6 +72,15 @@ def get(sid: str) -> dict | None:
     try:
         return _to_dict(SafeLinkSession.objects.get(pk=sid), include_trail=True)
     except (SafeLinkSession.DoesNotExist, Exception):
+        return None
+
+
+def get_by_code(code: str) -> dict | None:
+    from .models import SafeLinkSession
+    try:
+        session = SafeLinkSession.objects.get(share_code=code.upper().strip())
+        return _to_dict(session, include_trail=True)
+    except SafeLinkSession.DoesNotExist:
         return None
 
 

@@ -64,14 +64,25 @@
           <span class="status-time">{{ lastLocationTs ? '위치 갱신됨' : '위치 대기 중…' }}</span>
         </div>
         <p v-if="gpsErrorMsg" class="share-status error" style="margin:8px 0 0;">📡 {{ gpsErrorMsg }}</p>
-        <p class="safe-link-url-label">보호자 링크 (공유하면 실시간 위치 확인 가능)</p>
-        <div class="safe-link-url-box">
-          <span class="safe-link-url-text">{{ safeLinkUrl }}</span>
+
+        <!-- 보호자 코드 (핵심 UI) -->
+        <div v-if="shareCode" class="share-code-box">
+          <p class="share-code-label">보호자에게 이 코드를 알려주세요</p>
+          <div class="share-code-display">
+            <span v-for="ch in shareCode" :key="ch + Math.random()" class="share-code-char">{{ ch }}</span>
+          </div>
+          <p class="share-code-hint">보호자는 앱에서 <strong>보호자 연결</strong>을 눌러 코드를 입력합니다</p>
         </div>
-        <div class="share-actions">
-          <button class="primary-btn" type="button" @click="copyAndShare">링크 공유</button>
-          <button class="outline-btn danger" type="button" @click="stopAndRecord">산행 종료</button>
-        </div>
+
+        <details class="share-url-details">
+          <summary>링크로 공유하기</summary>
+          <div class="safe-link-url-box" style="margin-top:8px">
+            <span class="safe-link-url-text">{{ safeLinkUrl }}</span>
+          </div>
+          <button class="outline-btn" style="margin-top:8px;width:100%" type="button" @click="copyAndShare">링크 복사</button>
+        </details>
+
+        <button class="outline-btn danger wide-field" style="margin-top:16px" type="button" @click="stopAndRecord">산행 종료</button>
         <p v-if="shareStatus" class="share-status">{{ shareStatus }}</p>
       </div>
 
@@ -123,7 +134,7 @@ const safeLinkMapEl = ref(null);
 const shareStatus = ref('');
 
 const { safeLinkMapStatus, renderSafeLinkMap } = useLeafletMap();
-const { sessionStatus: safeLinkStatus, shareUrl: safeLinkUrl, isActive: safeLinkActive, errorMsg: safeLinkError, gpsErrorMsg, lastLocationTs, startHiking, stopHiking, resetSafeLink } = useSafeLink();
+const { sessionStatus: safeLinkStatus, shareUrl: safeLinkUrl, shareCode, isActive: safeLinkActive, errorMsg: safeLinkError, gpsErrorMsg, lastLocationTs, startHiking, stopHiking, resetSafeLink } = useSafeLink();
 
 const hasLocation = computed(() => {
   const lat = Number(selectedCourse.value?.lat);

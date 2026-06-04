@@ -109,6 +109,7 @@ class FavoriteCourse(models.Model):
 
 class SafeLinkSession(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    share_code = models.CharField(max_length=6, unique=True, blank=True)
     course_name = models.CharField(max_length=200, blank=True)
     mountain = models.CharField(max_length=100, blank=True)
     safety_label = models.CharField(max_length=20, blank=True)

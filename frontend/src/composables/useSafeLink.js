@@ -3,6 +3,7 @@ import { createSafeLink, updateSafeLinkLocation, endSafeLink, getSafeLink } from
 
 // ── 모듈 레벨 싱글톤 (탭 이동해도 상태 유지) ────────────────────────────────
 const sessionId = ref(null);
+const shareCode = ref('');
 const sessionStatus = ref('idle'); // idle | creating | active | ended | error
 const errorMsg = ref('');
 const lastLocationTs = ref(null);
@@ -61,6 +62,7 @@ export function useSafeLink() {
     try {
       const data = await createSafeLink(course);
       sessionId.value = data.id;
+      shareCode.value = data.share_code || '';
       sessionStatus.value = 'active';
       _startTracking();
     } catch (err) {
@@ -76,6 +78,7 @@ export function useSafeLink() {
     }
     sessionStatus.value = 'ended';
     sessionId.value = null;
+    shareCode.value = '';
     lastLocationTs.value = null;
     gpsErrorMsg.value = '';
   }
@@ -83,6 +86,7 @@ export function useSafeLink() {
   function resetSafeLink() {
     _stopTracking();
     sessionId.value = null;
+    shareCode.value = '';
     sessionStatus.value = 'idle';
     errorMsg.value = '';
     gpsErrorMsg.value = '';
@@ -91,6 +95,7 @@ export function useSafeLink() {
 
   return {
     sessionId,
+    shareCode,
     sessionStatus,
     shareUrl,
     isActive,

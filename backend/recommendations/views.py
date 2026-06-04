@@ -163,6 +163,14 @@ def disaster_zones(request):
     return JsonResponse({"zones": zones[:30]}, json_dumps_params={"ensure_ascii": False})
 
 
+@require_GET
+def safe_link_by_code(request, code):
+    session = safe_link_store.get_by_code(code)
+    if not session:
+        return JsonResponse({"error": "코드를 찾을 수 없습니다."}, status=404)
+    return JsonResponse(session, json_dumps_params={"ensure_ascii": False})
+
+
 @csrf_exempt
 def safe_link_create(request):
     if request.method != "POST":
@@ -173,7 +181,7 @@ def safe_link_create(request):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
     course = body.get("course", {})
     session = safe_link_store.create(course)
-    return JsonResponse({"id": session["id"]}, status=201)
+    return JsonResponse({"id": session["id"], "share_code": session["share_code"]}, status=201)
 
 
 @csrf_exempt

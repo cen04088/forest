@@ -73,19 +73,6 @@
               </label>
             </div>
           </div>
-          <div class="field wide-field">
-            <span>이동 수단</span>
-            <div class="segment-group">
-              <label class="segment-btn">
-                <input type="radio" v-model="profile.transport" value="public" name="transport_form" />
-                <span>🚌 대중교통</span>
-              </label>
-              <label class="segment-btn">
-                <input type="radio" v-model="profile.transport" value="car" name="transport_form" />
-                <span>🚗 차량</span>
-              </label>
-            </div>
-          </div>
           <button class="primary-btn wide-field" :class="{ loading }" type="submit" :disabled="loading">
             {{ loading ? '안전 등급 계산 중…' : '동반자 기준 안전코스 찾기' }}
           </button>
@@ -343,7 +330,7 @@ const purposeTypes = [
   { value: 'workout', label: '💪 운동' },
   { value: 'view', label: '🏔️ 전망' },
 ];
-const quickMountains = ['관악산', '북한산', '청계산', '도봉산', '남산', '수락산', '설악산', '지리산'];
+const quickMountains = ['설악산', '지리산', '북한산', '관악산', '청계산', '도봉산', '남산', '수락산'];
 
 const minDepartureTime = computed(() =>
   profile.departureDate === minDepartureDate
@@ -496,7 +483,10 @@ function handleMountainChange() {
 }
 
 function selectQuickMountain(name) {
-  profile.mountainName = name;
+  // mountainOptions의 실제 이름과 매칭 (공백·접미사 차이 허용)
+  const norm = (s) => s.replace(/\s/g, '').replace(/산$/, '');
+  const match = mountainOptions.value.find((m) => norm(m.name) === norm(name));
+  profile.mountainName = match ? match.name : name;
   handleMountainChange();
 }
 

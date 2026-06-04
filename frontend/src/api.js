@@ -151,6 +151,10 @@ export async function getSafeLink(id) {
   return request(`/safe-links/${id}/`);
 }
 
+export async function getSafeLinkByCode(code) {
+  return request(`/safe-links/code/${encodeURIComponent(code.toUpperCase().trim())}/`);
+}
+
 export async function updateSafeLinkLocation(id, lat, lng) {
   return request(`/safe-links/${id}/`, {
     method: "POST",
