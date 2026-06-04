@@ -1,14 +1,14 @@
 <template>
-  <section class="screen-stack mypage-layout">
+  <section class="screen-stack mypage-grid">
 
-    <!-- 로그인 유도 (full width) -->
-    <div v-if="!authUser" class="panel mypage-login-prompt mypage-full">
+    <!-- 로그인 유도 — 전체 너비 -->
+    <div v-if="!authUser" class="panel mypage-login-prompt mypage-col-full">
       <p>로그인하면 산행 기록, 즐겨찾기, 긴급 연락처를 저장할 수 있습니다.</p>
       <button class="primary-btn" type="button" @click="showAuthModal = true">로그인 / 회원가입</button>
     </div>
 
-    <!-- 개인 설정 -->
-    <section class="panel profile-settings">
+    <!-- ① 개인 설정 — col 1 -->
+    <section class="panel mypage-col-1">
       <div class="section-title compact">
         <div><p class="eyebrow">My Info</p><h2>개인 설정</h2></div>
         <span class="mini-status">{{ myProfileStatus }}</span>
@@ -31,8 +31,8 @@
       </div>
     </section>
 
-    <!-- 즐겨찾기 -->
-    <section class="panel">
+    <!-- ② 즐겨찾기 — col 2 -->
+    <section class="panel mypage-col-1">
       <div class="section-title compact">
         <div><p class="eyebrow">Favorites</p><h2>즐겨찾기 코스</h2></div>
         <span class="mini-status">{{ favorites.length }}개</span>
@@ -50,8 +50,8 @@
       </div>
     </section>
 
-    <!-- 산행 기록 -->
-    <section class="panel">
+    <!-- ③ 산행 기록 — col 3 -->
+    <section class="panel mypage-col-1">
       <div class="section-title compact">
         <div><p class="eyebrow">History</p><h2>산행 기록</h2></div>
         <span class="mini-status">{{ hikingRecords.length }}회</span>
@@ -70,15 +70,15 @@
       </div>
     </section>
 
-    <!-- 내가 쓴 글 (full width) -->
-    <section v-if="authUser" class="panel mypage-full">
+    <!-- ④ 내가 쓴 글 — 전체 너비 -->
+    <section v-if="authUser" class="panel mypage-col-full">
       <div class="section-title compact">
         <div><p class="eyebrow">My Posts</p><h2>내가 쓴 글</h2></div>
         <span class="mini-status">{{ myPostsTotal }}개</span>
       </div>
       <div v-if="myPostsLoading" class="community-loading">불러오는 중…</div>
       <div v-else-if="myPosts.length === 0" class="community-empty"><p>아직 작성한 글이 없습니다.</p></div>
-      <div v-else>
+      <div v-else class="mypost-grid">
         <div
           v-for="post in myPosts" :key="post.id"
           class="mypost-item" @click="goToPost(post.id)"
@@ -90,8 +90,8 @@
       </div>
     </section>
 
-    <!-- 긴급 연락처 (full width) -->
-    <section class="panel mypage-full">
+    <!-- ⑤ 긴급 연락처 — col 1~2 -->
+    <section class="panel mypage-col-2">
       <div class="section-title compact">
         <div><p class="eyebrow">Emergency</p><h2>긴급 연락처</h2></div>
         <span class="mini-status">{{ emergencyContacts.length }}명</span>
@@ -116,8 +116,8 @@
       </div>
     </section>
 
-    <!-- 출발 전 체크리스트 (full width) -->
-    <section class="panel guardian-checklist mypage-full">
+    <!-- ⑥ 출발 전 체크리스트 — col 3 -->
+    <section class="panel guardian-checklist mypage-col-1">
       <div class="section-title compact">
         <div><p class="eyebrow">Checklist</p><h2>출발 전 체크리스트</h2></div>
         <span class="mini-status">{{ checkedCount }}/{{ checklistItems.length }}</span>
@@ -142,7 +142,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authUser, showAuthModal } from '../composables/useAuth.js';
 import { favorites, hikingRecords, emergencyContacts, loadMyPageData, removeRecord, removeFav, addContact, removeContact } from '../composables/useUserData.js';
-import { myPosts, myPostsTotal, myPostsLoading, loadMyPosts, formatRelativeTime, communityView, openPost } from '../composables/useCommunity.js';
+import { myPosts, myPostsTotal, myPostsLoading, loadMyPosts, formatRelativeTime, openPost } from '../composables/useCommunity.js';
 import { profile } from '../composables/useGuide.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 
@@ -172,12 +172,12 @@ const newChecklistText = ref('');
 const checkedCount = computed(() => checklistItems.value.filter((i) => i.checked).length);
 
 const myProfileStatus = computed(() => {
-  const companionTypes = [
+  const types = [
     { value: 'vulnerable', label: '어린이·노약자 동반' },
     { value: 'family', label: '가족 동반' },
     { value: 'solo', label: '혼자 산행' },
   ];
-  return (companionTypes.find((t) => t.value === profile.companion)?.label || '동반자').replace(' 동반', '');
+  return (types.find((t) => t.value === profile.companion)?.label || '동반자').replace(' 동반', '');
 });
 
 function saveChecklist() {

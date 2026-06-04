@@ -435,8 +435,7 @@ p {
 }
 
 /* 다중 컬럼 레이아웃 — 모바일: 단일 컬럼 */
-.safelink-layout,
-.mypage-layout {
+.safelink-layout {
   display: grid;
   gap: 12px;
 }
@@ -450,6 +449,18 @@ p {
 .community-post-grid {
   display: grid;
   gap: 12px;
+}
+
+/* 내정보 그리드 — 모바일: 단일 컬럼 */
+.mypage-grid {
+  display: grid;
+  gap: 12px;
+}
+
+/* 내가 쓴 글 포스트 목록 */
+.mypost-grid {
+  display: grid;
+  gap: 8px;
 }
 
 .panel,
@@ -2620,17 +2631,34 @@ p {
     width: 100%;
   }
 
-  /* ── 내정보 탭: 3컬럼 그리드 ── */
-  .mypage-layout {
+  /* ── 내정보 탭: 3컬럼 통합 그리드 ── */
+  .mypage-grid {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     align-items: start;
   }
 
-  /* 체크리스트·긴급연락처·내 글은 하단 full-width */
-  .mypage-full {
+  /* col-1: 1칸 너비 (기본) */
+  .mypage-col-1 {
+    grid-column: span 1;
+  }
+
+  /* col-2: 2칸 너비 */
+  .mypage-col-2 {
+    grid-column: span 2;
+  }
+
+  /* col-full: 전체 3칸 */
+  .mypage-col-full {
     grid-column: 1 / -1;
+  }
+
+  /* 내가 쓴 글: 포스트를 2열로 */
+  .mypost-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
   /* 코스 카드 더 넓은 내부 패딩 */
@@ -2672,10 +2700,7 @@ p {
     grid-template-columns: repeat(4, 1fr);
   }
 
-  /* 1440px+: 내정보 4컬럼 */
-  .mypage-layout {
-    grid-template-columns: repeat(4, 1fr);
-  }
+  /* 1440px+: 내정보 그리드 그대로 3컬럼 유지 */
 }
 
 /* ── 보호자 전용 뷰 ──────────────────────────────────────────────────────── */
