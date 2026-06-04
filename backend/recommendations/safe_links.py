@@ -21,7 +21,7 @@ def _generate_code() -> str:
 def _to_dict(session, include_trail=False) -> dict:
     data = {
         "id": str(session.id),
-        "share_code": session.share_code,
+        "share_code": getattr(session, "share_code", ""),
         "course_name": session.course_name,
         "mountain": session.mountain,
         "safety_label": session.safety_label,
@@ -50,8 +50,7 @@ def _to_dict(session, include_trail=False) -> dict:
 
 def create(course: dict) -> dict:
     from .models import SafeLinkSession
-    session = SafeLinkSession.objects.create(
-        share_code=_generate_code(),
+    base_fields = dict(
         course_name=course.get("name", ""),
         mountain=course.get("mountain", ""),
         safety_label=course.get("safety_label", ""),
@@ -64,6 +63,11 @@ def create(course: dict) -> dict:
         current_lat=course.get("lat"),
         current_lng=course.get("lng"),
     )
+    try:
+        session = SafeLinkSession.objects.create(share_code=_generate_code(), **base_fields)
+    except Exception:
+        # share_code 컬럼 미존재(마이그레이션 미적용) 시 폴백
+        session = SafeLinkSession.objects.create(**base_fields)
     return _to_dict(session)
 
 

@@ -1,12 +1,20 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, options);
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, options);
+  } catch (networkErr) {
+    throw new Error(`네트워크 연결 오류: ${networkErr.message}`);
+  }
 
   if (!response.ok) {
-    // 인증/커뮤니티 오류는 서버 메시지를 그대로 던짐
-    let msg = "데이터를 불러오지 못했습니다.";
-    try { msg = (await response.json()).error || msg; } catch {}
+    let msg = `오류 ${response.status} (${path.split('?')[0]})`;
+    try {
+      const data = await response.json();
+      msg = data.error || data.detail || msg;
+    } catch {}
+    console.error('[API]', response.status, path, msg);
     throw new Error(msg);
   }
 

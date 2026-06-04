@@ -168,9 +168,14 @@ def safe_link_by_code(request):
     code = request.GET.get("code", "").strip().upper()
     if not code:
         return JsonResponse({"error": "코드를 입력해 주세요."}, status=400)
-    session = safe_link_store.get_by_code(code)
+    try:
+        session = safe_link_store.get_by_code(code)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("safe_link_by_code 오류: %s", exc, exc_info=True)
+        return JsonResponse({"error": f"서버 오류: {exc}"}, status=500)
     if not session:
-        return JsonResponse({"error": f"코드 '{code}'를 찾을 수 없습니다."}, status=404)
+        return JsonResponse({"error": f"코드 '{code}'를 찾을 수 없습니다. (DB에 없음)"}, status=404)
     return JsonResponse(session, json_dumps_params={"ensure_ascii": False})
 
 
@@ -182,9 +187,14 @@ def safe_link_create(request):
         body = json.loads(request.body.decode("utf-8") or "{}")
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
-    course = body.get("course", {})
-    session = safe_link_store.create(course)
-    return JsonResponse({"id": session["id"], "share_code": session["share_code"]}, status=201)
+    try:
+        course = body.get("course", {})
+        session = safe_link_store.create(course)
+        return JsonResponse({"id": session["id"], "share_code": session.get("share_code", "")}, status=201)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("safe_link_create 오류: %s", exc, exc_info=True)
+        return JsonResponse({"error": f"세이프 링크 생성 실패: {exc}"}, status=500)
 
 
 @csrf_exempt
