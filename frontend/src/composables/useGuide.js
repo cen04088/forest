@@ -1,5 +1,67 @@
 import { computed, reactive, ref } from 'vue';
-import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations } from '../api.js';
+import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations, fetchVWorldTrails, fetchOSMTrails } from '../api.js';
+
+// 경로 geometry 캐시 (courseId → { geometry, source })
+const _geometryCache = new Map();
+
+function _bestMatch(items, course) {
+  if (!items?.length) return null;
+  const courseNorm = (course.name || '').replace(/코스$/, '').replace(/\s/g, '').toLowerCase();
+  const mountainNorm = (course.mountain || '').replace(/\s/g, '').toLowerCase();
+  return (
+    items.find((item) => {
+      const n = (item.name || '').replace(/\s/g, '').toLowerCase();
+      return courseNorm && n.includes(courseNorm);
+    }) ||
+    items.find((item) => {
+      const n = (item.name || '').replace(/\s/g, '').toLowerCase();
+      return mountainNorm && n.includes(mountainNorm);
+    }) ||
+    items[0]
+  );
+}
+
+export async function fetchCourseGeometry(course) {
+  if (!course?.lat || !course?.lng) return null;
+  if (Array.isArray(course.route_geometry) && course.route_geometry.length >= 2) return course.route_geometry;
+
+  const key = course.id || `${course.lat},${course.lng}`;
+  if (_geometryCache.has(key)) return _geometryCache.get(key);
+
+  // 1단계: VWorld API
+  try {
+    const result = await fetchVWorldTrails({
+      mountainName: course.mountain || '',
+      lat: course.lat,
+      lng: course.lng,
+      radius: 2,
+    });
+    const best = _bestMatch(result?.items, course);
+    if (best?.route_geometry?.length >= 2) {
+      _geometryCache.set(key, best.route_geometry);
+      return best.route_geometry;
+    }
+  } catch {}
+
+  // 2단계: OSM Overpass (VWorld 결과 없을 때)
+  try {
+    const osmResult = await fetchOSMTrails({
+      lat: course.lat,
+      lng: course.lng,
+      mountainName: course.mountain || '',
+      radius: 3000,
+    });
+    const best = _bestMatch(osmResult?.items, course);
+    if (best?.route_geometry?.length >= 2) {
+      _geometryCache.set(key, best.route_geometry);
+      return best.route_geometry;
+    }
+  } catch {}
+
+  // 둘 다 실패
+  _geometryCache.set(key, null);
+  return null;
+}
 import { useLocation } from './useLocation.js';
 import { addDays, addMinutes, formatDateForInput, formatTimeForInput } from '../utils/dateHelpers.js';
 

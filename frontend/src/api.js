@@ -115,6 +115,20 @@ export async function fetchRecommendations(payload) {
   });
 }
 
+export async function fetchOSMTrails({ lat, lng, mountainName = "", radius = 3000 } = {}) {
+  const params = new URLSearchParams({ lat, lng, mountain: mountainName, radius });
+  return request(`/osm-trails/?${params.toString()}`);
+}
+
+export async function fetchVWorldTrails({ mountainName = "", lat, lng, radius = 5 } = {}) {
+  const params = new URLSearchParams({ mountain: mountainName || "", radius });
+  if (lat !== undefined && lng !== undefined) {
+    params.set("lat", lat);
+    params.set("lng", lng);
+  }
+  return request(`/vworld-trails/?${params.toString()}`);
+}
+
 export async function fetchSafetyReports(mountainName) {
   const params = new URLSearchParams({ mountain: mountainName || "" });
   return request(`/safety-reports/?${params.toString()}`);

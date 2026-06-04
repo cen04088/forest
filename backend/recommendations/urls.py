@@ -17,6 +17,7 @@ urlpatterns = [
     path("wildfire/", views.wildfire),
     path("landslide/", views.landslide),
     path("recommendations/", views.recommendations),
+    path("osm-trails/", views.osm_trails),
     path("disaster-zones/", views.disaster_zones),
     path("safe-links/", views.safe_link_create),
     path("safe-links/<str:session_id>/", views.safe_link_detail),

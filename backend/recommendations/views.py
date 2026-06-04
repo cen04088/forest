@@ -17,6 +17,7 @@ from .mountain_weather_api import fetch_mountain_weather
 from .wildfire_api import fetch_wildfire_risk
 from .vworld_api import fetch_vworld_trails
 from . import safe_links as safe_link_store
+from .osm_trail_api import fetch_osm_trails
 
 
 @require_GET
@@ -137,6 +138,18 @@ def recommendations(request):
         return JsonResponse({"error": "Invalid JSON body"}, status=400)
 
     return JsonResponse(recommend_courses(payload))
+
+
+@require_GET
+def osm_trails(request):
+    lat = request.GET.get("lat")
+    lng = request.GET.get("lng")
+    if not lat or not lng:
+        return JsonResponse({"items": [], "error": "lat/lng required"}, status=400)
+    mountain = request.GET.get("mountain", "")
+    radius = int(request.GET.get("radius", 3000))
+    result = fetch_osm_trails(float(lat), float(lng), mountain, radius)
+    return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
 
 
 @require_GET

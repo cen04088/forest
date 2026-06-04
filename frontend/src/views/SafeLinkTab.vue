@@ -99,16 +99,16 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { selectedCourse, weatherData } from '../composables/useGuide.js';
+import { selectedCourse, weatherData, fetchCourseGeometry } from '../composables/useGuide.js';
 import { saveHikingRecord } from '../composables/useUserData.js';
 import { useSafeLink } from '../composables/useSafeLink.js';
-import { useKakaoMap } from '../composables/useKakaoMap.js';
+import { useLeafletMap } from '../composables/useLeafletMap.js';
 import { safetyClass, durationLabel, daylightLabel } from '../utils/courseHelpers.js';
 
 const safeLinkMapEl = ref(null);
 const shareStatus = ref('');
 
-const { safeLinkMapStatus, renderSafeLinkMap } = useKakaoMap();
+const { safeLinkMapStatus, renderSafeLinkMap } = useLeafletMap();
 const { sessionStatus: safeLinkStatus, shareUrl: safeLinkUrl, isActive: safeLinkActive, errorMsg: safeLinkError, lastLocationTs, startHiking, stopHiking } = useSafeLink();
 
 const hasLocation = computed(() => {
@@ -191,6 +191,19 @@ async function shareMessage() {
 }
 
 async function renderMap() {
+  await nextTick();
+  const course = selectedCourse.value;
+  if (!course) { renderSafeLinkMap(safeLinkMapEl.value, null); return; }
+
+  // geometry 없으면 on-demand fetch
+  if (!course.route_geometry || course.route_geometry.length < 2) {
+    renderSafeLinkMap(safeLinkMapEl.value, course);
+    const geometry = await fetchCourseGeometry(course);
+    if (geometry) {
+      course.route_geometry = geometry;
+      selectedCourse.value = { ...course };
+    }
+  }
   await nextTick();
   renderSafeLinkMap(safeLinkMapEl.value, selectedCourse.value);
 }

@@ -319,17 +319,18 @@ import {
   maxDepartureDate, minDepartureDate, mountainOptions, nearbyAlternativeCourses,
   profile, recommendations, resultState, selectedCourse, strictMountainMatch,
   submit, syncLocationToMountain, weatherData, location, detectGPS,
+  fetchCourseGeometry,
 } from '../composables/useGuide.js';
 import { fetchSafetyReports } from '../api.js';
 import { favorites, toggleFavorite } from '../composables/useUserData.js';
-import { useKakaoMap } from '../composables/useKakaoMap.js';
+import { useLeafletMap } from '../composables/useLeafletMap.js';
 import { safetyClass, fallbackSafetyLabel, durationLabel } from '../utils/courseHelpers.js';
 import CourseCard from '../components/CourseCard.vue';
 import { addMinutes, formatTimeForInput } from '../utils/dateHelpers.js';
 
 const detailMapEl = ref(null);
 const safetyReports = ref([]);
-const { mapStatus, renderDetailMap } = useKakaoMap();
+const { mapStatus, renderDetailMap } = useLeafletMap();
 
 const companionTypes = [
   { value: 'vulnerable', label: '어린이·노약자 동반' },
@@ -451,6 +452,19 @@ const gpsBtnTitle = computed(() => {
 async function selectCourse(course) {
   selectedCourse.value = course;
   renderMap();
+
+  // route_geometry 없는 CSV 코스: VWorld에서 실제 경로 보완
+  if (!course.route_geometry || course.route_geometry.length < 2) {
+    mapStatus.value = '등산로 경로를 불러오는 중…';
+    const geometry = await fetchCourseGeometry(course);
+    if (geometry) {
+      course.route_geometry = geometry;
+      selectedCourse.value = { ...course };
+    }
+    mapStatus.value = '';
+    renderMap();
+  }
+
   safetyReports.value = [];
   if (course.mountain) {
     try {

@@ -51,14 +51,14 @@
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useGuardianView } from '../composables/useSafeLink.js';
-import { useKakaoMap } from '../composables/useKakaoMap.js';
+import { useLeafletMap } from '../composables/useLeafletMap.js';
 
 const route = useRoute();
 const sessionId = route.params.sessionId;
 
 const guardianMapEl = ref(null);
 const { session, loading, pollError, lastUpdateLabel, statusLabel, statusClass, startPolling, stopPolling } = useGuardianView(sessionId);
-const { renderGuardianMap } = useKakaoMap();
+const { renderGuardianMap } = useLeafletMap();
 
 function refresh() {
   loading.value = true;
