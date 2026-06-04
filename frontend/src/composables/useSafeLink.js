@@ -1,16 +1,55 @@
-import { ref, computed, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
 import { createSafeLink, updateSafeLinkLocation, endSafeLink, getSafeLink } from '../api.js';
 
-export function useSafeLink() {
-  const sessionId = ref(null);
-  const sessionStatus = ref('idle'); // idle | creating | active | ended | error
-  const errorMsg = ref('');
-  const watchId = ref(null);
-  const lastLocationTs = ref(null);
+// ── 모듈 레벨 싱글톤 (탭 이동해도 상태 유지) ────────────────────────────────
+const sessionId = ref(null);
+const sessionStatus = ref('idle'); // idle | creating | active | ended | error
+const errorMsg = ref('');
+const lastLocationTs = ref(null);
+const gpsErrorMsg = ref('');
+let _watchId = null;
 
+// ── GPS 추적 (내부) ──────────────────────────────────────────────────────────
+function _startTracking() {
+  if (!navigator.geolocation) {
+    gpsErrorMsg.value = '이 브라우저는 위치 서비스를 지원하지 않습니다.';
+    return;
+  }
+  if (_watchId !== null) return; // 이미 추적 중
+
+  _watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      if (!sessionId.value) return;
+      const { latitude, longitude } = pos.coords;
+      updateSafeLinkLocation(sessionId.value, latitude, longitude)
+        .then(() => { lastLocationTs.value = Date.now(); })
+        .catch(() => {});
+    },
+    (err) => {
+      const msgs = {
+        1: 'GPS 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해 주세요.',
+        2: 'GPS 신호를 찾을 수 없습니다. 실외로 이동해 다시 시도해 주세요.',
+        3: 'GPS 응답 시간이 초과되었습니다.',
+      };
+      gpsErrorMsg.value = msgs[err.code] || `GPS 오류 (코드 ${err.code})`;
+    },
+    { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 },
+  );
+}
+
+function _stopTracking() {
+  if (_watchId !== null) {
+    navigator.geolocation?.clearWatch(_watchId);
+    _watchId = null;
+  }
+}
+
+// ── 공개 composable ───────────────────────────────────────────────────────────
+export function useSafeLink() {
   const shareUrl = computed(() => {
     if (!sessionId.value) return '';
-    return `${window.location.origin}${window.location.pathname}#/safe/${sessionId.value}`;
+    const base = `${window.location.origin}${window.location.pathname}`;
+    return `${base}#/safe/${sessionId.value}`;
   });
 
   const isActive = computed(() => sessionStatus.value === 'active');
@@ -18,6 +57,7 @@ export function useSafeLink() {
   async function startHiking(course) {
     sessionStatus.value = 'creating';
     errorMsg.value = '';
+    gpsErrorMsg.value = '';
     try {
       const data = await createSafeLink(course);
       sessionId.value = data.id;
@@ -25,43 +65,42 @@ export function useSafeLink() {
       _startTracking();
     } catch (err) {
       sessionStatus.value = 'error';
-      errorMsg.value = '세이프 링크 생성에 실패했습니다.';
+      errorMsg.value = err.message || '세이프 링크 생성에 실패했습니다.';
     }
-  }
-
-  function _startTracking() {
-    if (!navigator.geolocation) return;
-    watchId.value = navigator.geolocation.watchPosition(
-      (pos) => {
-        if (!sessionId.value) return;
-        const { latitude, longitude } = pos.coords;
-        updateSafeLinkLocation(sessionId.value, latitude, longitude)
-          .then(() => { lastLocationTs.value = Date.now(); })
-          .catch(() => {});
-      },
-      () => {},
-      { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 },
-    );
   }
 
   async function stopHiking() {
-    if (watchId.value !== null) {
-      navigator.geolocation.clearWatch(watchId.value);
-      watchId.value = null;
-    }
+    _stopTracking();
     if (sessionId.value) {
       try { await endSafeLink(sessionId.value); } catch {}
     }
     sessionStatus.value = 'ended';
+    sessionId.value = null;
+    lastLocationTs.value = null;
+    gpsErrorMsg.value = '';
   }
 
-  onUnmounted(() => {
-    if (watchId.value !== null) {
-      navigator.geolocation.clearWatch(watchId.value);
-    }
-  });
+  function resetSafeLink() {
+    _stopTracking();
+    sessionId.value = null;
+    sessionStatus.value = 'idle';
+    errorMsg.value = '';
+    gpsErrorMsg.value = '';
+    lastLocationTs.value = null;
+  }
 
-  return { sessionId, sessionStatus, shareUrl, isActive, errorMsg, lastLocationTs, startHiking, stopHiking };
+  return {
+    sessionId,
+    sessionStatus,
+    shareUrl,
+    isActive,
+    errorMsg,
+    gpsErrorMsg,
+    lastLocationTs,
+    startHiking,
+    stopHiking,
+    resetSafeLink,
+  };
 }
 
 // ── 보호자 뷰 훅 ─────────────────────────────────────────────────────────────
@@ -88,7 +127,7 @@ export function useGuardianView(sessionId) {
   }
 
   function stopPolling() {
-    if (pollTimer) clearInterval(pollTimer);
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   }
 
   const lastUpdateLabel = computed(() => {
@@ -102,17 +141,15 @@ export function useGuardianView(sessionId) {
   const statusLabel = computed(() => {
     if (!session.value) return '연결 중';
     if (session.value.status === 'ended') return '산행 종료';
-    const decision = session.value.safety_decision;
-    if (decision === 'not_recommended') return '주의 필요';
-    if (decision === 'caution') return '주의 구간';
+    if (session.value.safety_decision === 'not_recommended') return '주의 필요';
+    if (session.value.safety_decision === 'caution') return '주의 구간';
     return '정상 이동';
   });
 
   const statusClass = computed(() => {
     if (!session.value || session.value.status === 'ended') return 'gray';
-    const decision = session.value.safety_decision;
-    if (decision === 'not_recommended') return 'red';
-    if (decision === 'caution') return 'yellow';
+    if (session.value.safety_decision === 'not_recommended') return 'red';
+    if (session.value.safety_decision === 'caution') return 'yellow';
     return 'green';
   });
 

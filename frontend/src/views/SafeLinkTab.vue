@@ -38,8 +38,14 @@
       <div class="section-title compact">
         <div><p class="eyebrow">산행 시작</p><h2>세이프링크 생성</h2></div>
       </div>
+      <!-- 대기 / 오류 상태 -->
       <div v-if="!safeLinkActive && safeLinkStatus !== 'ended'">
-        <p class="safe-link-guide">코스를 선택한 뒤 산행을 시작하면 보호자 전용 실시간 위치 링크가 생성됩니다.</p>
+        <p class="safe-link-guide">
+          코스를 선택한 뒤 산행을 시작하면 보호자 전용 실시간 위치 링크가 생성됩니다.
+        </p>
+        <p v-if="!selectedCourse" class="safe-link-guide" style="color:var(--amber);font-size:12px;">
+          ⚠️ 안전코스 탭에서 코스를 먼저 선택해 주세요.
+        </p>
         <button
           class="primary-btn wide-field" type="button"
           :disabled="!selectedCourse || safeLinkStatus === 'creating'"
@@ -48,13 +54,16 @@
           {{ safeLinkStatus === 'creating' ? '링크 생성 중…' : '산행 시작 &amp; 세이프링크 생성' }}
         </button>
         <p v-if="safeLinkError" class="share-status error">{{ safeLinkError }}</p>
+        <p v-if="gpsErrorMsg" class="share-status error">📡 {{ gpsErrorMsg }}</p>
       </div>
 
+      <!-- 산행 중 -->
       <div v-else-if="safeLinkActive" class="safe-link-active-panel">
         <div class="safe-link-live-badge">
           <span class="status-dot dot-green"></span> 산행 중 · GPS 추적 활성
-          <span v-if="lastLocationTs" class="status-time">방금 전 갱신</span>
+          <span class="status-time">{{ lastLocationTs ? '위치 갱신됨' : '위치 대기 중…' }}</span>
         </div>
+        <p v-if="gpsErrorMsg" class="share-status error" style="margin:8px 0 0;">📡 {{ gpsErrorMsg }}</p>
         <p class="safe-link-url-label">보호자 링크 (공유하면 실시간 위치 확인 가능)</p>
         <div class="safe-link-url-box">
           <span class="safe-link-url-text">{{ safeLinkUrl }}</span>
@@ -63,10 +72,15 @@
           <button class="primary-btn" type="button" @click="copyAndShare">링크 공유</button>
           <button class="outline-btn danger" type="button" @click="stopAndRecord">산행 종료</button>
         </div>
+        <p v-if="shareStatus" class="share-status">{{ shareStatus }}</p>
       </div>
 
+      <!-- 종료 -->
       <div v-else class="safe-link-ended">
-        <p>산행이 종료되었습니다. 새 산행을 시작하려면 코스를 다시 선택하세요.</p>
+        <p>산행이 종료되었습니다.</p>
+        <button class="primary-btn wide-field" type="button" style="margin-top:12px" @click="resetSafeLink">
+          새 산행 시작하기
+        </button>
       </div>
 
       <details class="share-message-details" v-if="selectedCourse">
@@ -109,7 +123,7 @@ const safeLinkMapEl = ref(null);
 const shareStatus = ref('');
 
 const { safeLinkMapStatus, renderSafeLinkMap } = useLeafletMap();
-const { sessionStatus: safeLinkStatus, shareUrl: safeLinkUrl, isActive: safeLinkActive, errorMsg: safeLinkError, lastLocationTs, startHiking, stopHiking } = useSafeLink();
+const { sessionStatus: safeLinkStatus, shareUrl: safeLinkUrl, isActive: safeLinkActive, errorMsg: safeLinkError, gpsErrorMsg, lastLocationTs, startHiking, stopHiking, resetSafeLink } = useSafeLink();
 
 const hasLocation = computed(() => {
   const lat = Number(selectedCourse.value?.lat);

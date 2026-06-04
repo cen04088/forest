@@ -54,7 +54,7 @@ export function useLeafletMap() {
   const safeLinkMapStatus = ref('');
 
   // ─── 코스 상세 지도 ───────────────────────────────────────────────────────
-  async function renderDetailMap(el, course, disasterZones = [], userLocation = null) {
+  async function renderDetailMap(el, course, disasterZones = []) {
     if (!el) return;
     if (!course?.lat || !course?.lng) {
       mapStatus.value = '좌표 정보가 없어 지도를 표시할 수 없습니다.';
@@ -66,18 +66,6 @@ export function useLeafletMap() {
     const geometry = course.route_geometry;
     const hasRoute = Array.isArray(geometry) && geometry.length >= 2;
     const map = _getOrCreateMap(el, center, hasRoute ? 13 : 14);
-
-    // 사용자 현재 위치
-    if (userLocation?.lat && userLocation?.lng) {
-      const userPos = [userLocation.lat, userLocation.lng];
-      L.circleMarker(userPos, {
-        radius: 10, color: '#1d4ed8', fillColor: '#3b82f6', fillOpacity: 0.7, weight: 2,
-      }).addTo(map).bindTooltip('📍 현재 위치', { permanent: false });
-
-      L.polyline([userPos, center], {
-        color: '#1d4ed8', weight: 2, opacity: 0.5, dashArray: '6 4',
-      }).addTo(map);
-    }
 
     if (hasRoute) {
       const points = geometry.map((p) => [p.lat, p.lng]);
@@ -118,10 +106,7 @@ export function useLeafletMap() {
         radius: 8, color: '#7c3aed', fillColor: '#a78bfa', fillOpacity: 0.9, weight: 2,
       }).addTo(map).bindTooltip('🎯 도착', { permanent: false });
 
-      // 경로 전체가 보이도록 자동 확대
-      const bounds = L.latLngBounds(points);
-      if (userLocation?.lat) bounds.extend([userLocation.lat, userLocation.lng]);
-      map.fitBounds(bounds, { padding: [24, 24] });
+      map.fitBounds(L.latLngBounds(points), { padding: [24, 24] });
     } else {
       // 경로 없음: 출발지 원
       L.circle(center, {

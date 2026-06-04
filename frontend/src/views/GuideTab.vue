@@ -510,7 +510,7 @@ function ensureFutureDepartureTime() {
 
 async function renderMap() {
   await nextTick();
-  renderDetailMap(detailMapEl.value, selectedCourse.value, disasterZones.value, location.value);
+  renderDetailMap(detailMapEl.value, selectedCourse.value, disasterZones.value);
 }
 
 watch(selectedCourse, () => renderMap());
