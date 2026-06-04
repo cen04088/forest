@@ -77,10 +77,15 @@ def get(sid: str) -> dict | None:
 
 def get_by_code(code: str) -> dict | None:
     from .models import SafeLinkSession
+    clean = code.upper().strip()
+    if not clean:
+        return None
     try:
-        session = SafeLinkSession.objects.get(share_code=code.upper().strip())
+        session = SafeLinkSession.objects.get(share_code=clean)
         return _to_dict(session, include_trail=True)
     except SafeLinkSession.DoesNotExist:
+        return None
+    except Exception:
         return None
 
 
