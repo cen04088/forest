@@ -63,6 +63,12 @@
           <span class="status-dot dot-green"></span> 산행 중 · GPS 추적 활성
           <span class="status-time">{{ lastLocationTs ? '위치 갱신됨' : '위치 대기 중…' }}</span>
         </div>
+        <div v-if="wakeLockActive" class="wakelock-badge">
+          🔆 화면 켜짐 유지 중 · GPS 계속 추적
+        </div>
+        <div v-else class="wakelock-warn">
+          ⚠️ 화면이 꺼지면 GPS 추적이 중단됩니다. 산행 중에는 화면을 켜두세요.
+        </div>
         <p v-if="gpsErrorMsg" class="share-status error" style="margin:8px 0 0;">📡 {{ gpsErrorMsg }}</p>
 
         <!-- 보호자 코드 (핵심 UI) -->
@@ -134,7 +140,7 @@ const safeLinkMapEl = ref(null);
 const shareStatus = ref('');
 
 const { safeLinkMapStatus, renderSafeLinkMap } = useLeafletMap();
-const { sessionStatus: safeLinkStatus, shareUrl: safeLinkUrl, shareCode, isActive: safeLinkActive, errorMsg: safeLinkError, gpsErrorMsg, lastLocationTs, startHiking, stopHiking, resetSafeLink } = useSafeLink();
+const { sessionStatus: safeLinkStatus, shareUrl: safeLinkUrl, shareCode, isActive: safeLinkActive, errorMsg: safeLinkError, gpsErrorMsg, lastLocationTs, wakeLockActive, startHiking, stopHiking, resetSafeLink } = useSafeLink();
 
 const hasLocation = computed(() => {
   const lat = Number(selectedCourse.value?.lat);

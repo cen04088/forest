@@ -8,7 +8,33 @@ const sessionStatus = ref('idle'); // idle | creating | active | ended | error
 const errorMsg = ref('');
 const lastLocationTs = ref(null);
 const gpsErrorMsg = ref('');
+const wakeLockActive = ref(false);
 let _watchId = null;
+let _wakeLock = null;
+
+// ── Wake Lock (화면 꺼짐 방지) ───────────────────────────────────────────────
+async function _acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    _wakeLock = await navigator.wakeLock.request('screen');
+    wakeLockActive.value = true;
+    _wakeLock.addEventListener('release', () => { wakeLockActive.value = false; });
+    // 화면이 다시 켜지면 자동 재취득
+    document.addEventListener('visibilitychange', _reacquireWakeLock);
+  } catch {}
+}
+
+async function _reacquireWakeLock() {
+  if (document.visibilityState === 'visible' && sessionStatus.value === 'active') {
+    await _acquireWakeLock();
+  }
+}
+
+function _releaseWakeLock() {
+  document.removeEventListener('visibilitychange', _reacquireWakeLock);
+  if (_wakeLock) { _wakeLock.release(); _wakeLock = null; }
+  wakeLockActive.value = false;
+}
 
 // ── GPS 추적 (내부) ──────────────────────────────────────────────────────────
 function _startTracking() {
@@ -65,6 +91,7 @@ export function useSafeLink() {
       shareCode.value = data.share_code || '';
       sessionStatus.value = 'active';
       _startTracking();
+      _acquireWakeLock();
     } catch (err) {
       sessionStatus.value = 'error';
       errorMsg.value = err.message || '세이프 링크 생성에 실패했습니다.';
@@ -72,6 +99,7 @@ export function useSafeLink() {
   }
 
   async function stopHiking() {
+    _releaseWakeLock();
     _stopTracking();
     if (sessionId.value) {
       try { await endSafeLink(sessionId.value); } catch {}
@@ -84,6 +112,7 @@ export function useSafeLink() {
   }
 
   function resetSafeLink() {
+    _releaseWakeLock();
     _stopTracking();
     sessionId.value = null;
     shareCode.value = '';
@@ -102,6 +131,7 @@ export function useSafeLink() {
     errorMsg,
     gpsErrorMsg,
     lastLocationTs,
+    wakeLockActive,
     startHiking,
     stopHiking,
     resetSafeLink,
