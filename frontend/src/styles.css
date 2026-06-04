@@ -2442,13 +2442,14 @@ p {
   }
 
   /* 히어로 데스크톱 */
-  .app-hero { margin-bottom: 24px; }
-  .hero-body { padding: 16px 32px 32px; }
-  .hero-nav  { padding: 18px 32px 8px; }
-  .hero-title { font-size: 34px; }
-  .hero-stat-num { font-size: 26px; }
-  .hero-stats { gap: 12px; }
-  .hero-stat { padding: 14px 16px; }
+  .app-hero { margin-bottom: 24px; border-radius: 24px; }
+  .hero-body { padding: 20px 40px 36px; }
+  .hero-nav  { padding: 20px 40px 8px; }
+  .hero-title { font-size: 38px; }
+  .hero-desc { font-size: 15px; }
+  .hero-stat-num { font-size: 28px; }
+  .hero-stats { gap: 14px; }
+  .hero-stat { padding: 16px 20px; border-radius: 16px; }
 
   /* ── 사이드바 브랜딩 ── */
   .sidebar-brand {
@@ -2561,7 +2562,7 @@ p {
 
   /* 패널 패딩 확대 */
   .panel {
-    padding: 24px;
+    padding: 26px 28px;
   }
 
   /* 헤딩 크기 */
@@ -2589,11 +2590,8 @@ p {
     height: 320px;
   }
 
-  /* ── 비-가이드 탭 공통: 최대 너비 + 중앙 정렬 ── */
+  /* ── 비-가이드 탭 공통: 히어로와 동일한 전체 너비 ── */
   .screen-stack:not(.guide-layout) {
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
     width: 100%;
   }
 
@@ -2608,29 +2606,29 @@ p {
   .safelink-col-map { display: grid; gap: 20px; }
   .safelink-col-ctrl { display: grid; gap: 20px; }
 
-  /* ── 커뮤니티 탭: 포스트 목록 2컬럼 그리드 ── */
+  /* ── 커뮤니티 탭: 포스트 목록 3컬럼 그리드 ── */
   .community-post-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
   }
 
-  /* 커뮤니티 상세·작성 뷰: 단일 컬럼 + 넓은 패딩 */
+  /* 커뮤니티 상세·작성 뷰: 단일 컬럼, 가독성 너비 유지 */
   .community-detail-wide {
-    max-width: 680px;
+    max-width: 760px;
     margin: 0 auto;
     width: 100%;
   }
 
-  /* ── 내정보 탭: 상단 2컬럼 + 하단 2컬럼 ── */
+  /* ── 내정보 탭: 3컬럼 그리드 ── */
   .mypage-layout {
     display: grid !important;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     align-items: start;
   }
 
-  /* 체크리스트·긴급연락처는 하단 full-width */
+  /* 체크리스트·긴급연락처·내 글은 하단 full-width */
   .mypage-full {
     grid-column: 1 / -1;
   }
@@ -2659,16 +2657,24 @@ p {
   }
 
   .guide-layout {
-    grid-template-columns: 400px 1fr;
+    grid-template-columns: 420px 1fr;
     gap: 32px;
   }
 
-  .guide-left {
-    gap: 24px;
+  .guide-left { gap: 24px; }
+  .guide-right { gap: 24px; }
+
+  /* 1440px+: 안전공유 지도 더 높게 */
+  .safe-link-map { height: 420px; }
+
+  /* 1440px+: 커뮤니티 4컬럼 */
+  .community-post-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 
-  .guide-right {
-    gap: 24px;
+  /* 1440px+: 내정보 4컬럼 */
+  .mypage-layout {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
