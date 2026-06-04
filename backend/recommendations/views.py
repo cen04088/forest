@@ -80,9 +80,16 @@ def mountain_story(request):
 
 @require_GET
 def weather(request):
+    from django.core.cache import cache
     lat = float(request.GET.get("lat", 37.5665))
     lng = float(request.GET.get("lng", 126.978))
-    return JsonResponse(fetch_current_weather(lat, lng), json_dumps_params={"ensure_ascii": False})
+    cache_key = f"weather:{round(lat, 2)}:{round(lng, 2)}"
+    cached = cache.get(cache_key)
+    if cached:
+        return JsonResponse(cached, json_dumps_params={"ensure_ascii": False})
+    result = fetch_current_weather(lat, lng)
+    cache.set(cache_key, result, 600)
+    return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
 
 
 @require_GET

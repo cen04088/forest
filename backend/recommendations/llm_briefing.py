@@ -1,37 +1,39 @@
-import functools
 import os
+
+_LLM_CACHE_SECONDS = 3600  # 동일 조건 브리핑은 1시간 캐시
 
 
 def _cache_key(course, safety, weather, daylight_margin):
     rainfall_bucket = int((weather.get("rainfall_mm") or 0) // 5) * 5
     wind_bucket = int((weather.get("wind_speed_ms") or 0) // 3) * 3
-    daylight_bucket = None if daylight_margin is None else (
+    daylight_bucket = (
+        None if daylight_margin is None else
         "negative" if daylight_margin < 0 else
         "short" if daylight_margin < 60 else
         "ok"
     )
-    return (
+    key_parts = (
         safety.get("safety_decision", ""),
         course.get("difficulty", ""),
         rainfall_bucket,
         wind_bucket,
         daylight_bucket,
-        tuple(sorted(safety.get("risk_factors", [])[:2])),
+        ",".join(sorted((safety.get("risk_factors") or [])[:2])),
     )
-
-
-_briefing_cache: dict = {}
+    return "llm_briefing:" + ":".join(str(p) for p in key_parts)
 
 
 def generate_briefing(course, safety, weather, daylight_margin=None) -> str | None:
-    """Try Claude API → None if unavailable (caller uses template fallback)."""
+    """Claude API로 브리핑 생성. API 키 없거나 오류 시 None 반환 (호출부가 템플릿 폴백 사용)."""
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
         return None
 
+    from django.core.cache import cache
     cache_key = _cache_key(course, safety, weather, daylight_margin)
-    if cache_key in _briefing_cache:
-        return _briefing_cache[cache_key]
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
 
     try:
         import anthropic
@@ -59,7 +61,7 @@ def generate_briefing(course, safety, weather, daylight_margin=None) -> str | No
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text.strip()
-        _briefing_cache[cache_key] = text
+        cache.set(cache_key, text, _LLM_CACHE_SECONDS)
         return text
     except Exception:
         return None

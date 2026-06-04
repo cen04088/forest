@@ -21,8 +21,16 @@ def env_list(name, default=None):
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-forestrx-secret-key")
-DEBUG = env_bool("DJANGO_DEBUG", default=True)
+_secret_key = os.environ.get("DJANGO_SECRET_KEY")
+if not _secret_key:
+    _is_production = bool(os.environ.get("DATABASE_URL") or os.environ.get("RAILWAY_PUBLIC_DOMAIN"))
+    if _is_production:
+        raise RuntimeError(
+            "DJANGO_SECRET_KEY 환경변수가 설정되지 않았습니다. 프로덕션에서는 반드시 설정하세요."
+        )
+    _secret_key = "dev-only-forestrx-secret-key"
+SECRET_KEY = _secret_key
+DEBUG = env_bool("DJANGO_DEBUG", default=False)
 
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", ["localhost", "127.0.0.1", ".railway.app", ".up.railway.app"])
 if railway_domain := os.environ.get("RAILWAY_PUBLIC_DOMAIN"):

@@ -105,38 +105,6 @@ export async function fetchWeather(location) {
   return request(`/weather/?${params.toString()}`);
 }
 
-export async function fetchMountainWeather({ mountainName = "", mountainNum = "" } = {}) {
-  const params = new URLSearchParams({ mountain: mountainName || "" });
-  if (mountainNum) {
-    params.set("mountainNum", mountainNum);
-  }
-  return request(`/mountain-weather/?${params.toString()}`);
-}
-
-export async function fetchForestSpatial(mountainName) {
-  const params = new URLSearchParams({ mountain: mountainName || "" });
-  return request(`/forest-spatial/?${params.toString()}`);
-}
-
-export async function fetchVWorldTrails({ mountainName = "", lat, lng, radius = 5 } = {}) {
-  const params = new URLSearchParams({ mountain: mountainName || "", radius });
-  if (lat !== undefined && lng !== undefined) {
-    params.set("lat", lat);
-    params.set("lng", lng);
-  }
-  return request(`/vworld-trails/?${params.toString()}`);
-}
-
-export async function fetchMountainStory(mountainName) {
-  const params = new URLSearchParams({ mountain: mountainName || "" });
-  return request(`/mountain-story/?${params.toString()}`);
-}
-
-export async function fetchLandslide(sgg) {
-  const params = new URLSearchParams({ sgg: sgg || "" });
-  return request(`/landslide/?${params.toString()}`);
-}
-
 export async function fetchRecommendations(payload) {
   return request("/recommendations/", {
     method: "POST",
@@ -145,6 +113,11 @@ export async function fetchRecommendations(payload) {
     },
     body: JSON.stringify(payload),
   });
+}
+
+export async function fetchSafetyReports(mountainName) {
+  const params = new URLSearchParams({ mountain: mountainName || "" });
+  return request(`/safety-reports/?${params.toString()}`);
 }
 
 export async function fetchDisasterZones(mountainName) {
@@ -184,10 +157,6 @@ export async function endSafeLink(id) {
 
 export async function fetchMyPosts(token, page = 1) {
   return request(`/my-posts/?page=${page}`, { headers: authHeaders(token) });
-}
-
-export async function fetchLikedPosts(token) {
-  return request("/liked-posts/", { headers: authHeaders(token) });
 }
 
 // ── 산행 기록 ─────────────────────────────────────────────────────────────────

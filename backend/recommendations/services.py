@@ -1,6 +1,10 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
+from functools import lru_cache
 from math import asin, cos, radians, sin, sqrt
 from zoneinfo import ZoneInfo
+
+from django.core.cache import cache
 
 from .disaster_risk import disaster_risk_level, disaster_risk_messages, find_course_disaster_risks
 from .forest_api import fetch_forest_spatial_data, forest_spatial_items_to_courses
@@ -8,6 +12,8 @@ from .loaders import load_public_trail_courses, load_disaster_risk_zones
 from .local_road_api import fetch_local_road_trails
 from .weather_api import fetch_current_weather, merge_mountain_weather
 from .vworld_api import fetch_vworld_trails
+
+_WEATHER_CACHE_SECONDS = 600  # 10분
 
 
 DIFFICULTY_LEVEL = {"easy": 1, "medium": 2, "hard": 3}
@@ -239,10 +245,20 @@ def safety_rank(decision):
     return {"recommend": 3, "caution": 2, "not_recommended": 1}.get(decision, 0)
 
 
+def _cached_weather(lat, lng):
+    cache_key = f"weather:{round(lat, 2)}:{round(lng, 2)}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    result = fetch_current_weather(lat, lng)
+    cache.set(cache_key, result, _WEATHER_CACHE_SECONDS)
+    return result
+
+
 def recommend_courses(payload):
     profile = payload.get("profile", {})
     location = payload.get("location") or {"lat": 37.5665, "lng": 126.978}
-    weather = fetch_current_weather(location["lat"], location["lng"])
+    weather = _cached_weather(location["lat"], location["lng"])
     courses = [dict(course) for course in load_public_trail_courses()]
 
     mountain_name = (profile.get("mountainName") or "").strip()
@@ -260,24 +276,37 @@ def recommend_courses(payload):
     weather_score = weather_safety_score(weather)
     all_disaster_zones = load_disaster_risk_zones()  # lru_cache — 한 번만 IO 발생
     if mountain_name:
-        local_road_result = fetch_local_road_trails(
-            query_lat,
-            query_lng,
-            mountain_name,
-            radius_km=max(int(profile.get("maxDistanceKm", 30)) / 2, 8),
-            size=40,
+        radius_km = max(int(profile.get("maxDistanceKm", 30)) / 2, 8)
+
+        def _fetch_local():
+            return fetch_local_road_trails(query_lat, query_lng, mountain_name, radius_km=radius_km, size=40)
+
+        def _fetch_vworld():
+            return fetch_vworld_trails(lat=query_lat, lng=query_lng, mountain_name=mountain_name, radius_km=max(radius_km, 5), size=40)
+
+        def _fetch_forest():
+            return fetch_forest_spatial_data(mountain_name, 1, 10)
+
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures = {
+                pool.submit(_fetch_local): "local",
+                pool.submit(_fetch_vworld): "vworld",
+                pool.submit(_fetch_forest): "forest",
+            }
+            results = {}
+            for future in as_completed(futures):
+                key = futures[future]
+                try:
+                    results[key] = future.result()
+                except Exception:
+                    results[key] = {}
+
+        courses = (
+            forest_spatial_items_to_courses(results.get("forest", {}))
+            + results.get("vworld", {}).get("items", [])
+            + results.get("local", {}).get("items", [])
+            + courses
         )
-        courses = local_road_result.get("items", []) + courses
-        vworld_result = fetch_vworld_trails(
-            lat=query_lat,
-            lng=query_lng,
-            mountain_name=mountain_name,
-            radius_km=max(int(profile.get("maxDistanceKm", 30)) / 2, 5),
-            size=40,
-        )
-        courses = vworld_result.get("items", []) + courses
-        forest_result = fetch_forest_spatial_data(mountain_name, 1, 10)
-        courses = forest_spatial_items_to_courses(forest_result) + courses
 
     recommendations = []
     for course in courses:

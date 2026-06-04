@@ -18,9 +18,12 @@ def get_auth_user(request):
     if not key:
         return None
     try:
-        return AuthToken.objects.select_related("user").get(key=key).user
+        token = AuthToken.objects.select_related("user").get(key=key)
     except AuthToken.DoesNotExist:
         return None
+    if not token.is_valid():
+        return None
+    return token.user
 
 
 def _user_dict(user):
@@ -477,6 +480,32 @@ def emergency_contacts(request):
         relation=(body.get("relation") or "").strip(),
     )
     return JsonResponse(_contact_dict(contact), status=201)
+
+
+@require_http_methods(["GET"])
+def safety_reports(request):
+    """특정 산의 최근 안전 제보 게시글을 반환한다."""
+    mountain = request.GET.get("mountain", "").strip()
+    if not mountain:
+        return JsonResponse({"reports": []})
+
+    qs = (
+        Post.objects.filter(category="safety")
+        .filter(mountain__icontains=mountain)
+        .order_by("-created_at")[:5]
+    )
+    return JsonResponse({
+        "reports": [
+            {
+                "id": p.id,
+                "title": p.title,
+                "content": p.content[:200],
+                "author": p.author.first_name or p.author.username,
+                "created_at": p.created_at.isoformat(),
+            }
+            for p in qs
+        ]
+    })
 
 
 @csrf_exempt

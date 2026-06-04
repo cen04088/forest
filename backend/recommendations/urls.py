@@ -31,6 +31,8 @@ urlpatterns = [
     path("posts/<int:post_id>/like/", cv.post_like),
     path("posts/<int:post_id>/comments/", cv.post_comments),
     path("comments/<int:comment_id>/", cv.comment_detail),
+    # 안전 제보
+    path("safety-reports/", cv.safety_reports),
     # 내 활동
     path("my-posts/", cv.my_posts),
     path("liked-posts/", cv.liked_posts),

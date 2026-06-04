@@ -1,19 +1,33 @@
 import secrets
+import uuid
+from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils import timezone
+
+TOKEN_EXPIRY_DAYS = 30
 
 
 class AuthToken(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="auth_token")
     key = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     @classmethod
     def create_for_user(cls, user):
         key = secrets.token_hex(32)
-        token, _ = cls.objects.update_or_create(user=user, defaults={"key": key})
+        expires_at = timezone.now() + timedelta(days=TOKEN_EXPIRY_DAYS)
+        token, _ = cls.objects.update_or_create(
+            user=user, defaults={"key": key, "expires_at": expires_at}
+        )
         return token
+
+    def is_valid(self):
+        if self.expires_at is None:
+            return True
+        return timezone.now() < self.expires_at
 
     class Meta:
         db_table = "recommendations_authtoken"
@@ -91,6 +105,41 @@ class FavoriteCourse(models.Model):
         unique_together = ("user", "course_id")
         ordering = ["-created_at"]
         db_table = "recommendations_favoritecourse"
+
+
+class SafeLinkSession(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    course_name = models.CharField(max_length=200, blank=True)
+    mountain = models.CharField(max_length=100, blank=True)
+    safety_label = models.CharField(max_length=20, blank=True)
+    safety_decision = models.CharField(max_length=30, blank=True)
+    risk_factors = models.JSONField(default=list)
+    distance_km = models.FloatField(null=True, blank=True)
+    duration_min = models.IntegerField(default=0)
+    course_lat = models.FloatField(null=True, blank=True)
+    course_lng = models.FloatField(null=True, blank=True)
+    current_lat = models.FloatField(null=True, blank=True)
+    current_lng = models.FloatField(null=True, blank=True)
+    location_ts = models.IntegerField(null=True, blank=True)
+    status = models.CharField(max_length=20, default="hiking")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "recommendations_safelinksession"
+        ordering = ["-created_at"]
+
+
+class LocationLog(models.Model):
+    session = models.ForeignKey(
+        SafeLinkSession, on_delete=models.CASCADE, related_name="location_logs"
+    )
+    lat = models.FloatField()
+    lng = models.FloatField()
+    recorded_at = models.IntegerField()  # Unix timestamp
+
+    class Meta:
+        db_table = "recommendations_locationlog"
+        ordering = ["recorded_at"]
 
 
 class EmergencyContact(models.Model):
