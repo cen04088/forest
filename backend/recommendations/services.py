@@ -308,6 +308,10 @@ def recommend_courses(payload):
             + courses
         )
 
+    route_courses = [c for c in courses if c.get("route_geometry")]
+    if route_courses:
+        courses = route_courses
+
     recommendations = []
     for course in courses:
         course["disaster_risk_zones"] = find_course_disaster_risks(course, all_disaster_zones)
