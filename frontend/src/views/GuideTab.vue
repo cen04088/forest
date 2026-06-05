@@ -53,6 +53,14 @@
               <option :value="120">2시간</option>
               <option :value="180">3시간</option>
               <option :value="240">4시간</option>
+              <option :value="300">5시간</option>
+              <option :value="360">6시간</option>
+              <option :value="420">7시간</option>
+              <option :value="480">8시간</option>
+              <option :value="540">9시간</option>
+              <option :value="600">10시간</option>
+              <option :value="660">11시간</option>
+              <option :value="720">12시간</option>
             </select>
           </label>
           <div class="field wide-field">
@@ -330,7 +338,19 @@ const purposeTypes = [
   { value: 'workout', label: '💪 운동' },
   { value: 'view', label: '🏔️ 전망' },
 ];
-const quickMountains = ['설악산', '지리산', '북한산', '관악산', '청계산', '도봉산', '남산', '수락산'];
+// 선호 순서 정의 — 실제 mountainOptions에 있는 산만 버튼으로 노출
+const _preferredOrder = ['설악산', '지리산', '북한산', '오대산', '무등산', '계룡산', '팔공산', '속리산', '소백산', '치악산'];
+const quickMountains = computed(() => {
+  if (!mountainOptions.value.length) return _preferredOrder.slice(0, 8);
+  const available = new Set(mountainOptions.value.map((m) => m.name));
+  const result = _preferredOrder.filter((n) => available.has(n));
+  // 선호 목록이 8개 미만이면 mountainOptions 상위로 보충
+  for (const m of mountainOptions.value) {
+    if (result.length >= 8) break;
+    if (!result.includes(m.name)) result.push(m.name);
+  }
+  return result.slice(0, 8);
+});
 
 const minDepartureTime = computed(() =>
   profile.departureDate === minDepartureDate
@@ -483,10 +503,8 @@ function handleMountainChange() {
 }
 
 function selectQuickMountain(name) {
-  // mountainOptions의 실제 이름과 매칭 (공백·접미사 차이 허용)
-  const norm = (s) => s.replace(/\s/g, '').replace(/산$/, '');
-  const match = mountainOptions.value.find((m) => norm(m.name) === norm(name));
-  profile.mountainName = match ? match.name : name;
+  // quickMountains는 이미 mountainOptions에 있는 이름만 담으므로 직접 설정
+  profile.mountainName = name;
   handleMountainChange();
 }
 
