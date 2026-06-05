@@ -109,6 +109,7 @@ def _read_trail_csv(path, encoding):
                 segments.append(course)
 
     courses = merge_connected_trail_segments(segments)
+    courses = [c for c in courses if c.get("lat") is not None and c.get("lng") is not None]
     return courses or COURSES
 
 
