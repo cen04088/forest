@@ -66,7 +66,22 @@
             <p class="eyebrow">Mountain Finder</p>
             <h2>나에게 맞는 산 추천</h2>
           </div>
-          <span class="mini-status">{{ loading ? '분석 중' : '준비됨' }}</span>
+          <div class="title-gps">
+            <button
+              class="gps-btn" type="button"
+              :class="gpsStatus" :disabled="gpsStatus === 'loading'"
+              :title="gpsBtnTitle" @click="handleGPS"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                <path v-if="gpsStatus === 'loading'" d="M12 6a6 6 0 0 1 6 6" class="gps-spin" />
+              </svg>
+            </button>
+            <span class="mini-status" :class="gpsStatus === 'success' ? 'status-gps-ok' : ''">
+              {{ gpsStatus === 'success' ? '위치 감지됨' : gpsStatus === 'error' ? '위치 오류' : '내 위치 우선' }}
+            </span>
+          </div>
         </div>
 
         <form class="planner" @submit.prevent="handleSubmit">
@@ -111,25 +126,7 @@
             </div>
           </div>
 
-          <!-- GPS 위치 감지 -->
-          <div class="field wide-field gps-field">
-            <div class="gps-row">
-              <span class="gps-label">내 위치로 가까운 산 우선</span>
-              <button
-                class="gps-btn" type="button"
-                :class="gpsStatus" :disabled="gpsStatus === 'loading'"
-                :title="gpsBtnTitle" @click="handleGPS"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-                  <path v-if="gpsStatus === 'loading'" d="M12 6a6 6 0 0 1 6 6" class="gps-spin" />
-                </svg>
-              </button>
-            </div>
-            <p v-if="gpsStatus === 'success'" class="gps-message success">📍 위치 감지 완료 — 가까운 산을 우선합니다</p>
-            <p v-if="gpsStatus === 'error'" class="gps-message error">⚠️ {{ gpsError }}</p>
-          </div>
+          <p v-if="gpsStatus === 'error'" class="gps-message error" style="margin-bottom:4px">⚠️ {{ gpsError }}</p>
 
           <button class="primary-btn wide-field" :class="{ loading }" type="submit" :disabled="loading">
             {{ loading ? '최적 산 분석 중…' : '나에게 맞는 산 찾기' }}

@@ -11,6 +11,8 @@ const gpsErrorMsg = ref('');
 const wakeLockActive = ref(false);
 let _watchId = null;
 let _wakeLock = null;
+let _lastSavedTs = 0;          // 마지막 서버 저장 시각 (Unix sec)
+const WAYPOINT_INTERVAL = 300; // 5분
 
 // ── Wake Lock (화면 꺼짐 방지) ───────────────────────────────────────────────
 async function _acquireWakeLock() {
@@ -44,9 +46,14 @@ function _startTracking() {
   }
   if (_watchId !== null) return; // 이미 추적 중
 
+  _lastSavedTs = 0; // 첫 포인트 즉시 저장되도록 초기화
   _watchId = navigator.geolocation.watchPosition(
     (pos) => {
       if (!sessionId.value) return;
+      const nowSec = Date.now() / 1000;
+      // 첫 포인트는 즉시, 이후 5분 간격으로만 저장
+      if (_lastSavedTs !== 0 && nowSec - _lastSavedTs < WAYPOINT_INTERVAL) return;
+      _lastSavedTs = nowSec;
       const { latitude, longitude } = pos.coords;
       updateSafeLinkLocation(sessionId.value, latitude, longitude)
         .then(() => { lastLocationTs.value = Date.now(); })
@@ -139,16 +146,23 @@ export function useSafeLink() {
 }
 
 // ── 보호자 뷰 훅 ─────────────────────────────────────────────────────────────
+const AUTO_REFRESH_INTERVAL = 60_000; // 1분
+
 export function useGuardianView(sessionId) {
   const session = ref(null);
   const loading = ref(true);
   const pollError = ref('');
+  const lastRefreshedTs = ref(null);   // 마지막 자동/수동 새로고침 시각 (ms)
+  const nextRefreshIn = ref(0);        // 다음 자동 새로고침까지 남은 초
   let pollTimer = null;
+  let countdownTimer = null;
 
   async function fetchSession() {
     try {
       session.value = await getSafeLink(sessionId);
       pollError.value = '';
+      lastRefreshedTs.value = Date.now();
+      nextRefreshIn.value = AUTO_REFRESH_INTERVAL / 1000;
     } catch {
       pollError.value = '위치 정보를 불러오지 못했습니다.';
     } finally {
@@ -156,14 +170,48 @@ export function useGuardianView(sessionId) {
     }
   }
 
+  function _startCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      nextRefreshIn.value = Math.max(0, nextRefreshIn.value - 1);
+    }, 1000);
+  }
+
   function startPolling() {
     fetchSession();
-    pollTimer = setInterval(fetchSession, 20000);
+    pollTimer = setInterval(fetchSession, AUTO_REFRESH_INTERVAL);
+    _startCountdown();
   }
 
   function stopPolling() {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
   }
+
+  // 수동 새로고침 — 타이머도 리셋
+  async function manualRefresh() {
+    stopPolling();
+    loading.value = true;
+    await fetchSession();
+    pollTimer = setInterval(fetchSession, AUTO_REFRESH_INTERVAL);
+    _startCountdown();
+  }
+
+  const lastRefreshedLabel = computed(() => {
+    const ts = lastRefreshedTs.value;
+    if (!ts) return '';
+    const elapsed = Math.floor((Date.now() - ts) / 1000);
+    if (elapsed < 10) return '방금 새로고침';
+    if (elapsed < 60) return `${elapsed}초 전 새로고침`;
+    return `${Math.floor(elapsed / 60)}분 전 새로고침`;
+  });
+
+  const nextRefreshLabel = computed(() => {
+    const s = nextRefreshIn.value;
+    if (s <= 0) return '새로고침 중…';
+    if (s < 60) return `${s}초 후 자동 새로고침`;
+    return `${Math.floor(s / 60)}분 ${s % 60}초 후 자동 새로고침`;
+  });
 
   const lastUpdateLabel = computed(() => {
     const ts = session.value?.location_ts;
@@ -188,5 +236,10 @@ export function useGuardianView(sessionId) {
     return 'green';
   });
 
-  return { session, loading, pollError, lastUpdateLabel, statusLabel, statusClass, startPolling, stopPolling };
+  return {
+    session, loading, pollError,
+    lastUpdateLabel, statusLabel, statusClass,
+    lastRefreshedLabel, nextRefreshLabel,
+    startPolling, stopPolling, manualRefresh,
+  };
 }

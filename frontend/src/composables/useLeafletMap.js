@@ -171,19 +171,67 @@ export function useLeafletMap() {
     const zoom = trail.length >= 2 ? 14 : 15;
     const map = _getOrCreateMap(el, center, zoom);
 
-    // 이동 궤적
+    // 매 갱신마다 이전 레이어 제거 후 재그리기
+    if (!map._guardianLayerGroup) {
+      map._guardianLayerGroup = L.layerGroup().addTo(map);
+    }
+    map._guardianLayerGroup.clearLayers();
+
+    const lg = map._guardianLayerGroup;
+
+    // ── 궤적 선 ────────────────────────────────
     if (trail.length >= 2) {
-      const trailPoints = trail.map((p) => [p.lat, p.lng]);
-      L.polyline(trailPoints, { color: '#3b82f6', weight: 3, opacity: 0.7 }).addTo(map);
-      map.fitBounds(L.latLngBounds(trailPoints), { padding: [32, 32] });
+      const pts = trail.map((p) => [p.lat, p.lng]);
+      L.polyline(pts, { color: '#3b82f6', weight: 3, opacity: 0.75 }).addTo(lg);
+      map.fitBounds(L.latLngBounds(pts), { padding: [40, 40], maxZoom: 15 });
     }
 
-    // 현재 위치 마커
-    L.circleMarker(center, {
-      radius: 12, color: '#1d4ed8', fillColor: '#3b82f6', fillOpacity: 0.75, weight: 3,
-    }).addTo(map).bindTooltip('📍 현재 위치', { permanent: false });
+    // ── 5분 간격 waypoint 점 ───────────────────
+    const fmt = (ts) => {
+      if (!ts) return '시간 미상';
+      const d = new Date(ts * 1000);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const elapsed = Math.floor((Date.now() / 1000 - ts) / 60);
+      const ago = elapsed < 1 ? '방금' : elapsed < 60 ? `${elapsed}분 전` : `${Math.floor(elapsed/60)}시간 ${elapsed%60}분 전`;
+      return `${hh}:${mm} (${ago})`;
+    };
 
-    map.setView(center);
+    trail.forEach((p, i) => {
+      const isFirst = i === 0;
+      const isLast = i === trail.length - 1;
+      const label = isFirst ? '🚩 출발' : `📍 ${i}번째 기록`;
+      const timeStr = fmt(p.recorded_at);
+
+      if (!isLast) {
+        L.circleMarker([p.lat, p.lng], {
+          radius: isFirst ? 7 : 5,
+          color: '#1d4ed8',
+          fillColor: isFirst ? '#facc15' : '#93c5fd',
+          fillOpacity: 0.9,
+          weight: 2,
+        }).addTo(lg).bindPopup(
+          `<div style="font-size:12px;text-align:center;line-height:1.6">
+            <div style="font-weight:700">${label}</div>
+            <div style="color:#6b7280">${timeStr}</div>
+          </div>`,
+          { maxWidth: 160 }
+        );
+      }
+    });
+
+    // ── 현재 위치 마커 (파란 점) ───────────────
+    L.circleMarker(center, {
+      radius: 12, color: '#1d4ed8', fillColor: '#3b82f6', fillOpacity: 0.85, weight: 3,
+    }).addTo(lg).bindPopup(
+      `<div style="font-size:12px;text-align:center;line-height:1.6">
+        <div style="font-weight:700">📍 현재 위치</div>
+        <div style="color:#6b7280">${fmt(session.location_ts)}</div>
+      </div>`,
+      { maxWidth: 160 }
+    );
+
+    if (trail.length < 2) map.setView(center, zoom);
   }
 
   // ─── 재난위험지구 오버레이 ─────────────────────────────────────────────────

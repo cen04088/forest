@@ -9,49 +9,49 @@
 
       <article class="safe-link-card">
         <div class="safe-link-map">
-          <div ref="safeLinkMapEl" class="kakao-map" aria-label="보호자 공유 카카오 지도"></div>
+          <div ref="safeLinkMapEl" class="kakao-map" aria-label="보호자 공유 지도"></div>
         </div>
         <div v-if="safeLinkMapStatus" class="map-status-msg">
           <span class="info-icon">ℹ️</span><span>{{ safeLinkMapStatus }}</span>
         </div>
         <div class="safe-link-status">
-          <span :class="['safety-badge', selectedCourse ? safetyClass(selectedCourse) : 'yellow']">
-            {{ selectedCourse?.safety_label || '진단 대기' }}
+          <span :class="['safety-badge', selectedMountain ? badgeClass : 'yellow']">
+            {{ selectedMountain?.safety_label || '진단 대기' }}
           </span>
-          <h3>{{ selectedCourse?.name || '안전 진단 후 공유 가능' }}</h3>
+          <h3>{{ selectedMountain?.name || '안전 진단 후 공유 가능' }}</h3>
           <p>{{ safeLinkSummary }}</p>
         </div>
       </article>
 
-      <div v-if="selectedCourse" class="safe-link-status-bar">
-        <div class="status-dot" :class="selectedCourse.safety_decision === 'recommend' ? 'dot-green' : 'dot-yellow'"></div>
-        <span>{{ selectedCourse.safe_link_preview?.status || '정상 이동' }}</span>
+      <div v-if="selectedMountain" class="safe-link-status-bar">
+        <div class="status-dot" :class="selectedMountain.safety_decision === 'recommend' ? 'dot-green' : 'dot-yellow'"></div>
+        <span>{{ selectedMountain.safety_label || '정상 이동' }}</span>
         <span class="status-time">마지막 확인: 방금 전</span>
       </div>
     </section>
-    </div><!-- /safelink-col-map -->
+    </div>
 
-    <!-- 오른쪽 컬럼: 산행 시작 컨트롤 + 외부 링크 -->
+    <!-- 오른쪽 컬럼: 산행 시작 컨트롤 -->
     <div class="safelink-col-ctrl">
-    <!-- 산행 시작 / 세이프링크 패널 -->
     <section class="panel share-panel">
       <div class="section-title compact">
         <div><p class="eyebrow">산행 시작</p><h2>세이프링크 생성</h2></div>
       </div>
-      <!-- 대기 / 오류 상태 -->
+
+      <!-- 대기 상태 -->
       <div v-if="!safeLinkActive && safeLinkStatus !== 'ended'">
         <p class="safe-link-guide">
-          코스를 선택한 뒤 산행을 시작하면 보호자 전용 실시간 위치 링크가 생성됩니다.
+          산을 선택한 뒤 산행을 시작하면 보호자 전용 실시간 위치 링크가 생성됩니다.
         </p>
-        <p v-if="!selectedCourse" class="safe-link-guide" style="color:var(--amber);font-size:12px;">
-          ⚠️ 안전코스 탭에서 코스를 먼저 선택해 주세요.
+        <p v-if="!selectedMountain" class="safe-link-guide" style="color:var(--amber);font-size:12px;">
+          ⚠️ 안전코스 탭에서 산을 먼저 선택해 주세요.
         </p>
         <button
           class="primary-btn wide-field" type="button"
-          :disabled="!selectedCourse || safeLinkStatus === 'creating'"
-          @click="startHiking(selectedCourse)"
+          :disabled="!selectedMountain || safeLinkStatus === 'creating'"
+          @click="startHiking(mountainAsCourse)"
         >
-          {{ safeLinkStatus === 'creating' ? '링크 생성 중…' : '산행 시작 &amp; 세이프링크 생성' }}
+          {{ safeLinkStatus === 'creating' ? '링크 생성 중…' : '산행 시작 & 세이프링크 생성' }}
         </button>
         <p v-if="safeLinkError" class="share-status error">{{ safeLinkError }}</p>
         <p v-if="gpsErrorMsg" class="share-status error">📡 {{ gpsErrorMsg }}</p>
@@ -71,7 +71,6 @@
         </div>
         <p v-if="gpsErrorMsg" class="share-status error" style="margin:8px 0 0;">📡 {{ gpsErrorMsg }}</p>
 
-        <!-- 보호자 코드 (핵심 UI) -->
         <div v-if="shareCode" class="share-code-box">
           <p class="share-code-label">보호자에게 이 코드를 알려주세요</p>
           <div class="share-code-display">
@@ -100,7 +99,7 @@
         </button>
       </div>
 
-      <details class="share-message-details" v-if="selectedCourse">
+      <details class="share-message-details" v-if="selectedMountain">
         <summary>문자 공유 문구 보기</summary>
         <textarea class="share-message" :value="safeLinkMessage" readonly aria-label="보호자 공유 메시지"></textarea>
         <div class="share-actions">
@@ -111,11 +110,11 @@
     </section>
 
     <section class="panel kakao-actions">
-      <a :class="['map-action', !selectedCourse ? 'disabled' : '']" :href="selectedCourse ? kakaoMapUrl : undefined" target="_blank" rel="noreferrer">
+      <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? kakaoMapUrl : undefined" target="_blank" rel="noreferrer">
         <strong>카카오맵에서 위치 보기</strong>
-        <span>보호자가 코스 위치를 바로 확인합니다.</span>
+        <span>보호자가 산 위치를 바로 확인합니다.</span>
       </a>
-      <a :class="['map-action', !selectedCourse ? 'disabled' : '']" :href="selectedCourse ? 'https://m.map.kakao.com/scheme/open?page=locationsharing' : undefined" target="_blank" rel="noreferrer">
+      <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? 'https://m.map.kakao.com/scheme/open?page=locationsharing' : undefined" target="_blank" rel="noreferrer">
         <strong>카카오맵 친구위치 공유</strong>
         <span>현재 나의 위치를 친구들과 카카오맵으로 실시간 공유합니다.</span>
       </a>
@@ -124,61 +123,103 @@
         <span>산악 사고 발생 시 즉시 119에 신고하세요.</span>
       </a>
     </section>
-    </div><!-- /safelink-col-ctrl -->
+    </div>
   </section>
 </template>
 
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { selectedCourse, weatherData, fetchCourseGeometry } from '../composables/useGuide.js';
+import { selectedMountain, weatherData } from '../composables/useGuide.js';
 import { saveHikingRecord } from '../composables/useUserData.js';
 import { useSafeLink } from '../composables/useSafeLink.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
-import { safetyClass, durationLabel, daylightLabel } from '../utils/courseHelpers.js';
 
 const safeLinkMapEl = ref(null);
 const shareStatus = ref('');
 
 const { safeLinkMapStatus, renderSafeLinkMap } = useLeafletMap();
-const { sessionStatus: safeLinkStatus, shareUrl: safeLinkUrl, shareCode, isActive: safeLinkActive, errorMsg: safeLinkError, gpsErrorMsg, lastLocationTs, wakeLockActive, startHiking, stopHiking, resetSafeLink } = useSafeLink();
+const {
+  sessionStatus: safeLinkStatus,
+  shareUrl: safeLinkUrl,
+  shareCode,
+  isActive: safeLinkActive,
+  errorMsg: safeLinkError,
+  gpsErrorMsg,
+  lastLocationTs,
+  wakeLockActive,
+  startHiking,
+  stopHiking,
+  resetSafeLink,
+} = useSafeLink();
+
+// 산 → 세이프링크 API가 기대하는 형태로 변환
+const mountainAsCourse = computed(() => {
+  const m = selectedMountain.value;
+  if (!m) return null;
+  return {
+    id: m.id,
+    name: m.name,
+    mountain: m.name,
+    lat: m.lat,
+    lng: m.lng,
+    safety_label: m.safety_label || '확인 중',
+    safety_decision: m.safety_decision || 'caution',
+    elevation_m: m.elevation_m,
+    region: m.region,
+    difficulty: m.difficulty,
+    duration_min: m.walk_time_min || 0,
+  };
+});
+
+const badgeClass = computed(() => {
+  const d = selectedMountain.value?.safety_decision;
+  if (d === 'recommend') return 'green';
+  if (d === 'caution') return 'yellow';
+  return 'red';
+});
 
 const hasLocation = computed(() => {
-  const lat = Number(selectedCourse.value?.lat);
-  const lng = Number(selectedCourse.value?.lng);
-  return Number.isFinite(lat) && Number.isFinite(lng);
+  const m = selectedMountain.value;
+  return m && Number.isFinite(Number(m.lat)) && Number.isFinite(Number(m.lng));
 });
 
 const kakaoMapUrl = computed(() => {
   if (!hasLocation.value) return '';
-  const c = selectedCourse.value;
-  return `https://map.kakao.com/link/map/${encodeURIComponent(c.name)},${c.lat},${c.lng}`;
+  const m = selectedMountain.value;
+  return `https://map.kakao.com/link/map/${encodeURIComponent(m.name)},${m.lat},${m.lng}`;
 });
 
 const safeLinkSummary = computed(() => {
-  if (!selectedCourse.value) return '안전 진단 후 보호자에게 보낼 공유 카드가 생성됩니다.';
-  return `${selectedCourse.value.mountain} ${selectedCourse.value.name} 코스의 안전 등급과 카카오 지도 위치를 보호자에게 공유합니다.`;
+  if (!selectedMountain.value) return '안전 진단 후 보호자에게 보낼 공유 카드가 생성됩니다.';
+  const m = selectedMountain.value;
+  return `${m.name}(${m.region}) 산행 안전 등급과 위치를 보호자에게 공유합니다.`;
 });
 
 const safeLinkMessage = computed(() => {
-  if (!selectedCourse.value) return '안전 진단 후 공유 메시지가 생성됩니다.';
-  const course = selectedCourse.value;
-  const riskFactors = (course.risk_factors || []).slice(0, 2).join(', ') || '특이 위험 요인 없음';
-  const locationLine = hasLocation.value ? `카카오맵 위치: ${kakaoMapUrl.value}` : '카카오맵 위치: 좌표 정보 없음';
+  if (!selectedMountain.value) return '안전 진단 후 공유 메시지가 생성됩니다.';
+  const m = selectedMountain.value;
+  const loH = Math.floor((m.walk_time_min || 0) / 60);
+  const hiH = Math.floor((m.walk_time_max || 0) / 60);
+  const timeText = (loH || hiH) ? `약 ${loH}~${hiH}시간` : '확인 필요';
+  const diffLabel = { easy: '초급', medium: '중급', hard: '고급' }[m.difficulty] || '';
+  const highlights = (m.highlights || []).slice(0, 2).join(', ') || '';
+  const locationLine = hasLocation.value ? `카카오맵 위치: ${kakaoMapUrl.value}` : '';
   return [
     '[올라 안전공유]',
-    `산/코스: ${course.mountain} · ${course.name}`,
-    `안전 등급: ${course.safety_label || ''}`,
-    `예상 산행: 약 ${durationLabel(course.duration_min)} / 거리 ${course.distance_km}km`,
-    `하산 여유: ${daylightLabel(course.daylight_margin_min)}`,
-    `주의 요인: ${riskFactors}`,
+    `산: ${m.name} (${m.region})`,
+    `안전 등급: ${m.safety_label || '확인 중'} · 난이도 ${diffLabel}`,
+    `해발 ${m.elevation_m ?? '-'}m · 소요시간 ${timeText}`,
+    highlights ? `특징: ${highlights}` : '',
     locationLine,
     '현장 통제, 기상 변화, 입산 제한 여부를 함께 확인해 주세요.',
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 });
 
 async function stopAndRecord() {
   await stopHiking();
-  await saveHikingRecord(selectedCourse.value, weatherData.value);
+  if (mountainAsCourse.value) {
+    await saveHikingRecord(mountainAsCourse.value, weatherData.value);
+  }
 }
 
 async function copyAndShare() {
@@ -186,7 +227,7 @@ async function copyAndShare() {
   if (!url) return;
   if (navigator.share) {
     try {
-      await navigator.share({ title: '올라 세이프링크', text: `${selectedCourse.value?.mountain} ${selectedCourse.value?.name} 산행 중입니다.`, url });
+      await navigator.share({ title: '올라 세이프링크', text: `${selectedMountain.value?.name} 산행 중입니다.`, url });
       return;
     } catch (err) { if (err?.name === 'AbortError') return; }
   }
@@ -199,21 +240,21 @@ async function copyAndShare() {
 }
 
 async function copyMessage() {
-  if (!selectedCourse.value) return;
+  if (!selectedMountain.value) return;
   try {
     await navigator.clipboard.writeText(safeLinkMessage.value);
     shareStatus.value = '보호자 공유 문구를 복사했습니다.';
   } catch {
-    shareStatus.value = '브라우저에서 복사를 허용하지 않았습니다. 문구를 직접 선택해 복사해 주세요.';
+    shareStatus.value = '문구를 직접 선택해 복사해 주세요.';
   }
 }
 
 async function shareMessage() {
-  if (!selectedCourse.value) return;
+  if (!selectedMountain.value) return;
   if (navigator.share) {
     try {
       await navigator.share({ title: '올라 안전공유', text: safeLinkMessage.value, url: hasLocation.value ? kakaoMapUrl.value : window.location.href });
-      shareStatus.value = '보호자 공유 창을 열었습니다.';
+      shareStatus.value = '공유 창을 열었습니다.';
       return;
     } catch (err) { if (err?.name === 'AbortError') { shareStatus.value = '공유를 취소했습니다.'; return; } }
   }
@@ -221,24 +262,15 @@ async function shareMessage() {
   if (hasLocation.value) window.open(kakaoMapUrl.value, '_blank', 'noreferrer');
 }
 
+// 지도: 산 위치 핀 표시
 async function renderMap() {
   await nextTick();
-  const course = selectedCourse.value;
-  if (!course) { renderSafeLinkMap(safeLinkMapEl.value, null); return; }
-
-  // geometry 없으면 on-demand fetch
-  if (!course.route_geometry || course.route_geometry.length < 2) {
-    renderSafeLinkMap(safeLinkMapEl.value, course);
-    const geometry = await fetchCourseGeometry(course);
-    if (geometry) {
-      course.route_geometry = geometry;
-      selectedCourse.value = { ...course };
-    }
-  }
-  await nextTick();
-  renderSafeLinkMap(safeLinkMapEl.value, selectedCourse.value);
+  const m = selectedMountain.value;
+  if (!m) { renderSafeLinkMap(safeLinkMapEl.value, null); return; }
+  // 산 데이터를 renderSafeLinkMap이 이해하는 형태로 전달
+  renderSafeLinkMap(safeLinkMapEl.value, mountainAsCourse.value);
 }
 
-watch(selectedCourse, renderMap);
+watch(selectedMountain, renderMap);
 onMounted(renderMap);
 </script>

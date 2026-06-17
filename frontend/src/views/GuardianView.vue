@@ -22,11 +22,18 @@
         <div class="guardian-meta-row">
           <span>📍 마지막 위치 수신: <strong>{{ lastUpdateLabel }}</strong></span>
           <span>🕐 {{ session.duration_min }}분 코스</span>
-          <span v-if="session.trail?.length">🗺️ 궤적 {{ session.trail.length }}포인트</span>
+          <span v-if="session.trail?.length">🗺️ 위치 {{ session.trail.length }}회 기록됨</span>
         </div>
 
         <div v-if="session.risk_factors?.length" class="risk-tags guardian-risks">
           <span v-for="f in session.risk_factors" :key="f">{{ f }}</span>
+        </div>
+
+        <!-- 자동 새로고침 상태 -->
+        <div class="guardian-refresh-status">
+          <span class="refresh-dot"></span>
+          <span>{{ lastRefreshedLabel }}</span>
+          <span class="refresh-next">· {{ nextRefreshLabel }}</span>
         </div>
 
         <div v-if="session.status === 'ended'" class="guardian-ended-banner">
@@ -36,7 +43,7 @@
 
       <section class="guardian-actions">
         <a href="tel:119" class="emergency-btn">🚨 119 신고</a>
-        <button class="outline-btn" type="button" @click="refresh">새로고침</button>
+        <button class="outline-btn" type="button" @click="manualRefresh">새로고침</button>
       </section>
 
       <p v-if="pollError" class="guardian-error">{{ pollError }}</p>
@@ -57,14 +64,13 @@ const route = useRoute();
 const sessionId = route.params.sessionId;
 
 const guardianMapEl = ref(null);
-const { session, loading, pollError, lastUpdateLabel, statusLabel, statusClass, startPolling, stopPolling } = useGuardianView(sessionId);
+const {
+  session, loading, pollError,
+  lastUpdateLabel, statusLabel, statusClass,
+  lastRefreshedLabel, nextRefreshLabel,
+  startPolling, stopPolling, manualRefresh,
+} = useGuardianView(sessionId);
 const { renderGuardianMap } = useLeafletMap();
-
-function refresh() {
-  loading.value = true;
-  stopPolling();
-  startPolling();
-}
 
 watch(session, async (val) => {
   if (!val) return;
