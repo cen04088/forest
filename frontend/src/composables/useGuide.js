@@ -1,5 +1,5 @@
 import { computed, reactive, ref } from 'vue';
-import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations, fetchVWorldTrails, fetchOSMTrails } from '../api.js';
+import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations, fetchVWorldTrails, fetchOSMTrails, fetchMountains, fetchMountainRecommendations } from '../api.js';
 
 // 경로 geometry 캐시 (courseId → { geometry, source })
 const _geometryCache = new Map();
@@ -67,6 +67,10 @@ import { addDays, addMinutes, formatDateForInput, formatTimeForInput } from '../
 
 // ── 싱글톤 상태 ─────────────────────────────────────────────────────────────
 export const publicCourses = ref([]);
+export const publicMountains = ref([]);
+export const recommendedMountains = ref([]);
+export const alternativeMountains = ref([]);
+export const selectedMountain = ref(null);
 export const recommendations = ref([]);
 export const alternatives = ref([]);
 export const selectedCourse = ref(null);
@@ -147,13 +151,53 @@ export async function loadCourses() {
   } catch { publicCourses.value = []; }
 }
 
-export async function loadWeather() {
-  const mountain = mountainOptions.value.find((m) => m.name === profile.mountainName);
-  const lat = location.value?.lat ?? mountain?.lat ?? 37.5665;
-  const lng = location.value?.lng ?? mountain?.lng ?? 126.978;
+export async function loadMountains() {
   try {
-    weatherData.value = await fetchWeather({ lat, lng });
-  } catch {}
+    const data = await fetchMountains();
+    publicMountains.value = data.mountains || [];
+  } catch { publicMountains.value = []; }
+}
+
+export async function submitMountainRecommendation() {
+  loading.value = true;
+  guideError.value = '';
+  try {
+    const weather = weatherData.value;
+    const data = await fetchMountainRecommendations({
+      profile,
+      location: location.value,
+      weather,
+    });
+    recommendedMountains.value = data.mountains || [];
+    alternativeMountains.value = data.alternatives || [];
+    resultState.value = recommendedMountains.value.length ? 'has_recommendations' : 'no_safe_course';
+    agentSummary.value = _buildMountainSummary(recommendedMountains.value, profile);
+    selectedMountain.value = recommendedMountains.value[0] || null;
+  } catch (err) {
+    guideError.value = err.message || '산 추천 데이터를 불러오지 못했습니다.';
+  } finally {
+    loading.value = false;
+  }
+}
+
+function _buildMountainSummary(mountains, profile) {
+  if (!mountains.length) return '현재 조건에 맞는 추천 산이 없습니다.';
+  const top = mountains[0];
+  const compMap = { vulnerable: '어린이·노약자 동반', family: '가족', solo: '혼자' };
+  const compLabel = compMap[profile.companion] || '';
+  return `${compLabel} 기준으로 ${top.name}(${top.region.split(' ')[0]})이 가장 적합합니다. 해발 ${top.elevation_m}m, 소요시간 ${Math.floor(top.walk_time_min / 60)}~${Math.floor(top.walk_time_max / 60)}시간 코스입니다.`;
+}
+
+export async function loadWeather(overrideLat, overrideLng) {
+  const mountain = mountainOptions.value.find((m) => m.name === profile.mountainName);
+  const lat = overrideLat ?? location.value?.lat ?? mountain?.lat ?? 37.5665;
+  const lng = overrideLng ?? location.value?.lng ?? mountain?.lng ?? 126.978;
+  try {
+    const data = await fetchWeather({ lat, lng });
+    weatherData.value = data;
+  } catch (e) {
+    console.error('[loadWeather]', e);
+  }
 }
 
 export function syncLocationToMountain() {

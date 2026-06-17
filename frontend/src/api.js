@@ -102,6 +102,18 @@ export async function fetchCourses() {
   return request("/courses/");
 }
 
+export async function fetchMountains() {
+  return request("/mountains/");
+}
+
+export async function fetchMountainRecommendations(payload) {
+  return request("/recommend-mountains/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function fetchDataSources() {
   return request("/data-sources/");
 }

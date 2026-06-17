@@ -72,6 +72,49 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         <span>보호자</span>
       </router-link>
+
+      <!-- ─── 실시간 산행 환경 미니 카드 ── -->
+      <div class="sidebar-weather">
+        <div class="sw-header">
+          <span class="sw-title">{{ selectedMountain ? selectedMountain.name + ' 날씨' : '실시간 산행 환경' }}</span>
+          <span v-if="weatherData" :class="weatherData.source === 'mock' ? 'live-badge mock-badge' : 'live-badge'" style="font-size:9px;padding:2px 6px">
+            {{ weatherData.source === 'mock' ? '추정' : '● LIVE' }}
+          </span>
+        </div>
+        <template v-if="weatherData">
+          <div class="sw-gauge-track">
+            <div class="sw-gauge-fill" :class="swSafetyClass" :style="{ width: swSafetyPct + '%' }"></div>
+          </div>
+          <p class="sw-gauge-label">{{ swSafetyLabel }}</p>
+          <div class="sw-grid">
+            <div class="sw-item">
+              <span>{{ swWeatherIcon }}</span>
+              <span>{{ swWeatherLabel }} {{ weatherData.temperature_c }}°C</span>
+            </div>
+            <div class="sw-item">
+              <span>🌅</span>
+              <span>일몰 {{ weatherData.sunset || '-' }}</span>
+            </div>
+            <div class="sw-item">
+              <span>💧</span>
+              <span :class="weatherData.rainfall_mm > 0 ? 'sw-warn' : ''">강수 {{ weatherData.rainfall_mm ?? 0 }}mm</span>
+            </div>
+            <div class="sw-item">
+              <span>💨</span>
+              <span :class="weatherData.wind_speed_ms >= 5 ? 'sw-warn' : ''">풍속 {{ weatherData.wind_speed_ms }}m/s</span>
+            </div>
+            <div class="sw-item">
+              <span>💦</span>
+              <span>습도 {{ weatherData.humidity_pct ?? '-' }}%</span>
+            </div>
+            <div class="sw-item">
+              <span>🔥</span>
+              <span :class="swWildfireClass">산불 {{ swWildfireLabel }}</span>
+            </div>
+          </div>
+        </template>
+        <p v-else style="font-size:10px;color:#9ca3af;margin:4px 0 0">날씨 불러오는 중...</p>
+      </div>
     </nav>
 
     <!-- ─── 라우터 뷰 ─────────────────────────────────────────────────── -->
@@ -83,14 +126,46 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { authUser, loadMe, showAuthModal } from './composables/useAuth.js';
 import { loadMyPageData } from './composables/useUserData.js';
-import { guideError } from './composables/useGuide.js';
+import { guideError, weatherData, loadWeather, selectedMountain } from './composables/useGuide.js';
 import { communityError } from './composables/useCommunity.js';
-import { computed } from 'vue';
 import AuthModal from './components/AuthModal.vue';
+
+const swWeatherIcon = computed(() => {
+  const w = weatherData.value;
+  if (!w) return '🌤️';
+  if (w.rainfall_mm >= 10) return '🌧️';
+  if (w.rainfall_mm > 0) return '🌦️';
+  if (w.wind_speed_ms >= 8) return '💨';
+  return '☀️';
+});
+const swWeatherLabel = computed(() => {
+  const w = weatherData.value;
+  if (!w) return '';
+  if (w.rainfall_mm >= 10) return '비';
+  if (w.rainfall_mm > 0) return '흐림';
+  return '맑음';
+});
+const swSafetyClass = computed(() => {
+  const w = weatherData.value;
+  if (!w) return 'safe';
+  const r = w.rainfall_mm ?? 0;
+  const wind = w.wind_speed_ms ?? 0;
+  if (r >= 10 || wind >= 10) return 'danger';
+  if (r > 0 || wind >= 5) return 'warning';
+  return 'safe';
+});
+const swSafetyPct = computed(() => {
+  return swSafetyClass.value === 'safe' ? 95 : swSafetyClass.value === 'warning' ? 55 : 20;
+});
+const swSafetyLabel = computed(() => {
+  return swSafetyClass.value === 'safe' ? '산행 적합' : swSafetyClass.value === 'warning' ? '주의 필요' : '산행 위험';
+});
+const swWildfireClass = computed(() => ({ low: '', medium: 'sw-warn', high: 'sw-danger', very_high: 'sw-danger' }[weatherData.value?.wildfire_risk || 'low'] || ''));
+const swWildfireLabel = computed(() => ({ low: '낮음', medium: '보통', high: '높음', very_high: '매우높음' }[weatherData.value?.wildfire_risk || 'low'] || '낮음'));
 
 const route = useRoute();
 
@@ -107,5 +182,6 @@ function reload() {
 onMounted(async () => {
   await loadMe();
   if (authUser.value) loadMyPageData();
+  loadWeather();
 });
 </script>

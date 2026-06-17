@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>등산로 코스 지도</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif; background: #f5f6f8; }
+    header {
+      background: #11a361; color: white; padding: 14px 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    header h1 { font-size: 18px; font-weight: 700; }
+    header span { font-size: 13px; opacity: .8; }
+    .layout { display: flex; height: calc(100vh - 52px); }
+    #map { flex: 1; }
+    .sidebar {
+      width: 300px; overflow-y: auto; background: white;
+      border-left: 1px solid #e5e7eb;
+    }
+    .sidebar-title {
+      padding: 14px 16px 10px; font-size: 12px; font-weight: 600;
+      color: #6b7280; text-transform: uppercase; letter-spacing: .05em;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .course-item {
+      padding: 14px 16px; border-bottom: 1px solid #f3f4f6;
+      cursor: pointer; transition: background .15s;
+    }
+    .course-item:hover { background: #f9fafb; }
+    .course-item.active { background: #ecfdf5; border-left: 3px solid #11a361; }
+    .course-mountain { font-size: 11px; color: #11a361; font-weight: 600; margin-bottom: 3px; }
+    .course-name { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 6px; }
+    .course-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge {
+      font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 500;
+    }
+    .badge.easy { background: #d1fae5; color: #065f46; }
+    .badge.medium { background: #fef3c7; color: #92400e; }
+    .badge.hard { background: #fee2e2; color: #991b1b; }
+    .badge.info { background: #e5e7eb; color: #374151; }
+    .course-region { font-size: 11px; color: #9ca3af; margin-top: 5px; }
+    .highlights { margin-top: 8px; }
+    .highlight-tag {
+      display: inline-block; font-size: 11px; background: #f3f4f6;
+      color: #374151; padding: 2px 6px; border-radius: 6px; margin: 2px 2px 0 0;
+    }
+    .popup-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+    .popup-badge { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 8px; margin-bottom: 4px; display: inline-block; }
+    .popup-row { font-size: 12px; color: #374151; margin: 2px 0; }
+    .popup-tags { margin-top: 6px; }
+    .popup-tag { font-size: 11px; background: #f3f4f6; border-radius: 5px; padding: 1px 5px; margin-right: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>올라 — 등산로 코스 지도</h1>
+    <span>5개 코스</span>
+  </header>
+  <div class="layout">
+    <div id="map"></div>
+    <div class="sidebar">
+      <div class="sidebar-title">전체 코스 목록</div>
+      <div id="course-list"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const COURSES = [
+      {
+        id: 1, mountain: '관악산', name: '서울대입구 둘레길 코스',
+        region: '서울 관악구', difficulty: 'easy',
+        distance_km: 3.4, duration_min: 95, elevation_gain_m: 180,
+        lat: 37.445, lng: 126.951, crowding: 0.42,
+        highlights: ['완만한 초입', '대중교통 접근 우수', '짧은 회복형 코스'],
+      },
+      {
+        id: 2, mountain: '북한산', name: '우이령 숲길 코스',
+        region: '서울 강북구', difficulty: 'easy',
+        distance_km: 4.6, duration_min: 130, elevation_gain_m: 220,
+        lat: 37.662, lng: 127.012, crowding: 0.37,
+        highlights: ['숲길 중심', '동반 산행 적합', '일몰 전 하산 여유'],
+      },
+      {
+        id: 3, mountain: '청계산', name: '원터골-매봉 코스',
+        region: '서울 서초구', difficulty: 'medium',
+        distance_km: 5.2, duration_min: 165, elevation_gain_m: 430,
+        lat: 37.427, lng: 127.055, crowding: 0.58,
+        highlights: ['운동 강도 확보', '정상 조망', '초중급자 인기'],
+      },
+      {
+        id: 4, mountain: '아차산', name: '고구려정 전망 코스',
+        region: '서울 광진구', difficulty: 'easy',
+        distance_km: 2.8, duration_min: 75, elevation_gain_m: 155,
+        lat: 37.573, lng: 127.103, crowding: 0.64,
+        highlights: ['짧은 전망 코스', '초보자 적합', '야외 산책 느낌'],
+      },
+      {
+        id: 5, mountain: '수락산', name: '벽운계곡 왕복 코스',
+        region: '서울 노원구', difficulty: 'hard',
+        distance_km: 6.8, duration_min: 230, elevation_gain_m: 620,
+        lat: 37.699, lng: 127.083, crowding: 0.33,
+        highlights: ['계곡 경관', '상급자 운동 코스', '혼잡도 낮음'],
+      },
+    ];
+
+    const DIFF_LABEL = { easy: '초급', medium: '중급', hard: '고급' };
+    const DIFF_COLOR = { easy: '#10b981', medium: '#f59e0b', hard: '#ef4444' };
+
+    const map = L.map('map').setView([37.55, 127.02], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 18,
+    }).addTo(map);
+
+    const markers = [];
+    let activeId = null;
+
+    function makeIcon(color) {
+      return L.divIcon({
+        className: '',
+        html: `<div style="
+          width:32px;height:32px;border-radius:50% 50% 50% 0;
+          background:${color};border:3px solid white;
+          box-shadow:0 2px 8px rgba(0,0,0,.3);
+          transform:rotate(-45deg);
+        "></div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -34],
+      });
+    }
+
+    function durationLabel(min) {
+      const h = Math.floor(min / 60), m = min % 60;
+      return m ? `${h}시간 ${m}분` : `${h}시간`;
+    }
+
+    function crowdingLabel(c) {
+      if (c < 0.4) return '한산';
+      if (c < 0.6) return '보통';
+      return '혼잡';
+    }
+
+    COURSES.forEach((c, i) => {
+      const color = DIFF_COLOR[c.difficulty];
+      const marker = L.marker([c.lat, c.lng], { icon: makeIcon(color) })
+        .addTo(map)
+        .bindPopup(`
+          <div style="min-width:180px">
+            <div class="popup-title">${c.mountain} · ${c.name}</div>
+            <span class="popup-badge" style="background:${color}22;color:${color}">${DIFF_LABEL[c.difficulty]}</span>
+            <div class="popup-row">📏 ${c.distance_km}km &nbsp;⏱ ${durationLabel(c.duration_min)}</div>
+            <div class="popup-row">⬆️ 고도차 ${c.elevation_gain_m}m &nbsp;👥 ${crowdingLabel(c.crowding)}</div>
+            <div class="popup-row">📍 ${c.region}</div>
+            <div class="popup-tags" style="margin-top:6px">
+              ${c.highlights.map(h => `<span class="popup-tag">${h}</span>`).join('')}
+            </div>
+          </div>
+        `);
+
+      marker.on('click', () => setActive(c.id));
+      markers.push({ id: c.id, marker, lat: c.lat, lng: c.lng });
+    });
+
+    function setActive(id) {
+      activeId = id;
+      document.querySelectorAll('.course-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.id === String(id));
+      });
+      const m = markers.find(m => m.id === id);
+      if (m) {
+        map.setView([m.lat, m.lng], 13, { animate: true });
+        m.marker.openPopup();
+      }
+    }
+
+    const list = document.getElementById('course-list');
+    COURSES.forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'course-item';
+      el.dataset.id = c.id;
+      el.innerHTML = `
+        <div class="course-mountain">${c.mountain}</div>
+        <div class="course-name">${c.name}</div>
+        <div class="course-meta">
+          <span class="badge ${c.difficulty}">${DIFF_LABEL[c.difficulty]}</span>
+          <span class="badge info">${c.distance_km}km</span>
+          <span class="badge info">${durationLabel(c.duration_min)}</span>
+          <span class="badge info">고도 ${c.elevation_gain_m}m</span>
+        </div>
+        <div class="course-region">${c.region} · ${crowdingLabel(c.crowding)}</div>
+        <div class="highlights">${c.highlights.map(h => `<span class="highlight-tag">${h}</span>`).join('')}</div>
+      `;
+      el.addEventListener('click', () => setActive(c.id));
+      list.appendChild(el);
+    });
+  </script>
+</body>
+</html>

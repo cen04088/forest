@@ -127,7 +127,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px 6px;
+  padding: 10px 20px 4px;
   position: relative;
   z-index: 1;
 }
@@ -192,25 +192,25 @@ p {
 
 /* 히어로 바디 */
 .hero-body {
-  padding: 12px 22px 26px;
+  padding: 8px 22px 16px;
   position: relative;
   z-index: 1;
 }
 .hero-eyebrow {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: rgba(255,255,255,0.55);
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 .hero-title {
-  font-size: 26px;
+  font-size: 18px;
   font-weight: 900;
   color: #fff;
   line-height: 1.25;
   letter-spacing: -0.5px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 .hero-title-accent {
   background: linear-gradient(110deg, #86efac 0%, #4ade80 40%, #fbbf24 100%);
@@ -219,45 +219,45 @@ p {
   background-clip: text;
 }
 .hero-desc {
-  font-size: 13px;
+  font-size: 11px;
   color: rgba(255,255,255,0.65);
-  line-height: 1.6;
-  margin-bottom: 20px;
+  line-height: 1.5;
+  margin-bottom: 12px;
 }
 
 /* 핵심 지표 카드 */
 .hero-stats {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 .hero-stat {
   flex: 1;
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 14px;
-  padding: 12px 10px;
+  border-radius: 12px;
+  padding: 8px 8px;
   backdrop-filter: blur(8px);
   text-align: center;
 }
 .hero-stat-num {
   display: block;
-  font-size: 22px;
+  font-size: 15px;
   font-weight: 900;
   color: #fff;
   line-height: 1.1;
   letter-spacing: -0.5px;
 }
 .hero-stat-unit {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: rgba(255,255,255,0.75);
 }
 .hero-stat-label {
   display: block;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   color: rgba(255,255,255,0.5);
-  margin-top: 4px;
+  margin-top: 3px;
   line-height: 1.3;
 }
 
@@ -666,6 +666,46 @@ p {
   display: grid;
   gap: 12px;
 }
+
+/* ── 산 카드 ──────────────────────────────────────────────────────────────── */
+.mountain-card {
+  padding: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 18px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: all 0.22s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.mountain-card:hover { background: #f9fffe; box-shadow: 0 4px 12px rgba(0,0,0,0.09); transform: translateY(-1px); }
+.mountain-card.selected { border-color: var(--green); background: #f0fdf4; box-shadow: 0 0 0 2px var(--green); }
+.mountain-card.top-mountain { border-color: #f59e0b; background: linear-gradient(135deg, #fffbeb 0%, #fff 100%); }
+.mc-top-banner { background: linear-gradient(90deg, #f59e0b, #f97316); border-radius: 10px; padding: 7px 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.mc-top-badge { font-size: 12px; font-weight: 700; color: #fff; }
+.mc-top-reason { font-size: 11px; color: rgba(255,255,255,.85); }
+.mc-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+.mc-meta-left { display: flex; align-items: center; gap: 5px; }
+.mc-np-badge { font-size: 10px; background: #eff6ff; color: #1d4ed8; border-radius: 6px; padding: 2px 6px; font-weight: 600; }
+.mc-dist { font-size: 11px; color: #6b7280; }
+.mc-name { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.mc-region { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+.mc-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+.mc-companion { font-size: 12px; color: #16a34a; font-weight: 500; margin-bottom: 7px; }
+.mc-highlights { display: flex; flex-wrap: wrap; gap: 5px; }
+.mc-tag { font-size: 11px; background: #f3f4f6; color: #374151; border-radius: 8px; padding: 3px 8px; }
+.badge { font-size: 11px; font-weight: 600; border-radius: 8px; padding: 3px 8px; }
+.badge.easy { background: #d1fae5; color: #065f46; }
+.badge.medium { background: #fef3c7; color: #92400e; }
+.badge.hard { background: #fee2e2; color: #991b1b; }
+.badge.info { background: #f3f4f6; color: #374151; }
+
+/* ── 산 상세 통계 ─────────────────────────────────────────────────────────── */
+.mountain-detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.mds-item { display: flex; flex-direction: column; align-items: center; background: #f9fafb; border-radius: 12px; padding: 10px 8px; }
+.mds-icon { font-size: 18px; margin-bottom: 3px; }
+.mds-label { font-size: 10px; color: #9ca3af; margin-bottom: 2px; }
+.mds-item strong { font-size: 13px; color: var(--ink); font-weight: 700; }
 
 .course-card {
   padding: 14px;
@@ -2468,13 +2508,73 @@ p {
 /* ══════════════════════════════════════════════════════════════════════════
    사이드바 브랜딩 — 모바일에서 숨김
 ══════════════════════════════════════════════════════════════════════════ */
-.sidebar-brand {
+.sidebar-brand,
+.sidebar-weather {
   display: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   가이드 2컬럼 래퍼 — 모바일에서는 투명(display:contents)하게 단일 흐름 유지
+   가이드 레이아웃 — 모바일: 단일 컬럼 (지도 위, 패널 아래)
 ══════════════════════════════════════════════════════════════════════════ */
+.guide-map {
+  height: 300px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 2px 12px rgba(0,0,0,.1);
+}
+
+.overview-map-container {
+  width: 100%;
+  height: 100%;
+}
+
+.map-legend {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+
+.map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.map-legend-sep {
+  color: #d1d5db;
+}
+
+.map-legend-hint {
+  color: #6b7280;
+  font-size: 10px;
+}
+
+.guide-panel {
+  display: grid;
+  gap: 12px;
+}
+
+/* 기존 호환성 유지 */
 .guide-left,
 .guide-right {
   display: contents;
@@ -2522,18 +2622,62 @@ p {
   }
 
   /* 히어로 데스크톱 */
-  .app-hero { margin-bottom: 24px; border-radius: 24px; }
-  .hero-body { padding: 20px 40px 36px; }
-  .hero-nav  { padding: 20px 40px 8px; }
-  .hero-title { font-size: 38px; }
-  .hero-desc { font-size: 15px; }
-  .hero-stat-num { font-size: 28px; }
-  .hero-stats { gap: 14px; }
-  .hero-stat { padding: 16px 20px; border-radius: 16px; }
+  .app-hero { margin-bottom: 16px; border-radius: 20px; }
+  .hero-body { padding: 10px 40px 18px; }
+  .hero-nav  { padding: 12px 40px 4px; }
+  .hero-title { font-size: 26px; }
+  .hero-desc { font-size: 11px; }
+  .hero-stat-num { font-size: 19px; }
+  .hero-stats { gap: 10px; }
+  .hero-stat { padding: 8px 14px; border-radius: 12px; }
 
-  /* ── 사이드바 브랜딩 ── */
+  /* ── 사이드바 브랜딩 + 날씨 위젯 ── */
+  .sidebar-brand,
+  .sidebar-weather { display: block; }
+
+  /* 사이드바 날씨 위젯 */
+  .sidebar-weather {
+    margin-top: 12px;
+    padding: 14px 12px;
+    background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+    border: 1px solid #bbf7d0;
+    border-radius: 14px;
+    font-size: 11px;
+    color: #1a2e1a;
+  }
+  .sw-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .sw-title { font-size: 11px; font-weight: 700; color: #166534; }
+  .sw-gauge-track {
+    height: 5px;
+    background: #e5e7eb;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 3px;
+  }
+  .sw-gauge-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+  .sw-gauge-fill.safe    { background: #22c55e; }
+  .sw-gauge-fill.warning { background: #f97316; }
+  .sw-gauge-fill.danger  { background: #ef4444; }
+  .sw-gauge-label { font-size: 10px; color: #6b7280; margin: 0 0 8px; }
+  .sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; }
+  .sw-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: #374151;
+    overflow: hidden;
+  }
+  .sw-item span:first-child { font-size: 13px; flex-shrink: 0; }
+  .sw-warn   { color: #f97316; font-weight: 600; }
+  .sw-danger { color: #ef4444; font-weight: 600; }
+
   .sidebar-brand {
-    display: block;
     padding: 0 14px 22px;
     margin-bottom: 14px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
@@ -2617,28 +2761,37 @@ p {
     margin-left: auto;
   }
 
-  /* ── 안전코스 탭: 2컬럼 레이아웃 ── */
+  /* ── 안전코스 탭: 지도 2 : 패널 1 ── */
   .guide-layout {
     display: grid !important;
-    grid-template-columns: 360px 1fr;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: calc(100vh - 100px);
     gap: 24px;
     align-items: start;
   }
 
-  /* 왼쪽 컬럼: 폼 + 날씨 조건 (스크롤 시 고정) */
-  .guide-left {
-    display: grid;
-    gap: 20px;
+  /* 왼쪽: 고정 전체높이 지도 */
+  .guide-map {
     position: sticky;
     top: 24px;
+    height: calc(100vh - 124px);
+    border-radius: 20px;
   }
 
-  /* 오른쪽 컬럼: 결과 목록 */
-  .guide-right {
+  /* 오른쪽: 스크롤 가능한 패널 */
+  .guide-panel {
     display: grid;
     gap: 20px;
     min-width: 0;
+    max-height: calc(100vh - 124px);
+    overflow-y: auto;
+    padding-right: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: #d4e8d8 transparent;
   }
+
+  .guide-panel::-webkit-scrollbar { width: 4px; }
+  .guide-panel::-webkit-scrollbar-thumb { background: #d4e8d8; border-radius: 2px; }
 
   /* 패널 패딩 확대 */
   .panel {
@@ -2754,12 +2907,11 @@ p {
   }
 
   .guide-layout {
-    grid-template-columns: 420px 1fr;
+    grid-template-columns: 2fr 1fr;
     gap: 32px;
   }
 
-  .guide-left { gap: 24px; }
-  .guide-right { gap: 24px; }
+  .guide-panel { gap: 24px; }
 
   /* 1440px+: 안전공유 지도 더 높게 */
   .safe-link-map { height: 420px; }

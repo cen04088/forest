@@ -11,6 +11,8 @@ from .loaders import load_public_service_key, load_public_trail_courses, load_di
 from .mountain_coordinates import MOUNTAIN_COORDINATES
 from .mountain_story_api import fetch_mountain_story
 from .services import recommend_courses
+from .mountain_recommend import recommend_mountains
+from .mountain_data import MOUNTAINS
 from .sun_api import fetch_sun_times
 from .weather_api import fetch_current_weather
 from .mountain_weather_api import fetch_mountain_weather
@@ -127,6 +129,21 @@ def landslide(request):
         fetch_landslide_prediction(sgg, forecast_name, page_no, num_of_rows),
         json_dumps_params={"ensure_ascii": False},
     )
+
+
+@require_GET
+def mountains(request):
+    return JsonResponse({"mountains": MOUNTAINS}, json_dumps_params={"ensure_ascii": False})
+
+
+@csrf_exempt
+@require_POST
+def recommend_mountains_view(request):
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+    return JsonResponse(recommend_mountains(payload), json_dumps_params={"ensure_ascii": False})
 
 
 @csrf_exempt
