@@ -143,6 +143,17 @@ def recommend_mountains_view(request):
         payload = json.loads(request.body.decode("utf-8") or "{}")
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+    # 사용자 위치 기반 일몰 시각 조회
+    loc = payload.get("location") or {}
+    lat, lng = loc.get("lat"), loc.get("lng")
+    if lat and lng:
+        try:
+            sun_data = fetch_sun_times(float(lat), float(lng)) or {}
+            payload["sun_times"] = sun_data
+        except Exception:
+            pass
+
     return JsonResponse(recommend_mountains(payload), json_dumps_params={"ensure_ascii": False})
 
 
@@ -241,3 +252,89 @@ def safe_link_detail(request, session_id):
         return JsonResponse({"ok": True, "location_ts": session["location_ts"]})
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+@csrf_exempt
+@require_POST
+def chat_view(request):
+    try:
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    messages = body.get("messages", [])
+    context = body.get("context", {})
+    if not messages:
+        return JsonResponse({"error": "messages required"}, status=400)
+
+    context = _enrich_chat_context(context)
+    from .chat_ai import get_chat_response
+    return JsonResponse({"response": get_chat_response(messages, context)})
+
+
+def _enrich_chat_context(context: dict) -> dict:
+    """실시간 안전 데이터(산불·산사태·NIFOS 기상·미세먼지)를 컨텍스트에 주입."""
+    context = dict(context)
+
+    try:
+        context["wildfire"] = fetch_wildfire_risk()
+    except Exception:
+        pass
+
+    try:
+        mountain = context.get("mountain") or {}
+        region = (mountain.get("region") or "").replace("국립공원", "").strip()
+        if region:
+            context["landslide"] = fetch_landslide_prediction(region, "", 1, 5)
+    except Exception:
+        pass
+
+    try:
+        from .nifos_api import fetch_nifos_mountain_weather, fetch_nifos_fine_dust
+        context["nifos_weather"] = fetch_nifos_mountain_weather()
+        context["nifos_dust"] = fetch_nifos_fine_dust()
+    except Exception:
+        pass
+
+    return context
+
+
+@require_GET
+def nifos_mountain_weather(request):
+    station_code = request.GET.get("station", "")
+    from .nifos_api import fetch_nifos_mountain_weather
+    return JsonResponse(fetch_nifos_mountain_weather(station_code), json_dumps_params={"ensure_ascii": False})
+
+
+@require_GET
+def nifos_fine_dust(request):
+    station_code = request.GET.get("station", "")
+    from .nifos_api import fetch_nifos_fine_dust
+    return JsonResponse(fetch_nifos_fine_dust(station_code), json_dumps_params={"ensure_ascii": False})
+
+
+@csrf_exempt
+@require_POST
+def safety_advice_view(request):
+    try:
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    mountain = body.get("mountain", {})
+    weather = body.get("weather", {})
+    profile = body.get("profile", {})
+
+    # Fetch sun times from mountain coordinates
+    sun_data = {}
+    lat = mountain.get("lat") or mountain.get("latitude")
+    lng = mountain.get("lng") or mountain.get("longitude")
+    if lat and lng:
+        try:
+            sun_data = fetch_sun_times(lat, lng) or {}
+        except Exception:
+            pass
+
+    from .safety_advice_ai import generate_safety_advice
+    advice = generate_safety_advice(mountain, weather, profile, sun_data)
+    return JsonResponse({"advice": advice or ""})

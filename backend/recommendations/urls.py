@@ -49,4 +49,10 @@ urlpatterns = [
     # 긴급 연락처
     path("emergency-contacts/", cv.emergency_contacts),
     path("emergency-contacts/<int:contact_id>/", cv.emergency_contact_detail),
+    # NIFOS 국립산림과학원
+    path("nifos-mountain-weather/", views.nifos_mountain_weather),
+    path("nifos-fine-dust/", views.nifos_fine_dust),
+    # AI
+    path("chat/", views.chat_view),
+    path("safety-advice/", views.safety_advice_view),
 ]
