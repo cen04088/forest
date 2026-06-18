@@ -57,6 +57,10 @@
             </li>
           </ul>
         </div>
+
+        <button class="community-link-btn" type="button" @click="goToCommunity(selectedMountain.name)">
+          💬 {{ selectedMountain.name }} 커뮤니티 후기 보기
+        </button>
       </section>
 
       <!-- 입력 폼 -->
@@ -215,6 +219,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   agentSummary, guideError, loading,
   loadMountains, publicMountains, recommendedMountains, alternativeMountains,
@@ -222,11 +227,13 @@ import {
   profile, minDepartureDate, maxDepartureDate,
   location, gpsStatus, gpsError, detectGPS, loadWeather,
 } from '../composables/useGuide.js';
+import { communitySearch, communityCategory } from '../composables/useCommunity.js';
 import { fetchDisasterZones } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import MountainCard from '../components/MountainCard.vue';
 import { addMinutes, formatTimeForInput } from '../utils/dateHelpers.js';
 
+const router = useRouter();
 const overviewMapEl = ref(null);
 const selectedDisasterZones = ref([]);
 const { renderOverviewMap, focusOverviewCourse } = useLeafletMap();
@@ -325,6 +332,12 @@ async function handleSubmit() {
 async function handleGPS() {
   await detectGPS();
   loadWeather();
+}
+
+function goToCommunity(mountainName) {
+  communitySearch.value = mountainName;
+  communityCategory.value = '';
+  router.push('/community');
 }
 
 function ensureFutureDepartureTime() {

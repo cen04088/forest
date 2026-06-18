@@ -59,14 +59,32 @@
 
       <!-- 산행 중 -->
       <div v-else-if="safeLinkActive" class="safe-link-active-panel">
-        <div class="safe-link-live-badge">
-          <span class="status-dot dot-green"></span> 산행 중 · GPS 추적 활성
-          <span class="status-time">{{ lastLocationTs ? '위치 갱신됨' : '위치 대기 중…' }}</span>
+
+        <!-- 산행 현황 카드 -->
+        <div class="hike-status-card">
+          <div class="hike-status-row">
+            <div class="hike-stat">
+              <span class="hike-stat-label">경과 시간</span>
+              <strong class="hike-stat-val">{{ elapsedLabel }}</strong>
+            </div>
+            <div class="hike-stat">
+              <span class="hike-stat-label">위치 기록</span>
+              <strong class="hike-stat-val">{{ waypointCount }}회</strong>
+            </div>
+            <div class="hike-stat">
+              <span class="hike-stat-label">GPS 상태</span>
+              <strong class="hike-stat-val" :class="lastLocationTs ? 'stat-ok' : 'stat-wait'">
+                {{ lastLocationTs ? '추적 중' : '대기 중' }}
+              </strong>
+            </div>
+          </div>
+          <div class="hike-status-footer">
+            <span class="status-dot dot-green"></span>
+            <span>산행 중 · {{ wakeLockActive ? '화면 유지 활성' : '화면 꺼짐 주의' }}</span>
+          </div>
         </div>
-        <div v-if="wakeLockActive" class="wakelock-badge">
-          🔆 화면 켜짐 유지 중 · GPS 계속 추적
-        </div>
-        <div v-else class="wakelock-warn">
+
+        <div v-if="!wakeLockActive" class="wakelock-warn">
           ⚠️ 화면이 꺼지면 GPS 추적이 중단됩니다. 산행 중에는 화면을 켜두세요.
         </div>
         <p v-if="gpsErrorMsg" class="share-status error" style="margin:8px 0 0;">📡 {{ gpsErrorMsg }}</p>
@@ -147,10 +165,22 @@ const {
   gpsErrorMsg,
   lastLocationTs,
   wakeLockActive,
+  waypointCount,
+  elapsedSec,
   startHiking,
   stopHiking,
   resetSafeLink,
 } = useSafeLink();
+
+const elapsedLabel = computed(() => {
+  const s = elapsedSec.value;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}시간 ${String(m).padStart(2,'0')}분`;
+  if (m > 0) return `${m}분 ${String(sec).padStart(2,'0')}초`;
+  return `${sec}초`;
+});
 
 // 산 → 세이프링크 API가 기대하는 형태로 변환
 const mountainAsCourse = computed(() => {

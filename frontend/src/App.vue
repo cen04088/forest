@@ -122,17 +122,23 @@
 
     <!-- ─── 로그인/회원가입 모달 ─────────────────────────────────────── -->
     <AuthModal v-if="showAuthModal" />
+
+    <!-- ─── 온보딩 모달 (첫 방문) ──────────────────────────────────── -->
+    <OnboardingModal v-if="showOnboarding" @close="showOnboarding = false" />
   </main>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { authUser, loadMe, showAuthModal } from './composables/useAuth.js';
 import { loadMyPageData } from './composables/useUserData.js';
 import { guideError, weatherData, loadWeather, selectedMountain } from './composables/useGuide.js';
 import { communityError } from './composables/useCommunity.js';
 import AuthModal from './components/AuthModal.vue';
+import OnboardingModal from './components/OnboardingModal.vue';
+
+const showOnboarding = ref(!localStorage.getItem('ollaOnboarded'));
 
 const swWeatherIcon = computed(() => {
   const w = weatherData.value;

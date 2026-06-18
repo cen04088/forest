@@ -9,10 +9,13 @@ const errorMsg = ref('');
 const lastLocationTs = ref(null);
 const gpsErrorMsg = ref('');
 const wakeLockActive = ref(false);
+const hikingStartTs = ref(null);    // 산행 시작 시각 (ms)
+const waypointCount = ref(0);       // 저장된 waypoint 수
 let _watchId = null;
 let _wakeLock = null;
-let _lastSavedTs = 0;          // 마지막 서버 저장 시각 (Unix sec)
-const WAYPOINT_INTERVAL = 300; // 5분
+let _elapsedTimer = null;           // 경과 시간 갱신용 interval
+let _lastSavedTs = 0;               // 마지막 서버 저장 시각 (Unix sec)
+const WAYPOINT_INTERVAL = 300;      // 5분
 
 // ── Wake Lock (화면 꺼짐 방지) ───────────────────────────────────────────────
 async function _acquireWakeLock() {
@@ -46,18 +49,22 @@ function _startTracking() {
   }
   if (_watchId !== null) return; // 이미 추적 중
 
-  _lastSavedTs = 0; // 첫 포인트 즉시 저장되도록 초기화
+  _lastSavedTs = 0;
   _watchId = navigator.geolocation.watchPosition(
     (pos) => {
       if (!sessionId.value) return;
       const nowSec = Date.now() / 1000;
-      // 첫 포인트는 즉시, 이후 5분 간격으로만 저장
       if (_lastSavedTs !== 0 && nowSec - _lastSavedTs < WAYPOINT_INTERVAL) return;
       _lastSavedTs = nowSec;
       const { latitude, longitude } = pos.coords;
       updateSafeLinkLocation(sessionId.value, latitude, longitude)
-        .then(() => { lastLocationTs.value = Date.now(); })
-        .catch(() => {});
+        .then(() => {
+          lastLocationTs.value = Date.now();
+          waypointCount.value += 1;
+        })
+        .catch(() => {
+          gpsErrorMsg.value = '위치 전송에 실패했습니다. 네트워크를 확인해 주세요.';
+        });
     },
     (err) => {
       const msgs = {
@@ -88,6 +95,9 @@ export function useSafeLink() {
 
   const isActive = computed(() => sessionStatus.value === 'active');
 
+  // 경과 시간 (초 단위, 1초마다 갱신)
+  const elapsedSec = ref(0);
+
   async function startHiking(course) {
     sessionStatus.value = 'creating';
     errorMsg.value = '';
@@ -97,19 +107,28 @@ export function useSafeLink() {
       sessionId.value = data.id;
       shareCode.value = data.share_code || '';
       sessionStatus.value = 'active';
+      hikingStartTs.value = Date.now();
+      waypointCount.value = 0;
+      elapsedSec.value = 0;
+      _elapsedTimer = setInterval(() => {
+        elapsedSec.value = Math.floor((Date.now() - hikingStartTs.value) / 1000);
+      }, 1000);
       _startTracking();
       _acquireWakeLock();
     } catch (err) {
       sessionStatus.value = 'error';
-      errorMsg.value = err.message || '세이프 링크 생성에 실패했습니다.';
+      errorMsg.value = err.message || '세이프 링크를 생성하지 못했습니다. 네트워크를 확인해 주세요.';
     }
   }
 
   async function stopHiking() {
     _releaseWakeLock();
     _stopTracking();
+    if (_elapsedTimer) { clearInterval(_elapsedTimer); _elapsedTimer = null; }
     if (sessionId.value) {
-      try { await endSafeLink(sessionId.value); } catch {}
+      try { await endSafeLink(sessionId.value); } catch {
+        // 종료 요청 실패해도 클라이언트는 종료 처리
+      }
     }
     sessionStatus.value = 'ended';
     sessionId.value = null;
@@ -121,12 +140,16 @@ export function useSafeLink() {
   function resetSafeLink() {
     _releaseWakeLock();
     _stopTracking();
+    if (_elapsedTimer) { clearInterval(_elapsedTimer); _elapsedTimer = null; }
     sessionId.value = null;
     shareCode.value = '';
     sessionStatus.value = 'idle';
     errorMsg.value = '';
     gpsErrorMsg.value = '';
     lastLocationTs.value = null;
+    hikingStartTs.value = null;
+    waypointCount.value = 0;
+    elapsedSec.value = 0;
   }
 
   return {
@@ -139,6 +162,9 @@ export function useSafeLink() {
     gpsErrorMsg,
     lastLocationTs,
     wakeLockActive,
+    hikingStartTs,
+    waypointCount,
+    elapsedSec,
     startHiking,
     stopHiking,
     resetSafeLink,
@@ -221,6 +247,15 @@ export function useGuardianView(sessionId) {
     return `${Math.floor(elapsed / 60)}분 전`;
   });
 
+  // 마지막 위치 수신 후 경과 분
+  const locationStaleMins = computed(() => {
+    const ts = session.value?.location_ts;
+    if (!ts || session.value?.status === 'ended') return 0;
+    return Math.floor((Date.now() / 1000 - ts) / 60);
+  });
+
+  const isLocationStale = computed(() => locationStaleMins.value >= 10);
+
   const statusLabel = computed(() => {
     if (!session.value) return '연결 중';
     if (session.value.status === 'ended') return '산행 종료';
@@ -240,6 +275,7 @@ export function useGuardianView(sessionId) {
     session, loading, pollError,
     lastUpdateLabel, statusLabel, statusClass,
     lastRefreshedLabel, nextRefreshLabel,
+    locationStaleMins, isLocationStale,
     startPolling, stopPolling, manualRefresh,
   };
 }

@@ -3055,6 +3055,193 @@ p {
   font-size: 11px;
 }
 
+/* ── 보호자 위치 미수신 경고 배너 ─────────────────────────────── */
+.guardian-stale-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 20px;
+  background: #fef2f2;
+  border-bottom: 2px solid #fca5a5;
+  color: #991b1b;
+}
+
+.stale-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+.guardian-stale-banner strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.guardian-stale-banner p { font-size: 12px; margin: 0; opacity: 0.85; }
+
+.stale-119 {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  align-self: center;
+}
+
+/* ── 산행 현황 카드 ─────────────────────────────────────────── */
+.hike-status-card {
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  padding: 14px 16px 10px;
+  margin-bottom: 12px;
+}
+
+.hike-status-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hike-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.hike-stat-label {
+  font-size: 10px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.hike-stat-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #166534;
+}
+
+.hike-stat-val.stat-ok { color: #16a34a; }
+.hike-stat-val.stat-wait { color: #9ca3af; }
+
+.hike-status-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #4b7c5a;
+  border-top: 1px solid #d1fae5;
+  padding-top: 8px;
+}
+
+/* ── 커뮤니티 연결 버튼 ─────────────────────────────────────── */
+.community-link-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 16px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  color: #0369a1;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.community-link-btn:hover { background: #e0f2fe; }
+
+/* ── 온보딩 모달 ─────────────────────────────────────────────── */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.onboarding-modal {
+  background: var(--paper);
+  border-radius: 20px;
+  padding: 32px 28px 24px;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.onboarding-steps { position: relative; min-height: 180px; }
+
+.onboarding-step {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.onboarding-step.active { display: flex; }
+
+.onboarding-icon { font-size: 52px; margin-bottom: 16px; }
+
+.onboarding-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.onboarding-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.onboarding-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0 16px;
+}
+
+.onboarding-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.onboarding-dots .dot.active {
+  background: var(--green);
+  transform: scale(1.3);
+}
+
+.onboarding-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.onboarding-actions .primary-btn { width: 100%; }
+
+.onboarding-skip {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px;
+  text-align: center;
+}
+
+.onboarding-skip:hover { color: var(--ink); }
+
 .guardian-ended-banner {
   background: var(--line);
   color: var(--muted);

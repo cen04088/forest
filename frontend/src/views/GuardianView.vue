@@ -5,6 +5,16 @@
       <span :class="['guardian-status-chip', statusClass]">{{ statusLabel }}</span>
     </header>
 
+    <!-- 위치 미수신 경고 배너 -->
+    <div v-if="isLocationStale && session?.status !== 'ended'" class="guardian-stale-banner" role="alert">
+      <span class="stale-icon">⚠️</span>
+      <div>
+        <strong>위치 업데이트가 {{ locationStaleMins }}분째 없습니다</strong>
+        <p>산행자의 GPS 신호가 끊겼거나 배터리가 부족할 수 있습니다. 직접 연락을 시도해 보세요.</p>
+      </div>
+      <a href="tel:119" class="stale-119">119</a>
+    </div>
+
     <div v-if="loading" class="guardian-loading">위치 정보를 불러오는 중입니다…</div>
     <div v-else-if="session">
       <div ref="guardianMapEl" class="guardian-map kakao-map" aria-label="산행자 현재 위치 지도"></div>
@@ -68,9 +78,31 @@ const {
   session, loading, pollError,
   lastUpdateLabel, statusLabel, statusClass,
   lastRefreshedLabel, nextRefreshLabel,
+  locationStaleMins, isLocationStale,
   startPolling, stopPolling, manualRefresh,
 } = useGuardianView(sessionId);
 const { renderGuardianMap } = useLeafletMap();
+
+// 위치 미수신 10분 시 브라우저 알림
+let _notifiedStale = false;
+watch(isLocationStale, async (stale) => {
+  if (!stale || _notifiedStale) return;
+  _notifiedStale = true;
+  if ('Notification' in window) {
+    const perm = Notification.permission === 'default'
+      ? await Notification.requestPermission()
+      : Notification.permission;
+    if (perm === 'granted') {
+      new Notification('올라 — 위치 업데이트 없음', {
+        body: `산행자의 위치가 ${locationStaleMins.value}분째 갱신되지 않았습니다. 직접 연락해 보세요.`,
+        icon: '/logo.png',
+      });
+    }
+  }
+});
+
+// 위치가 다시 갱신되면 알림 플래그 초기화
+watch(() => session.value?.location_ts, () => { _notifiedStale = false; });
 
 watch(session, async (val) => {
   if (!val) return;

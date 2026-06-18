@@ -174,7 +174,10 @@ export async function submitMountainRecommendation() {
     agentSummary.value = _buildMountainSummary(recommendedMountains.value, profile);
     selectedMountain.value = recommendedMountains.value[0] || null;
   } catch (err) {
-    guideError.value = err.message || '산 추천 데이터를 불러오지 못했습니다.';
+    const isNetwork = !navigator.onLine || err.message?.includes('fetch');
+    guideError.value = isNetwork
+      ? '네트워크에 연결되지 않았습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.'
+      : (err.message || '산 추천 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
   } finally {
     loading.value = false;
   }
