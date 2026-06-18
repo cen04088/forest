@@ -9,13 +9,68 @@ const errorMsg = ref('');
 const lastLocationTs = ref(null);
 const gpsErrorMsg = ref('');
 const wakeLockActive = ref(false);
-const hikingStartTs = ref(null);    // 산행 시작 시각 (ms)
-const waypointCount = ref(0);       // 저장된 waypoint 수
+const hikingStartTs = ref(null);
+const waypointCount = ref(0);
+const currentLat = ref(null);       // 가장 최근 GPS 위치
+const currentLng = ref(null);
+const liveTrail = ref([]);          // 메모리 내 전체 이동 경로 (서버 저장과 별개)
+const stepCount = ref(0);           // 걸음 수
+const distanceKm = ref(0);          // 이동 거리 (km)
 let _watchId = null;
 let _wakeLock = null;
-let _elapsedTimer = null;           // 경과 시간 갱신용 interval
-let _lastSavedTs = 0;               // 마지막 서버 저장 시각 (Unix sec)
-const WAYPOINT_INTERVAL = 300;      // 5분
+let _elapsedTimer = null;
+let _lastSavedTs = 0;
+const WAYPOINT_INTERVAL = 300;
+
+// ── 거리 계산 (Haversine) ────────────────────────────────────────────────────
+function _haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// ── 걸음 수 카운터 (DeviceMotion) ────────────────────────────────────────────
+let _stepListenerAttached = false;
+let _lastMag = 0;
+let _lastStepTs = 0;
+const STEP_THRESHOLD = 11.5; // m/s² 기준 가속도
+const STEP_COOLDOWN = 280;   // ms
+
+function _onMotion(e) {
+  const a = e.accelerationIncludingGravity;
+  if (!a) return;
+  const mag = Math.sqrt((a.x ?? 0) ** 2 + (a.y ?? 0) ** 2 + (a.z ?? 0) ** 2);
+  const now = Date.now();
+  // 상승 엣지(이전 < 임계값, 현재 >= 임계값)에서 한 걸음 카운트
+  if (_lastMag < STEP_THRESHOLD && mag >= STEP_THRESHOLD && now - _lastStepTs > STEP_COOLDOWN) {
+    stepCount.value += 1;
+    _lastStepTs = now;
+  }
+  _lastMag = mag;
+}
+
+async function _startStepCounter() {
+  if (_stepListenerAttached) return;
+  // iOS 13+ 권한 요청
+  if (typeof DeviceMotionEvent?.requestPermission === 'function') {
+    try {
+      const perm = await DeviceMotionEvent.requestPermission();
+      if (perm !== 'granted') return;
+    } catch { return; }
+  }
+  if (!window.DeviceMotionEvent) return;
+  window.addEventListener('devicemotion', _onMotion, { passive: true });
+  _stepListenerAttached = true;
+}
+
+function _stopStepCounter() {
+  if (!_stepListenerAttached) return;
+  window.removeEventListener('devicemotion', _onMotion);
+  _stepListenerAttached = false;
+}
 
 // ── Wake Lock (화면 꺼짐 방지) ───────────────────────────────────────────────
 async function _acquireWakeLock() {
@@ -53,10 +108,19 @@ function _startTracking() {
   _watchId = navigator.geolocation.watchPosition(
     (pos) => {
       if (!sessionId.value) return;
+      const { latitude, longitude } = pos.coords;
+
+      // 매 GPS 수신마다 실시간 위치·트레일 갱신
+      const prev = liveTrail.value.at(-1);
+      if (prev) distanceKm.value += _haversine(prev.lat, prev.lng, latitude, longitude);
+      currentLat.value = latitude;
+      currentLng.value = longitude;
+      liveTrail.value = [...liveTrail.value, { lat: latitude, lng: longitude, ts: Date.now() }];
+
+      // 5분 간격으로만 서버 저장
       const nowSec = Date.now() / 1000;
       if (_lastSavedTs !== 0 && nowSec - _lastSavedTs < WAYPOINT_INTERVAL) return;
       _lastSavedTs = nowSec;
-      const { latitude, longitude } = pos.coords;
       updateSafeLinkLocation(sessionId.value, latitude, longitude)
         .then(() => {
           lastLocationTs.value = Date.now();
@@ -110,10 +174,16 @@ export function useSafeLink() {
       hikingStartTs.value = Date.now();
       waypointCount.value = 0;
       elapsedSec.value = 0;
+      stepCount.value = 0;
+      distanceKm.value = 0;
+      liveTrail.value = [];
+      currentLat.value = null;
+      currentLng.value = null;
       _elapsedTimer = setInterval(() => {
         elapsedSec.value = Math.floor((Date.now() - hikingStartTs.value) / 1000);
       }, 1000);
       _startTracking();
+      _startStepCounter();
       _acquireWakeLock();
     } catch (err) {
       sessionStatus.value = 'error';
@@ -124,6 +194,7 @@ export function useSafeLink() {
   async function stopHiking() {
     _releaseWakeLock();
     _stopTracking();
+    _stopStepCounter();
     if (_elapsedTimer) { clearInterval(_elapsedTimer); _elapsedTimer = null; }
     if (sessionId.value) {
       try { await endSafeLink(sessionId.value); } catch {
@@ -140,6 +211,7 @@ export function useSafeLink() {
   function resetSafeLink() {
     _releaseWakeLock();
     _stopTracking();
+    _stopStepCounter();
     if (_elapsedTimer) { clearInterval(_elapsedTimer); _elapsedTimer = null; }
     sessionId.value = null;
     shareCode.value = '';
@@ -150,24 +222,22 @@ export function useSafeLink() {
     hikingStartTs.value = null;
     waypointCount.value = 0;
     elapsedSec.value = 0;
+    stepCount.value = 0;
+    distanceKm.value = 0;
+    liveTrail.value = [];
+    currentLat.value = null;
+    currentLng.value = null;
   }
 
   return {
-    sessionId,
-    shareCode,
-    sessionStatus,
-    shareUrl,
-    isActive,
-    errorMsg,
-    gpsErrorMsg,
-    lastLocationTs,
-    wakeLockActive,
-    hikingStartTs,
-    waypointCount,
-    elapsedSec,
-    startHiking,
-    stopHiking,
-    resetSafeLink,
+    sessionId, shareCode, sessionStatus,
+    shareUrl, isActive,
+    errorMsg, gpsErrorMsg,
+    lastLocationTs, wakeLockActive,
+    hikingStartTs, waypointCount, elapsedSec,
+    currentLat, currentLng, liveTrail,
+    stepCount, distanceKm,
+    startHiking, stopHiking, resetSafeLink,
   };
 }
 

@@ -388,12 +388,50 @@ export function useLeafletMap() {
     if (m) m.openPopup();
   }
 
+  // ─── 산행자 실시간 지도 (SafeLinkTab 산행 중) ─────────────────────────────
+  async function renderLiveHikingMap(el, lat, lng, trail) {
+    if (!el || lat == null || lng == null) return;
+    await _loadLeaflet();
+    const center = [lat, lng];
+    const map = _getOrCreateMap(el, center, 16);
+
+    if (!map._liveLayerGroup) {
+      map._liveLayerGroup = L.layerGroup().addTo(map);
+    }
+    map._liveLayerGroup.clearLayers();
+    const lg = map._liveLayerGroup;
+
+    // 이동 궤적
+    if (trail?.length >= 2) {
+      const pts = trail.map((p) => [p.lat, p.lng]);
+      L.polyline(pts, { color: '#22c55e', weight: 4, opacity: 0.85 }).addTo(lg);
+    }
+
+    // 출발점
+    if (trail?.length >= 1) {
+      L.circleMarker([trail[0].lat, trail[0].lng], {
+        radius: 6, color: '#15803d', fillColor: '#facc15', fillOpacity: 1, weight: 2,
+      }).addTo(lg).bindTooltip('출발', { permanent: false });
+    }
+
+    // 현재 위치 (파동 효과)
+    L.circleMarker(center, {
+      radius: 14, color: '#16a34a', fillColor: '#22c55e', fillOpacity: 0.25, weight: 2,
+    }).addTo(lg);
+    L.circleMarker(center, {
+      radius: 7, color: '#15803d', fillColor: '#22c55e', fillOpacity: 1, weight: 2,
+    }).addTo(lg).bindTooltip('현재 위치', { permanent: false });
+
+    map.setView(center, map.getZoom());
+  }
+
   return {
     mapStatus,
     safeLinkMapStatus,
     renderDetailMap,
     renderSafeLinkMap,
     renderGuardianMap,
+    renderLiveHikingMap,
     addDisasterZoneOverlays,
     renderOverviewMap,
     focusOverviewCourse,

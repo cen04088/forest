@@ -60,6 +60,10 @@
       <!-- 산행 중 -->
       <div v-else-if="safeLinkActive" class="safe-link-active-panel">
 
+        <!-- 실시간 지도 -->
+        <div ref="liveMapEl" class="live-hiking-map kakao-map" aria-label="실시간 위치 지도"></div>
+        <p v-if="!currentLat" class="live-map-waiting">GPS 신호 대기 중… 실외로 이동해 주세요</p>
+
         <!-- 산행 현황 카드 -->
         <div class="hike-status-card">
           <div class="hike-status-row">
@@ -68,14 +72,12 @@
               <strong class="hike-stat-val">{{ elapsedLabel }}</strong>
             </div>
             <div class="hike-stat">
-              <span class="hike-stat-label">위치 기록</span>
-              <strong class="hike-stat-val">{{ waypointCount }}회</strong>
+              <span class="hike-stat-label">이동 거리</span>
+              <strong class="hike-stat-val">{{ distanceLabel }}</strong>
             </div>
             <div class="hike-stat">
-              <span class="hike-stat-label">GPS 상태</span>
-              <strong class="hike-stat-val" :class="lastLocationTs ? 'stat-ok' : 'stat-wait'">
-                {{ lastLocationTs ? '추적 중' : '대기 중' }}
-              </strong>
+              <span class="hike-stat-label">걸음 수</span>
+              <strong class="hike-stat-val">{{ stepCount.toLocaleString() }}</strong>
             </div>
           </div>
           <div class="hike-status-footer">
@@ -153,9 +155,10 @@ import { useSafeLink } from '../composables/useSafeLink.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 
 const safeLinkMapEl = ref(null);
+const liveMapEl = ref(null);
 const shareStatus = ref('');
 
-const { safeLinkMapStatus, renderSafeLinkMap } = useLeafletMap();
+const { safeLinkMapStatus, renderSafeLinkMap, renderLiveHikingMap } = useLeafletMap();
 const {
   sessionStatus: safeLinkStatus,
   shareUrl: safeLinkUrl,
@@ -167,6 +170,8 @@ const {
   wakeLockActive,
   waypointCount,
   elapsedSec,
+  currentLat, currentLng, liveTrail,
+  stepCount, distanceKm,
   startHiking,
   stopHiking,
   resetSafeLink,
@@ -180,6 +185,19 @@ const elapsedLabel = computed(() => {
   if (h > 0) return `${h}시간 ${String(m).padStart(2,'0')}분`;
   if (m > 0) return `${m}분 ${String(sec).padStart(2,'0')}초`;
   return `${sec}초`;
+});
+
+const distanceLabel = computed(() => {
+  const d = distanceKm.value;
+  if (d < 1) return `${Math.round(d * 1000)}m`;
+  return `${d.toFixed(2)}km`;
+});
+
+// GPS 수신마다 실시간 지도 갱신
+watch([currentLat, currentLng], async ([lat, lng]) => {
+  if (!lat || !lng || !liveMapEl.value) return;
+  await nextTick();
+  renderLiveHikingMap(liveMapEl.value, lat, lng, liveTrail.value);
 });
 
 // 산 → 세이프링크 API가 기대하는 형태로 변환
