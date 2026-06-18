@@ -291,7 +291,8 @@ def _enrich_chat_context(context: dict) -> dict:
 
     try:
         from .nifos_api import fetch_nifos_mountain_weather, fetch_nifos_fine_dust
-        context["nifos_weather"] = fetch_nifos_mountain_weather()
+        mountain_name = (context.get("mountain") or {}).get("name", "")
+        context["nifos_weather"] = fetch_nifos_mountain_weather(mountain_name)
         context["nifos_dust"] = fetch_nifos_fine_dust()
     except Exception:
         pass

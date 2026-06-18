@@ -140,7 +140,7 @@ def data_source_status():
                 "id": "nifos_mountain_weather",
                 "name": "NIFOS 산악기상시스템 (실시간 관측)",
                 "status": "ready" if nifos_key_loaded else "missing_key",
-                "endpoint": "http://mtweather.nifos.go.kr/openapi/obs/current",
+                "endpoint": "http://apis.data.go.kr/1400377/mtweather/mountListSearch",
                 "provider": "국립산림과학원",
             },
             {

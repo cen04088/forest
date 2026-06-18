@@ -1,6 +1,6 @@
-"""국립산림과학원(NIFOS) 산악기상 및 산림 미세먼지 관측 데이터 API.
+"""국립산림과학원(NIFOS) 산악기상정보 및 산림 미세먼지 관측 데이터 API.
 
-산악기상시스템  : mtweather.nifos.go.kr
+산악기상정보(공공데이터포털): http://apis.data.go.kr/1400377/mtweather/mountListSearch
 미세먼지관측시스템: aican.nifos.go.kr
 """
 import json
@@ -9,7 +9,11 @@ import urllib.parse
 import urllib.request
 from functools import lru_cache
 
-NIFOS_MOUNTAIN_WEATHER_URL = "http://mtweather.nifos.go.kr/openapi/obs/current"
+from .loaders import load_public_service_key
+
+# 공공데이터 포털 등록 엔드포인트 (산림청 국립산림과학원_산악기상정보)
+NIFOS_MOUNTAIN_WEATHER_URL = "http://apis.data.go.kr/1400377/mtweather/mountListSearch"
+
 NIFOS_FINE_DUST_URL = "http://aican.nifos.go.kr/openapi/dust/current"
 
 
@@ -17,32 +21,36 @@ def _load_nifos_key() -> str:
     return os.environ.get("NIFOS_API_KEY", "").strip()
 
 
-# ── 산악기상 ──────────────────────────────────────────────────────────────────
+# ── 산악기상 (공공데이터 포털) ─────────────────────────────────────────────────
 
-def fetch_nifos_mountain_weather(station_code: str = "", timeout: int = 8) -> dict:
-    """NIFOS 산악기상시스템에서 실시간 기상 데이터 조회.
+def fetch_nifos_mountain_weather(mountain_name: str = "", timeout: int = 8) -> dict:
+    """산림청 국립산림과학원_산악기상정보 API 조회.
+
+    공공데이터포털(apis.data.go.kr/1400377/mtweather) 등록 서비스.
+    PUBLIC_SERVICE_KEY 사용 — 별도 키 불필요 (신청 승인 후 활성화).
 
     Args:
-        station_code: 관측소 코드 (미입력 시 전체 조회)
+        mountain_name: 산 이름 필터 (미입력 시 전체 목록)
         timeout: HTTP 타임아웃(초)
-
-    Returns:
-        ok=True 시 temperature_c, wind_speed_ms, precipitation_mm, humidity_pct 포함.
-        API 키 미설정 또는 오류 시 ok=False 반환 (호출부가 폴백 처리).
     """
-    api_key = _load_nifos_key()
-    if not api_key:
-        return {"ok": False, "source": "nifos_mountain_weather", "error": "NIFOS_API_KEY 미설정", "items": []}
-    return _cached_fetch_nifos_weather(station_code, api_key, timeout)
+    service_key = load_public_service_key()
+    if not service_key:
+        return {"ok": False, "source": "nifos_mountain_weather", "error": "PUBLIC_SERVICE_KEY 미설정", "items": []}
+    return _cached_fetch_nifos_weather(mountain_name.strip(), service_key, timeout)
 
 
 @lru_cache(maxsize=64)
-def _cached_fetch_nifos_weather(station_code: str, api_key: str, timeout: int) -> dict:
-    query: dict = {"authKey": api_key, "_type": "json"}
-    if station_code:
-        query["stnId"] = station_code
+def _cached_fetch_nifos_weather(mountain_name: str, service_key: str, timeout: int) -> dict:
+    query: dict = {
+        "serviceKey": service_key,
+        "numOfRows": "10",
+        "pageNo": "1",
+        "_type": "json",
+    }
+    if mountain_name:
+        query["mntnNm"] = mountain_name
 
-    url = f"{NIFOS_MOUNTAIN_WEATHER_URL}?{urllib.parse.urlencode(query)}"
+    url = f"{NIFOS_MOUNTAIN_WEATHER_URL}?{urllib.parse.urlencode(query, safe='%')}"
     try:
         with urllib.request.urlopen(url, timeout=timeout) as resp:
             body = resp.read()
