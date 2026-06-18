@@ -49,6 +49,8 @@ urlpatterns = [
     # 긴급 연락처
     path("emergency-contacts/", cv.emergency_contacts),
     path("emergency-contacts/<int:contact_id>/", cv.emergency_contact_detail),
+    # 대기질 (에어코리아)
+    path("air-quality/", views.air_quality),
     # NIFOS 국립산림과학원
     path("nifos-mountain-weather/", views.nifos_mountain_weather),
     path("nifos-fine-dust/", views.nifos_fine_dust),

@@ -71,6 +71,15 @@ def _build_realtime_safety(context: dict) -> str:
             f"PM2.5 {nifos_dust.get('pm25_ugm3')}㎍/m³ ({grade})"
         )
 
+    aq = context.get("air_quality") or {}
+    if aq.get("ok") and aq.get("pm25_ugm3") is not None:
+        grade = aq.get("grade_pm25", "")
+        parts.append(
+            f"대기질 ({aq.get('sido', '')} / {aq.get('station_name', '관측소')}): "
+            f"PM2.5 {aq.get('pm25_ugm3')}㎍/m³ ({grade}), "
+            f"PM10 {aq.get('pm10_ugm3')}㎍/m³ ({aq.get('grade_pm10', '')})"
+        )
+
     return "\n".join(parts)
 
 

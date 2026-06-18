@@ -130,6 +130,13 @@ def data_source_status():
                 "provider": "산림청",
             },
             {
+                "id": "air_quality",
+                "name": "에어코리아 실시간 대기질 (PM10·PM2.5)",
+                "status": "ready" if service_key_loaded else "missing_key",
+                "endpoint": "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty",
+                "provider": "한국환경공단",
+            },
+            {
                 "id": "nifos_mountain_weather",
                 "name": "NIFOS 산악기상시스템 (실시간 관측)",
                 "status": "ready" if nifos_key_loaded else "missing_key",

@@ -296,6 +296,13 @@ def _enrich_chat_context(context: dict) -> dict:
     except Exception:
         pass
 
+    try:
+        from .airquality_api import fetch_air_quality
+        mountain_name = (context.get("mountain") or {}).get("name", "")
+        context["air_quality"] = fetch_air_quality(mountain_name)
+    except Exception:
+        pass
+
     return context
 
 
@@ -304,6 +311,13 @@ def nifos_mountain_weather(request):
     station_code = request.GET.get("station", "")
     from .nifos_api import fetch_nifos_mountain_weather
     return JsonResponse(fetch_nifos_mountain_weather(station_code), json_dumps_params={"ensure_ascii": False})
+
+
+@require_GET
+def air_quality(request):
+    mountain = request.GET.get("mountain", "")
+    from .airquality_api import fetch_air_quality
+    return JsonResponse(fetch_air_quality(mountain), json_dumps_params={"ensure_ascii": False})
 
 
 @require_GET
