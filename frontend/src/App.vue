@@ -25,8 +25,8 @@
         <p class="hero-desc">날씨 · 코스 · 재난 데이터를 종합해<br>출발 전 안전 등급을 진단합니다</p>
         <div class="hero-stats">
           <div class="hero-stat">
-            <span class="hero-stat-num">8,000<span class="hero-stat-unit">건+</span></span>
-            <span class="hero-stat-label">연간 산악구조 출동</span>
+            <span class="hero-stat-num">77<span class="hero-stat-unit">개</span></span>
+            <span class="hero-stat-label">올라 추천 산</span>
           </div>
           <div class="hero-stat">
             <span class="hero-stat-num">631<span class="hero-stat-unit">개</span></span>
@@ -67,6 +67,10 @@
       <router-link to="/my-page" class="tabbar-item" active-class="active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         <span>내정보</span>
+      </router-link>
+      <router-link to="/chat" class="tabbar-item" active-class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span>AI 도우미</span>
       </router-link>
       <router-link to="/guardian" class="tabbar-item tabbar-guardian" active-class="active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>

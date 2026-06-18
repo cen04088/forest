@@ -92,16 +92,18 @@ export const profile = reactive({
   departureTime: formatTimeForInput(_initial),
   availableMinutes: 240,
   desiredHikingMinutes: 120,
-  companion: 'vulnerable',
   experience: 'beginner',
   condition: 4,
   intensity: 'moderate',
-  purpose: 'balanced',
+  difficultyFilter: 'all',
   transport: 'public',
   maxDistanceKm: 30,
 });
 
 export const { location, gpsStatus, gpsError, detectGPS } = useLocation();
+
+// 사용자가 직접 지정한 출발지 (null이면 GPS 위치 사용)
+export const customStartLocation = ref(null); // { lat, lng, name }
 
 export const mountainOptions = computed(() => {
   const buckets = new Map();
@@ -163,9 +165,10 @@ export async function submitMountainRecommendation() {
   guideError.value = '';
   try {
     const weather = weatherData.value;
+    const effectiveLocation = customStartLocation.value || location.value;
     const data = await fetchMountainRecommendations({
       profile,
-      location: location.value,
+      location: effectiveLocation,
       weather,
     });
     recommendedMountains.value = data.mountains || [];

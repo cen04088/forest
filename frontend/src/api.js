@@ -251,3 +251,19 @@ export async function addEmergencyContact(data, token) {
 export async function removeEmergencyContact(id, token) {
   return request(`/emergency-contacts/${id}/`, { method: "DELETE", headers: authHeaders(token) });
 }
+
+// ── AI ────────────────────────────────────────────────────────────────────────
+
+export async function fetchChatResponse({ messages, context }) {
+  return request("/chat/", {
+    method: "POST",
+    body: JSON.stringify({ messages, context }),
+  });
+}
+
+export async function fetchSafetyAdvice({ mountain, weather, profile, sunTimes }) {
+  return request("/safety-advice/", {
+    method: "POST",
+    body: JSON.stringify({ mountain, weather, profile, sun_times: sunTimes }),
+  });
+}

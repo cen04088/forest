@@ -58,6 +58,18 @@
           </ul>
         </div>
 
+        <!-- AI 맞춤 안전 조언 -->
+        <div class="safety-advice-panel" v-if="safetyAdviceLines.length || safetyAdviceLoading">
+          <div class="safety-advice-header">
+            <span class="safety-advice-icon">🧭</span>
+            <p class="safety-advice-title">AI 맞춤 안전 조언</p>
+            <span v-if="safetyAdviceLoading" class="advice-loading-dot"></span>
+          </div>
+          <ul class="safety-advice-list">
+            <li v-for="(line, i) in safetyAdviceLines" :key="i">{{ line }}</li>
+          </ul>
+        </div>
+
         <button class="community-link-btn" type="button" @click="goToCommunity(selectedMountain.name)">
           💬 {{ selectedMountain.name }} 커뮤니티 후기 보기
         </button>
@@ -70,22 +82,17 @@
             <p class="eyebrow">Mountain Finder</p>
             <h2>나에게 맞는 산 추천</h2>
           </div>
-          <div class="title-gps">
-            <button
-              class="gps-btn" type="button"
-              :class="gpsStatus" :disabled="gpsStatus === 'loading'"
-              :title="gpsBtnTitle" @click="handleGPS"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-                <path v-if="gpsStatus === 'loading'" d="M12 6a6 6 0 0 1 6 6" class="gps-spin" />
-              </svg>
-            </button>
-            <span class="mini-status" :class="gpsStatus === 'success' ? 'status-gps-ok' : ''">
-              {{ gpsStatus === 'success' ? '위치 감지됨' : gpsStatus === 'error' ? '위치 오류' : '내 위치 우선' }}
-            </span>
-          </div>
+          <button
+            class="gps-refresh-btn" type="button"
+            :class="gpsStatus" :disabled="gpsStatus === 'loading'"
+            :title="gpsBtnTitle" @click="handleGPS"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" :class="gpsStatus === 'loading' ? 'spin' : ''">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+            </svg>
+            <span>{{ gpsStatus === 'loading' ? '감지 중…' : gpsStatus === 'success' ? '위치 갱신' : '위치 갱신' }}</span>
+          </button>
         </div>
 
         <form class="planner" @submit.prevent="handleSubmit">
@@ -112,25 +119,60 @@
             </select>
           </label>
           <div class="field wide-field">
-            <span>동반자 유형</span>
+            <span>난이도</span>
             <div class="segment-group wrap">
-              <label v-for="type in companionTypes" :key="type.value" class="segment-btn">
-                <input type="radio" v-model="profile.companion" :value="type.value" name="companion_form" />
-                <span>{{ type.label }}</span>
-              </label>
-            </div>
-          </div>
-          <div class="field wide-field">
-            <span>산행 목적</span>
-            <div class="segment-group wrap">
-              <label v-for="p in purposeTypes" :key="p.value" class="segment-btn">
-                <input type="radio" v-model="profile.purpose" :value="p.value" name="purpose_form" />
-                <span>{{ p.label }}</span>
+              <label v-for="d in difficultyFilters" :key="d.value" class="segment-btn">
+                <input type="radio" v-model="profile.difficultyFilter" :value="d.value" name="difficulty_filter" />
+                <span>{{ d.label }}</span>
               </label>
             </div>
           </div>
 
-          <p v-if="gpsStatus === 'error'" class="gps-message error" style="margin-bottom:4px">⚠️ {{ gpsError }}</p>
+          <!-- 출발지 지정 -->
+          <div class="field wide-field start-location-field">
+            <span>출발지</span>
+            <div class="start-location-toggle">
+              <button
+                type="button"
+                :class="['sl-tab', !useCustomStart && 'sl-tab-active']"
+                @click="useCustomStart = false"
+              >📍 내 현재 위치</button>
+              <button
+                type="button"
+                :class="['sl-tab', useCustomStart && 'sl-tab-active']"
+                @click="useCustomStart = true"
+              >🗺 직접 지정</button>
+            </div>
+            <div v-if="useCustomStart" class="start-search-row">
+              <input
+                v-model="startQuery"
+                class="start-search-input"
+                type="text"
+                placeholder="예: 서울역, 수원시청, 강남구…"
+                @keydown.enter.prevent="searchStartLocation"
+              />
+              <button type="button" class="start-search-btn" :disabled="startSearching" @click="searchStartLocation">
+                {{ startSearching ? '검색 중…' : '검색' }}
+              </button>
+            </div>
+            <div v-if="useCustomStart && startResults.length" class="start-results">
+              <button
+                v-for="r in startResults" :key="r.place_id"
+                type="button"
+                :class="['start-result-item', customStartLocation?.name === r.display_name && 'selected']"
+                @click="selectStartResult(r)"
+              >
+                <span class="sr-name">{{ r.name }}</span>
+                <span class="sr-detail">{{ r.detail }}</span>
+              </button>
+            </div>
+            <p v-if="useCustomStart && startError" class="start-error">{{ startError }}</p>
+            <p v-if="useCustomStart && customStartLocation" class="start-confirmed">
+              ✅ {{ customStartLocation.name }}
+            </p>
+          </div>
+
+          <p v-if="gpsStatus === 'error' && !useCustomStart" class="gps-message error" style="margin-bottom:4px">⚠️ {{ gpsError }}</p>
 
           <button class="primary-btn wide-field" :class="{ loading }" type="submit" :disabled="loading">
             {{ loading ? '최적 산 분석 중…' : '나에게 맞는 산 찾기' }}
@@ -182,7 +224,7 @@
           <span class="mini-status">{{ recommendedMountains.length }}개</span>
         </div>
         <div class="personalization-line">
-          <span class="companion-chip">{{ companionChipLabel }}</span>
+          <span class="companion-chip">{{ difficultyChipLabel }}</span>
         </div>
         <div class="course-list">
           <MountainCard
@@ -225,10 +267,11 @@ import {
   loadMountains, publicMountains, recommendedMountains, alternativeMountains,
   selectedMountain, submitMountainRecommendation, resultState,
   profile, minDepartureDate, maxDepartureDate,
-  location, gpsStatus, gpsError, detectGPS, loadWeather,
+  location, gpsStatus, gpsError, detectGPS, loadWeather, weatherData,
+  customStartLocation,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones } from '../api.js';
+import { fetchDisasterZones, fetchSafetyAdvice } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import MountainCard from '../components/MountainCard.vue';
 import { addMinutes, formatTimeForInput } from '../utils/dateHelpers.js';
@@ -238,16 +281,72 @@ const overviewMapEl = ref(null);
 const selectedDisasterZones = ref([]);
 const { renderOverviewMap, focusOverviewCourse } = useLeafletMap();
 
-const companionTypes = [
-  { value: 'vulnerable', label: '어린이·노약자 동반' },
-  { value: 'family', label: '가족 동반' },
-  { value: 'solo', label: '혼자 산행' },
-];
-const purposeTypes = [
-  { value: 'balanced', label: '🎯 균형' },
-  { value: 'healing', label: '🌿 힐링' },
-  { value: 'workout', label: '💪 운동' },
-  { value: 'view', label: '🏔️ 전망' },
+const safetyAdviceText = ref('');
+const safetyAdviceLoading = ref(false);
+
+// 출발지 직접 지정
+const useCustomStart = ref(false);
+const startQuery = ref('');
+const startSearching = ref(false);
+const startResults = ref([]);
+const startError = ref('');
+
+watch(useCustomStart, (v) => {
+  if (!v) {
+    customStartLocation.value = null;
+    startResults.value = [];
+    startError.value = '';
+  }
+});
+
+async function searchStartLocation() {
+  const q = startQuery.value.trim();
+  if (!q) return;
+  startSearching.value = true;
+  startError.value = '';
+  startResults.value = [];
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=4&countrycodes=kr&accept-language=ko`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'ko' } });
+    const json = await res.json();
+    if (!json.length) {
+      startError.value = '검색 결과가 없습니다. 더 구체적인 지명을 입력해 보세요.';
+      return;
+    }
+    startResults.value = json.map((item) => {
+      const parts = item.display_name.split(',').map((s) => s.trim());
+      return {
+        place_id: item.place_id,
+        lat: parseFloat(item.lat),
+        lng: parseFloat(item.lon),
+        display_name: item.display_name,
+        name: parts[0],
+        detail: parts.slice(1, 3).join(', '),
+      };
+    });
+  } catch {
+    startError.value = '검색 중 오류가 발생했습니다. 네트워크를 확인해 주세요.';
+  } finally {
+    startSearching.value = false;
+  }
+}
+
+function selectStartResult(r) {
+  customStartLocation.value = { lat: r.lat, lng: r.lng, name: r.name };
+  startResults.value = [];
+  startQuery.value = r.name;
+}
+const safetyAdviceLines = computed(() =>
+  safetyAdviceText.value
+    ? safetyAdviceText.value.split('\n').map((l) => l.trim()).filter(Boolean)
+    : [],
+);
+
+const difficultyFilters = [
+  { value: 'all',    label: '🏔 전체' },
+  { value: 'easy',   label: '🌿 초급' },
+  { value: 'medium', label: '🥾 중급' },
+  { value: 'hard',   label: '⛰ 고급' },
 ];
 
 const minDepartureTime = computed(() =>
@@ -256,9 +355,9 @@ const minDepartureTime = computed(() =>
     : undefined,
 );
 
-const companionChipLabel = computed(() => {
-  const map = { vulnerable: '👨‍👧 어린이·노약자 동반 기준', family: '👨‍👩‍👦 가족 동반 기준', solo: '🧍 개인 산행 기준' };
-  return map[profile.companion] || '동반자 기준';
+const difficultyChipLabel = computed(() => {
+  const map = { all: '🏔 전체 난이도 기준', easy: '🌿 초급 기준', medium: '🥾 중급 기준', hard: '⛰ 고급 기준' };
+  return map[profile.difficultyFilter] || '난이도 기준';
 });
 
 const dailyTip = computed(() => {
@@ -310,6 +409,7 @@ function refreshOverviewMap() {
 
 async function selectMountain(mountain) {
   selectedMountain.value = mountain;
+  safetyAdviceText.value = '';
   if (mountain?.lat && mountain?.lng) loadWeather(mountain.lat, mountain.lng);
   await nextTick();
   focusOverviewCourse(mountain);
@@ -320,6 +420,30 @@ async function selectMountain(mountain) {
     const data = await fetchDisasterZones(mountain.name);
     selectedDisasterZones.value = data.zones || [];
   } catch {}
+
+  // AI 맞춤 안전 조언 비동기 로드
+  loadSafetyAdvice(mountain);
+}
+
+async function loadSafetyAdvice(mountain) {
+  safetyAdviceLoading.value = true;
+  try {
+    const data = await fetchSafetyAdvice({
+      mountain,
+      weather: weatherData.value || {},
+      profile: {
+        departureTime: profile.departureTime || '',
+        desiredHikingMinutes: profile.desiredHikingMinutes || 120,
+        companion: profile.companion || '',
+      },
+      sunTimes: null,
+    });
+    safetyAdviceText.value = data.advice || '';
+  } catch {
+    safetyAdviceText.value = '';
+  } finally {
+    safetyAdviceLoading.value = false;
+  }
 }
 
 async function handleSubmit() {

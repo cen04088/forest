@@ -4,6 +4,13 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# .env 파일 자동 로드 (있으면)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / ".env")
+except ImportError:
+    pass
 FRONTEND_DIST_DIR = BASE_DIR.parent / "frontend" / "dist"
 
 

@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 from .mountain_data import MOUNTAINS
 
 
@@ -6,38 +7,33 @@ def _haversine(lat1, lng1, lat2, lng2):
     R = 6371
     dlat = math.radians(lat2 - lat1)
     dlng = math.radians(lng2 - lng1)
-    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlng / 2) ** 2
+    a = (math.sin(dlat / 2) ** 2
+         + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlng / 2) ** 2)
     return R * 2 * math.asin(math.sqrt(a))
 
 
-def _difficulty_score(mountain, companion):
-    diff = mountain["difficulty"]
-    if companion == "vulnerable":
-        return {"easy": 1.0, "medium": 0.4, "hard": 0.0}[diff]
-    if companion == "family":
-        return {"easy": 0.9, "medium": 0.75, "hard": 0.2}[diff]
-    return {"easy": 0.6, "medium": 0.9, "hard": 1.0}[diff]
+def _parse_hhmm(s):
+    """'HH:MM' → 분 단위 정수. 파싱 실패 시 None."""
+    if not s:
+        return None
+    try:
+        h, m = s.split(":")
+        return int(h) * 60 + int(m)
+    except Exception:
+        return None
+
+
+# ── 개별 점수 함수 ────────────────────────────────────────────────────────────
 
 
 def _duration_score(mountain, desired_min):
     lo, hi = mountain["walk_time_min"], mountain["walk_time_max"]
-    mid = (lo + hi) / 2
     if lo <= desired_min <= hi:
         return 1.0
     if desired_min < lo:
-        gap = lo - desired_min
-        return max(0.0, 1.0 - gap / 120)
-    gap = desired_min - hi
-    return max(0.0, 1.0 - gap / 180)
+        return max(0.0, 1.0 - (lo - desired_min) / 120)
+    return max(0.0, 1.0 - (desired_min - hi) / 180)
 
-
-def _purpose_score(mountain, purpose):
-    fits = mountain.get("purpose_fit", [])
-    if purpose in fits:
-        return 1.0
-    if purpose == "balanced":
-        return 0.7
-    return 0.4
 
 
 def _distance_score(mountain, user_lat, user_lng):
@@ -47,74 +43,172 @@ def _distance_score(mountain, user_lat, user_lng):
     if d <= 30:
         return 1.0
     if d <= 80:
-        return 0.8
+        return 0.85
     if d <= 150:
-        return 0.6
+        return 0.65
     if d <= 300:
         return 0.4
     return 0.2
 
 
 def _weather_score(weather):
+    """날씨 조건 점수 (0.0~1.0)."""
     if not weather:
         return 0.7
     score = 1.0
     rainfall = float(weather.get("rainfall_mm", 0) or 0)
     wind = float(weather.get("wind_speed_ms", 0) or 0)
     temp = float(weather.get("temperature_c", 15) or 15)
-    if rainfall >= 10:
-        score -= 0.5
+    humidity = float(weather.get("humidity_pct", 50) or 50)
+    wildfire = weather.get("wildfire_risk", "low") or "low"
+
+    # 강수
+    if rainfall >= 20:
+        score -= 0.6
+    elif rainfall >= 10:
+        score -= 0.4
     elif rainfall > 0:
-        score -= 0.2
-    if wind >= 8:
-        score -= 0.3
-    elif wind >= 5:
         score -= 0.15
-    if temp <= 0 or temp >= 35:
+
+    # 풍속
+    if wind >= 12:
+        score -= 0.35
+    elif wind >= 8:
         score -= 0.2
+    elif wind >= 5:
+        score -= 0.1
+
+    # 기온
+    if temp <= -5 or temp >= 38:
+        score -= 0.3
+    elif temp <= 0 or temp >= 35:
+        score -= 0.15
+
+    # 습도 (폭염 + 고습)
+    if temp >= 30 and humidity >= 80:
+        score -= 0.1
+
+    # 산불 위험
+    wildfire_pen = {"low": 0.0, "medium": 0.1, "high": 0.25, "very_high": 0.45}.get(wildfire, 0.0)
+    score -= wildfire_pen
+
     return max(0.0, score)
+
+
+def _sunset_score(mountain, departure_time_str, sun_times):
+    """
+    일몰 전에 하산 가능한지 평가.
+    반환값: (score 0.0~1.0, margin_min: 일몰까지 여유분 or None)
+    - 여유 > 60분: 1.0
+    - 여유 30~60분: 0.75
+    - 여유 0~30분: 0.5  (아슬아슬)
+    - 여유 -60~0분: 0.2  (일몰 후 하산)
+    - 여유 < -60분: 0.0  (심각)
+    """
+    sunset_str = (sun_times or {}).get("sunset")
+    sunset_min = _parse_hhmm(sunset_str)
+    if sunset_min is None:
+        return 0.7, None  # 데이터 없으면 중립
+
+    dep_min = _parse_hhmm(departure_time_str)
+    if dep_min is None:
+        # 출발 시각 없으면 현재 시각 사용
+        now = datetime.now()
+        dep_min = now.hour * 60 + now.minute
+
+    # 산행 최대 소요 시간 기준으로 하산 완료 시각 추정
+    walk_max = mountain.get("walk_time_max", 180)
+    finish_min = dep_min + walk_max
+
+    margin = sunset_min - finish_min  # 양수: 일몰 전, 음수: 일몰 후
+
+    if margin > 90:
+        score = 1.0
+    elif margin > 60:
+        score = 0.9
+    elif margin > 30:
+        score = 0.75
+    elif margin > 0:
+        score = 0.5
+    elif margin > -60:
+        score = 0.2
+    else:
+        score = 0.0
+
+    return score, margin
+
+
+def _season_score(mountain):
+    """
+    계절별 패널티.
+    - 겨울(12, 1, 2)에 해발 1000m 이상 고산: 감점
+    - 여름(6, 7, 8)에 해발 1500m 이상: 오히려 선호 (더위 회피)
+    """
+    month = datetime.now().month
+    elev = mountain.get("elevation_m", 500) or 500
+    score = 1.0
+
+    if month in (12, 1, 2):
+        if elev >= 1500:
+            score -= 0.25
+        elif elev >= 1000:
+            score -= 0.1
+    elif month in (6, 7, 8):
+        if elev >= 1000:
+            score += 0.05  # 여름엔 고산 약간 선호
+
+    return min(1.0, max(0.0, score))
+
+
+# ── 메인 추천 함수 ─────────────────────────────────────────────────────────────
+
+# 가중치 합계 = 1.0
+WEIGHTS = {
+    "duration":  0.30,
+    "sunset":    0.25,
+    "distance":  0.25,
+    "weather":   0.20,
+}
 
 
 def recommend_mountains(payload):
     profile = payload.get("profile", {})
-    user_lat = None
-    user_lng = None
     loc = payload.get("location") or {}
-    if loc.get("lat") and loc.get("lng"):
-        user_lat = float(loc["lat"])
-        user_lng = float(loc["lng"])
+    user_lat = float(loc["lat"]) if loc.get("lat") else None
+    user_lng = float(loc["lng"]) if loc.get("lng") else None
 
-    companion = profile.get("companion", "family")
     desired_min = int(profile.get("desiredHikingMinutes", 180))
-    purpose = profile.get("purpose", "balanced")
+    difficulty_filter = profile.get("difficultyFilter", "all")
+    departure_time = profile.get("departureTime", "")
     weather = payload.get("weather")
+    sun_times = payload.get("sun_times") or {}
 
     w_weather = _weather_score(weather)
 
     results = []
     for m in MOUNTAINS:
-        d_score = _difficulty_score(m, companion)
-        t_score = _duration_score(m, desired_min)
-        p_score = _purpose_score(m, purpose)
-        dist_score = _distance_score(m, user_lat, user_lng)
-
-        total = (
-            d_score * 0.35
-            + t_score * 0.25
-            + dist_score * 0.20
-            + p_score * 0.10
-            + w_weather * 0.10
-        )
-
-        # 동반자 부적합 산 제외
-        if d_score == 0.0:
+        # 난이도 하드 필터
+        if difficulty_filter != "all" and m["difficulty"] != difficulty_filter:
             continue
 
+        t_score = _duration_score(m, desired_min)
+        dist_score = _distance_score(m, user_lat, user_lng)
+        sun_score, margin_min = _sunset_score(m, departure_time, sun_times)
+        season_score = _season_score(m)
+
+        base = (
+            t_score      * WEIGHTS["duration"]
+            + sun_score  * WEIGHTS["sunset"]
+            + dist_score * WEIGHTS["distance"]
+            + w_weather  * WEIGHTS["weather"]
+        )
+        total = base * season_score
+
         safety_score = round(total * 100)
-        if safety_score >= 75:
+        if safety_score >= 72:
             safety_label = "추천"
             safety_class = "safe"
-        elif safety_score >= 45:
+        elif safety_score >= 42:
             safety_label = "주의"
             safety_class = "caution"
         else:
@@ -125,18 +219,30 @@ def recommend_mountains(payload):
         if user_lat is not None:
             dist_km = round(_haversine(user_lat, user_lng, m["lat"], m["lng"]))
 
+        # 일몰 여유 설명 문자열
+        sunset_note = None
+        if margin_min is not None:
+            if margin_min >= 0:
+                h, mn = divmod(int(margin_min), 60)
+                sunset_note = f"일몰 {h}시간 {mn}분 전 하산 완료 예상" if h else f"일몰 {mn}분 전 하산 완료 예상"
+            else:
+                over = abs(int(margin_min))
+                h, mn = divmod(over, 60)
+                sunset_note = f"⚠️ 일몰 후 {h}시간 {mn}분 초과 예상" if h else f"⚠️ 일몰 {mn}분 후 하산 완료 예상"
+
         results.append({
             **m,
             "safety_score": safety_score,
             "safety_label": safety_label,
             "safety_class": safety_class,
             "distance_from_user_km": dist_km,
+            "sunset_note": sunset_note,
             "score_breakdown": {
-                "difficulty": round(d_score, 2),
-                "duration": round(t_score, 2),
-                "distance": round(dist_score, 2),
-                "purpose": round(p_score, 2),
-                "weather": round(w_weather, 2),
+                "duration":  round(t_score, 2),
+                "sunset":    round(sun_score, 2),
+                "distance":  round(dist_score, 2),
+                "weather":   round(w_weather, 2),
+                "season":    round(season_score, 2),
             },
         })
 

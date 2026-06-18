@@ -60,10 +60,6 @@
       <!-- 산행 중 -->
       <div v-else-if="safeLinkActive" class="safe-link-active-panel">
 
-        <!-- 실시간 지도 -->
-        <div ref="liveMapEl" class="live-hiking-map kakao-map" aria-label="실시간 위치 지도"></div>
-        <p v-if="!currentLat" class="live-map-waiting">GPS 신호 대기 중… 실외로 이동해 주세요</p>
-
         <!-- 산행 현황 카드 -->
         <div class="hike-status-card">
           <div class="hike-status-row">
@@ -155,10 +151,9 @@ import { useSafeLink } from '../composables/useSafeLink.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 
 const safeLinkMapEl = ref(null);
-const liveMapEl = ref(null);
 const shareStatus = ref('');
 
-const { safeLinkMapStatus, renderSafeLinkMap, renderLiveHikingMap } = useLeafletMap();
+const { safeLinkMapStatus, renderSafeLinkMap } = useLeafletMap();
 const {
   sessionStatus: safeLinkStatus,
   shareUrl: safeLinkUrl,
@@ -193,12 +188,6 @@ const distanceLabel = computed(() => {
   return `${d.toFixed(2)}km`;
 });
 
-// GPS 수신마다 실시간 지도 갱신
-watch([currentLat, currentLng], async ([lat, lng]) => {
-  if (!lat || !lng || !liveMapEl.value) return;
-  await nextTick();
-  renderLiveHikingMap(liveMapEl.value, lat, lng, liveTrail.value);
-});
 
 // 산 → 세이프링크 API가 기대하는 형태로 변환
 const mountainAsCourse = computed(() => {

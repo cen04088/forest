@@ -37,8 +37,10 @@
       <span class="badge info">탐방로 {{ mountain.trail_count }}개</span>
     </div>
 
-    <!-- 동반자 적합 여부 -->
-    <p class="mc-companion">{{ companionFitText }}</p>
+    <!-- 일몰 여유 -->
+    <p v-if="mountain.sunset_note" :class="['mc-sunset-note', sunsetNoteClass]">
+      🌇 {{ mountain.sunset_note }}
+    </p>
 
     <!-- 하이라이트 태그 -->
     <div class="mc-highlights">
@@ -73,13 +75,6 @@ const timeLabel = computed(() => {
   return `${fmt(lo)} ~ ${fmt(hi)}`;
 });
 
-const companionFitText = computed(() => {
-  const fits = props.mountain.companion_fit || [];
-  const labels = { vulnerable: '어린이·노약자', family: '가족', solo: '개인' };
-  const matched = fits.map((f) => labels[f]).filter(Boolean);
-  return matched.length ? `✅ ${matched.join(' / ')} 동반 적합` : '';
-});
-
 const topReason = computed(() => {
   const m = props.mountain;
   const parts = [];
@@ -89,4 +84,8 @@ const topReason = computed(() => {
   if ((m.companion_fit || []).includes('vulnerable')) parts.push('취약자 동반 가능');
   return parts.join(' · ') || '현재 조건 최적 산';
 });
+
+const sunsetNoteClass = computed(() =>
+  (props.mountain.sunset_note || '').startsWith('⚠️') ? 'sunset-warn' : 'sunset-ok',
+);
 </script>

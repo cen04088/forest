@@ -7,6 +7,7 @@ const routes = [
   { path: '/safe-link', component: () => import('./views/SafeLinkTab.vue') },
   { path: '/community', component: () => import('./views/CommunityTab.vue') },
   { path: '/my-page', component: () => import('./views/MyPageTab.vue') },
+  { path: '/chat', component: () => import('./views/ChatTab.vue') },
   { path: '/', redirect: '/guide' },
 ];
 
