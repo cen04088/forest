@@ -130,6 +130,9 @@
     <!-- ─── 온보딩 모달 (첫 방문) ──────────────────────────────────── -->
     <OnboardingModal v-if="showOnboarding" @close="showOnboarding = false" />
   </main>
+
+  <!-- ─── 플로팅 챗봇 위젯 (채팅 탭 제외) ─────────────────────── -->
+  <ChatWidget v-if="route.path !== '/chat'" />
 </template>
 
 <script setup>
@@ -141,6 +144,7 @@ import { guideError, weatherData, loadWeather, selectedMountain } from './compos
 import { communityError } from './composables/useCommunity.js';
 import AuthModal from './components/AuthModal.vue';
 import OnboardingModal from './components/OnboardingModal.vue';
+import ChatWidget from './components/ChatWidget.vue';
 
 const showOnboarding = ref(!localStorage.getItem('ollaOnboarded'));
 
