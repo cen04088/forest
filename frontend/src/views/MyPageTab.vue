@@ -26,7 +26,7 @@
       </div>
     </section>
 
-    <!-- ③ 산행 기록 — col 3 -->
+    <!-- ② 산행 기록 — col 2 -->
     <section class="panel mypage-col-1">
       <div class="section-title compact">
         <div><p class="eyebrow">History</p><h2>산행 기록</h2></div>
@@ -43,6 +43,24 @@
           </div>
           <button class="fav-remove-btn" type="button" @click="removeRecord(rec.id)">✕</button>
         </div>
+      </div>
+    </section>
+
+    <!-- ③ 출발 전 체크리스트 — col 3 (첫 행 마지막 열) -->
+    <section class="panel guardian-checklist mypage-col-1">
+      <div class="section-title compact">
+        <div><p class="eyebrow">Checklist</p><h2>출발 전 체크리스트</h2></div>
+        <span class="mini-status">{{ checkedCount }}/{{ checklistItems.length }}</span>
+      </div>
+      <label v-for="(item, i) in checklistItems" :key="item.id" class="custom-check-item">
+        <input type="checkbox" class="hidden-check" v-model="item.checked" @change="saveChecklist" />
+        <span class="check-box"></span>
+        <span>{{ item.text }}</span>
+        <button class="checklist-del-btn" type="button" @click.prevent="removeChecklistItem(i)">✕</button>
+      </label>
+      <div class="checklist-add-row">
+        <input v-model="newChecklistText" type="text" placeholder="새 항목 추가…" @keydown.enter.prevent="addChecklistItem" />
+        <button class="outline-btn" type="button" @click="addChecklistItem">추가</button>
       </div>
     </section>
 
@@ -86,14 +104,14 @@
       </div>
     </section>
 
-    <!-- ⑤ 긴급 연락처 — col 1~2 -->
-    <section class="panel mypage-col-2">
+    <!-- ⑤ 긴급 연락처 — 전체 너비 -->
+    <section class="panel mypage-col-full">
       <div class="section-title compact">
         <div><p class="eyebrow">Emergency</p><h2>긴급 연락처</h2></div>
         <span class="mini-status">{{ emergencyContacts.length }}명</span>
       </div>
       <div v-if="!authUser" class="mypage-login-needed">로그인 후 이용 가능합니다.</div>
-      <div v-else>
+      <div v-else class="emergency-inner">
         <div v-for="contact in emergencyContacts" :key="contact.id" class="contact-item">
           <div class="contact-info">
             <strong>{{ contact.name }}</strong>
@@ -112,23 +130,6 @@
       </div>
     </section>
 
-    <!-- ⑥ 출발 전 체크리스트 — col 3 -->
-    <section class="panel guardian-checklist mypage-col-1">
-      <div class="section-title compact">
-        <div><p class="eyebrow">Checklist</p><h2>출발 전 체크리스트</h2></div>
-        <span class="mini-status">{{ checkedCount }}/{{ checklistItems.length }}</span>
-      </div>
-      <label v-for="(item, i) in checklistItems" :key="item.id" class="custom-check-item">
-        <input type="checkbox" class="hidden-check" v-model="item.checked" @change="saveChecklist" />
-        <span class="check-box"></span>
-        <span>{{ item.text }}</span>
-        <button class="checklist-del-btn" type="button" @click.prevent="removeChecklistItem(i)">✕</button>
-      </label>
-      <div class="checklist-add-row">
-        <input v-model="newChecklistText" type="text" placeholder="새 항목 추가…" @keydown.enter.prevent="addChecklistItem" />
-        <button class="outline-btn" type="button" @click="addChecklistItem">추가</button>
-      </div>
-    </section>
 
   </section>
 </template>

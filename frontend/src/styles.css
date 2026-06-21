@@ -3426,6 +3426,18 @@ p {
     grid-column: 1 / -1;
   }
 
+  /* 긴급 연락처 전체 너비일 때 내부 2열 */
+  .emergency-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+    align-items: start;
+  }
+  .emergency-inner .contact-add-form,
+  .emergency-inner .auth-error {
+    grid-column: 1 / -1;
+  }
+
   /* 내가 쓴 글: 포스트를 2열로 */
   .mypost-grid {
     display: grid;
