@@ -4,8 +4,6 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .data_sources import data_source_status
-from .forest_api import fetch_forest_spatial_data, safe_public_response
 from .landslide_api import fetch_landslide_prediction
 from .loaders import load_public_service_key, load_public_trail_courses, load_disaster_risk_zones
 from .mountain_coordinates import MOUNTAIN_COORDINATES
@@ -15,7 +13,6 @@ from .mountain_recommend import recommend_mountains
 from .mountain_data import MOUNTAINS
 from .sun_api import fetch_sun_times
 from .weather_api import fetch_current_weather
-from .mountain_weather_api import fetch_mountain_weather
 from .wildfire_api import fetch_wildfire_risk
 from .vworld_api import fetch_vworld_trails
 from . import safe_links as safe_link_store
@@ -38,22 +35,8 @@ def health(request):
 
 
 @require_GET
-def data_sources(request):
-    return JsonResponse(data_source_status(), json_dumps_params={"ensure_ascii": False})
-
-
-@require_GET
 def courses(request):
     return JsonResponse({"courses": load_public_trail_courses()})
-
-
-@require_GET
-def forest_spatial(request):
-    mountain_name = request.GET.get("mountain", "")
-    page_no = request.GET.get("page", 1)
-    num_of_rows = request.GET.get("size", 10)
-    result = fetch_forest_spatial_data(mountain_name, page_no, num_of_rows)
-    return JsonResponse(safe_public_response(result), json_dumps_params={"ensure_ascii": False})
 
 
 @require_GET
@@ -84,27 +67,28 @@ def mountain_story(request):
 @require_GET
 def weather(request):
     from django.core.cache import cache
+    from .airquality_api import fetch_air_quality
     lat = float(request.GET.get("lat", 37.5665))
     lng = float(request.GET.get("lng", 126.978))
-    cache_key = f"weather:{round(lat, 2)}:{round(lng, 2)}"
+    mountain = request.GET.get("mountain", "")
+    cache_key = f"weather:{round(lat, 2)}:{round(lng, 2)}:{mountain}"
     cached = cache.get(cache_key)
     if cached:
         return JsonResponse(cached, json_dumps_params={"ensure_ascii": False})
     result = fetch_current_weather(lat, lng)
+    # 미세먼지 통합 (에러 시 무시)
+    try:
+        aq = fetch_air_quality(mountain)
+        if aq.get("ok"):
+            result["pm10_ugm3"] = aq.get("pm10_ugm3")
+            result["pm25_ugm3"] = aq.get("pm25_ugm3")
+            result["grade_pm10"] = aq.get("grade_pm10")
+            result["grade_pm25"] = aq.get("grade_pm25")
+            result["air_station"] = aq.get("station_name")
+    except Exception:
+        pass
     cache.set(cache_key, result, 600)
     return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
-
-
-@require_GET
-def mountain_weather(request):
-    mountain_name = request.GET.get("mountain", "")
-    mountain_num = request.GET.get("mountainNum", "")
-    base_date = request.GET.get("base_date", "")
-    base_time = request.GET.get("base_time", "")
-    return JsonResponse(
-        fetch_mountain_weather(mountain_name, mountain_num or None, base_date, base_time),
-        json_dumps_params={"ensure_ascii": False},
-    )
 
 
 @require_GET
@@ -144,15 +128,15 @@ def recommend_mountains_view(request):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON body"}, status=400)
 
-    # 사용자 위치 기반 일몰 시각 조회
+    # 일몰 시각 조회 — 위치 없으면 서울 기본좌표 사용 (채점에서 제외되면 안 됨)
     loc = payload.get("location") or {}
-    lat, lng = loc.get("lat"), loc.get("lng")
-    if lat and lng:
-        try:
-            sun_data = fetch_sun_times(float(lat), float(lng)) or {}
-            payload["sun_times"] = sun_data
-        except Exception:
-            pass
+    lat = float(loc["lat"]) if loc.get("lat") else 37.5665
+    lng = float(loc["lng"]) if loc.get("lng") else 126.978
+    try:
+        sun_data = fetch_sun_times(lat, lng) or {}
+        payload["sun_times"] = sun_data
+    except Exception:
+        pass
 
     return JsonResponse(recommend_mountains(payload), json_dumps_params={"ensure_ascii": False})
 
@@ -353,3 +337,24 @@ def safety_advice_view(request):
     from .safety_advice_ai import generate_safety_advice
     advice = generate_safety_advice(mountain, weather, profile, sun_data)
     return JsonResponse({"advice": advice or ""})
+
+
+@csrf_exempt
+@require_POST
+def mountain_intro_view(request):
+    """산 소개문 AI 변환 — DB에 저장하여 재사용."""
+    try:
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    name = (body.get("name") or "").strip()
+    summary = (body.get("summary") or "").strip()
+    reason = (body.get("selection_reason") or "").strip()
+
+    if not name or not summary:
+        return JsonResponse({"intro": ""})
+
+    from .mountain_intro_ai import get_or_generate_intro
+    intro = get_or_generate_intro(name, summary, reason)
+    return JsonResponse({"intro": intro}, json_dumps_params={"ensure_ascii": False})

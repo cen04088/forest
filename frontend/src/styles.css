@@ -903,6 +903,7 @@ p {
 .safe-link-map {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
   border-radius: 14px;
   background: #e7eee9;
 }
@@ -2551,6 +2552,7 @@ p {
   border-radius: 16px;
   overflow: hidden;
   position: relative;
+  isolation: isolate;
   box-shadow: 0 2px 12px rgba(0,0,0,.1);
 }
 
@@ -2604,6 +2606,520 @@ p {
   gap: 12px;
 }
 
+/* ── 산 브라우즈 단계 ────────────────────────────────────────────────────── */
+.browse-header-panel { padding-bottom: 8px; }
+
+.mountain-search-row { margin-top: 10px; }
+
+.mountain-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color 0.18s;
+}
+.mountain-search-input:focus {
+  outline: none;
+  border-color: var(--forest);
+}
+
+/* ── 통합 브라우즈 찾기 패널 ── */
+.browse-find-panel { display: flex; flex-direction: column; gap: 14px; }
+
+.bfp-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.bfp-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0 12px;
+  transition: border-color 0.18s;
+}
+.bfp-search-row:focus-within { border-color: var(--forest); background: #fff; }
+.bfp-search-icon { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+.bfp-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+.bfp-search-input:focus { outline: none; }
+.bfp-search-input::placeholder { color: #b0b7c3; }
+
+.bfp-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.bfp-divider::before, .bfp-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.bfp-field { display: flex; flex-direction: column; gap: 8px; }
+
+.bfp-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* 출발지 행 */
+.bfp-loc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bfp-loc-status {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  background: #f9fafb;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bfp-loc-status.active { color: var(--forest); border-color: #86efac; background: #f0fdf4; }
+.bfp-loc-status svg { flex-shrink: 0; }
+
+.bfp-loc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.bfp-loc-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.bfp-loc-btn:hover { background: #f0fdf4; border-color: #86efac; }
+.bfp-loc-btn.loading { color: var(--muted); }
+.bfp-loc-btn.error { border-color: #fca5a5; color: #ef4444; }
+.bfp-loc-btn svg { width: 13px; height: 13px; }
+.bfp-loc-btn svg.spin { animation: spin 1s linear infinite; }
+
+.bfp-city-select {
+  padding: 7px 8px;
+  font-size: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  max-width: 90px;
+}
+.bfp-city-select:focus { outline: none; border-color: var(--forest); }
+
+.bfp-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin: 0;
+}
+
+/* 산 목록 패널 */
+.mountain-list-panel {}
+
+/* 난이도 점 */
+.mbr-diff-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── 맞춤 추천 폼 ── */
+.recommend-form-panel { padding-bottom: 4px; }
+
+.chip-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.chip-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 52px;
+  flex-shrink: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 5px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.chip:hover { background: #f0faf2; border-color: #86efac; }
+.chip.active {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: #fff;
+}
+/* 난이도별 칩 활성 색상 */
+.chip.diff-easy.active  { background: #22c55e; border-color: #22c55e; }
+.chip.diff-medium.active { background: #f97316; border-color: #f97316; }
+.chip.diff-hard.active  { background: #ef4444; border-color: #ef4444; }
+
+/* 추천 결과 */
+.rec-summary {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  background: #f0fdf4;
+  border-radius: 8px;
+}
+
+.mountain-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clear-rec-btn {
+  font-size: 12px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.clear-rec-btn:hover { color: var(--ink); }
+
+/* ── 산 목록 ── */
+.mountain-browse-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.mountain-browse-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.mountain-browse-row:hover {
+  background: #f0faf2;
+  border-color: #86efac;
+  transform: translateX(2px);
+}
+.mountain-browse-row:active { transform: scale(0.99); }
+
+.mbr-body { flex: 1; min-width: 0; }
+
+.mbr-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.mbr-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mbr-meta {
+  font-size: 11px;
+  color: var(--muted);
+  display: block;
+}
+
+.mbr-arrow {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.browse-weather-panel {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.bwp-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #16a34a;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+.bwp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink);
+}
+.bwp-warn { color: #dc2626; font-weight: 600; }
+
+/* ── 코스 추천 단계 ──────────────────────────────────────────────────────── */
+.back-to-browse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--forest);
+  background: #f0faf2;
+  border: 1.5px solid #86efac;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.back-to-browse-btn svg { width: 16px; height: 16px; }
+.back-to-browse-btn:hover { background: #dcfce7; }
+
+.course-step-header { display: flex; flex-direction: column; gap: 10px; padding-bottom: 4px; }
+
+/* 상단 내비 행: 뒤로가기 + 후기 */
+.csh-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 산 제목 블록 */
+.csh-title-block { padding: 2px 0; }
+.csh-title-block .eyebrow { margin-bottom: 2px; }
+
+.csh-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.csh-mountain-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.mountain-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+.mds-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 4px;
+}
+.mds-icon { font-size: 16px; }
+.mds-label { font-size: 9px; color: var(--muted); }
+.mds-item strong { font-size: 11px; color: var(--ink); }
+
+.mountain-weather-card {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 10px 0;
+}
+.mwc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.mwc-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #2563eb;
+  text-transform: uppercase;
+}
+.mwc-source {
+  font-size: 10px;
+  color: #93c5fd;
+  background: #dbeafe;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.mwc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 12px;
+  color: var(--ink);
+}
+.mwc-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mwc-icon { font-size: 13px; }
+.mwc-warn { color: #dc2626; font-weight: 600; }
+.mwc-sunset-note {
+  font-size: 11px;
+  margin: 6px 0 0;
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-radius: 5px;
+  padding: 3px 8px;
+}
+
+.course-step-form { padding-bottom: 4px; }
+
+.course-form { display: grid; gap: 14px; }
+
+.course-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* 산 안전 등급 카드 */
+.mountain-safety-rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+.msr-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* 산 설명 카드 */
+.mountain-desc-card {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.65;
+  background: #fafaf9;
+  border-left: 3px solid #86efac;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin: 10px 0 0;
+}
+
+/* 하이라이트 목록 */
+.highlight-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.highlight-list li {
+  font-size: 13px;
+  color: var(--ink);
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border-left: 3px solid #22c55e;
+}
+.highlight-list li::before {
+  content: '✓ ';
+  color: #16a34a;
+  font-weight: 700;
+}
+
+/* AI 도우미 연결 CTA */
+.chat-cta-panel {
+  background: linear-gradient(135deg, #f0faf2 0%, #eff6ff 100%);
+  border: 1.5px solid #86efac;
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 4px;
+}
+.chat-cta-text {
+  font-size: 13px;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+.chat-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--forest);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.1s;
+}
+.chat-cta-btn:hover { background: #15803d; transform: translateY(-1px); }
+.chat-cta-btn:active { transform: scale(0.98); }
+
 /* 기존 호환성 유지 */
 .guide-left,
 .guide-right {
@@ -2638,6 +3154,10 @@ p {
   body {
     background: #bfcec2;
   }
+
+  /* 데스크톱: 탭바가 좌측 사이드바로 이동하므로 챗봇 원위치 */
+  .cw-fab { bottom: 24px; }
+  .cw-panel { bottom: 92px; }
 
   /* 앱 셸: 사이드바(240px) 공간 확보, 전체 너비 */
   .app-shell {
@@ -3877,7 +4397,78 @@ p {
 .start-error { font-size: 12px; color: #dc2626; margin: 0; }
 .start-confirmed { font-size: 12px; color: #16a34a; font-weight: 600; margin: 0; }
 
-/* ── AI 맞춤 안전 조언 패널 ─────────────────────────────────────────────── */
+/* ── 산 소개 카드 ────────────────────────────────────────────────────────── */
+.mountain-story-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 접기/펼치기 래퍼 */
+.msc-summary-wrap { position: relative; }
+.msc-summary-wrap.collapsed { max-height: 88px; overflow: hidden; }
+
+.mountain-story-summary {
+  font-size: 13.5px;
+  color: #374151;
+  line-height: 1.75;
+  margin: 0;
+  word-break: keep-all;
+}
+
+/* 하단 페이드 아웃 */
+.msc-fade {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 44px;
+  background: linear-gradient(to bottom, transparent, var(--surface));
+  pointer-events: none;
+}
+
+/* 더 보기 버튼 */
+.msc-toggle {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--forest);
+  background: none;
+  border: none;
+  padding: 2px 0;
+  cursor: pointer;
+  text-align: left;
+}
+.msc-toggle:hover { text-decoration: underline; }
+
+/* 100대 명산 선정 이유 */
+.msc-selection {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.msc-selection-label {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
+  padding: 2px 7px;
+  margin-bottom: 7px;
+}
+.msc-selection-text {
+  font-size: 12.5px;
+  color: #4b5563;
+  line-height: 1.7;
+  margin: 0;
+  word-break: keep-all;
+}
+
 .safety-advice-panel {
   background: linear-gradient(135deg, #fffbeb 0%, #fef9c3 100%);
   border: 1px solid #fcd34d;
@@ -4007,8 +4598,8 @@ p {
 .cw-fab {
   position: fixed;
   right: 24px;
-  bottom: 24px;
-  z-index: 100;
+  bottom: 100px;
+  z-index: 1200;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -4041,8 +4632,8 @@ p {
 .cw-panel {
   position: fixed;
   right: 24px;
-  bottom: 92px;
-  z-index: 99;
+  bottom: 164px;
+  z-index: 1100;
   width: 340px;
   height: 500px;
   display: flex;
@@ -4059,10 +4650,10 @@ p {
     right: 12px;
     left: 12px;
     width: auto;
-    bottom: 88px;
-    height: calc(100dvh - 180px);
+    bottom: 164px;
+    height: calc(100dvh - 248px);
   }
-  .cw-fab { right: 16px; bottom: 16px; }
+  .cw-fab { right: 16px; bottom: 100px; }
 }
 
 .cw-header {

@@ -56,6 +56,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
         <span>안전코스</span>
       </router-link>
+      <router-link to="/chat" class="tabbar-item" active-class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span>AI 도우미</span>
+      </router-link>
       <router-link to="/safe-link" class="tabbar-item" active-class="active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         <span>안전공유</span>
@@ -67,10 +71,6 @@
       <router-link to="/my-page" class="tabbar-item" active-class="active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         <span>내정보</span>
-      </router-link>
-      <router-link to="/chat" class="tabbar-item" active-class="active">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        <span>AI 도우미</span>
       </router-link>
       <router-link to="/guardian" class="tabbar-item tabbar-guardian" active-class="active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -96,6 +96,10 @@
               <span>{{ swWeatherLabel }} {{ weatherData.temperature_c }}°C</span>
             </div>
             <div class="sw-item">
+              <span>🌄</span>
+              <span>일출 {{ weatherData.sunrise || '-' }}</span>
+            </div>
+            <div class="sw-item">
               <span>🌅</span>
               <span>일몰 {{ weatherData.sunset || '-' }}</span>
             </div>
@@ -115,6 +119,14 @@
               <span>🔥</span>
               <span :class="swWildfireClass">산불 {{ swWildfireLabel }}</span>
             </div>
+            <div v-if="weatherData.pm10_ugm3 != null" class="sw-item" :class="swDustClass">
+              <span>🌫</span>
+              <span>미세먼지 {{ weatherData.pm10_ugm3 }}㎍ · {{ weatherData.grade_pm10 || '-' }}</span>
+            </div>
+            <div v-if="weatherData.pm25_ugm3 != null" class="sw-item" :class="swFineDustClass">
+              <span>💨</span>
+              <span>초미세먼지 {{ weatherData.pm25_ugm3 }}㎍ · {{ weatherData.grade_pm25 || '-' }}</span>
+            </div>
           </div>
         </template>
         <p v-else style="font-size:10px;color:#9ca3af;margin:4px 0 0">날씨 불러오는 중...</p>
@@ -131,20 +143,16 @@
     <OnboardingModal v-if="showOnboarding" @close="showOnboarding = false" />
   </main>
 
-  <!-- ─── 플로팅 챗봇 위젯 (채팅 탭 제외) ─────────────────────── -->
-  <ChatWidget v-if="route.path !== '/chat'" />
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
 import { authUser, loadMe, showAuthModal } from './composables/useAuth.js';
 import { loadMyPageData } from './composables/useUserData.js';
 import { guideError, weatherData, loadWeather, selectedMountain } from './composables/useGuide.js';
 import { communityError } from './composables/useCommunity.js';
 import AuthModal from './components/AuthModal.vue';
 import OnboardingModal from './components/OnboardingModal.vue';
-import ChatWidget from './components/ChatWidget.vue';
 
 const showOnboarding = ref(!localStorage.getItem('ollaOnboarded'));
 
@@ -180,8 +188,8 @@ const swSafetyLabel = computed(() => {
 });
 const swWildfireClass = computed(() => ({ low: '', medium: 'sw-warn', high: 'sw-danger', very_high: 'sw-danger' }[weatherData.value?.wildfire_risk || 'low'] || ''));
 const swWildfireLabel = computed(() => ({ low: '낮음', medium: '보통', high: '높음', very_high: '매우높음' }[weatherData.value?.wildfire_risk || 'low'] || '낮음'));
-
-const route = useRoute();
+const swDustClass = computed(() => ({ '보통': '', '나쁨': 'sw-warn', '매우나쁨': 'sw-danger' }[weatherData.value?.grade_pm10 || ''] || ''));
+const swFineDustClass = computed(() => ({ '보통': '', '나쁨': 'sw-warn', '매우나쁨': 'sw-danger' }[weatherData.value?.grade_pm25 || ''] || ''));
 
 // 전역 에러 — 어느 탭의 에러든 하나로 모음
 const globalError = computed({

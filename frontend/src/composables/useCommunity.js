@@ -1,7 +1,7 @@
 import { reactive, ref } from 'vue';
 import {
   createComment, createPost, deleteComment, deletePost,
-  fetchPost, fetchPosts, likePost, updatePost, fetchMyPosts,
+  fetchPost, fetchPosts, likePost, updatePost, fetchMyPosts, fetchLikedPosts,
 } from '../api.js';
 import { authToken, authUser, showAuthModal } from './useAuth.js';
 
@@ -22,6 +22,8 @@ export const writeLoading = ref(false);
 export const myPosts = ref([]);
 export const myPostsTotal = ref(0);
 export const myPostsLoading = ref(false);
+export const likedPosts = ref([]);
+export const likedPostsLoading = ref(false);
 
 export async function loadPosts(page = 1) {
   communityLoading.value = true;
@@ -151,6 +153,16 @@ export async function loadMyPosts() {
     myPostsTotal.value = data.total || 0;
   } catch {}
   finally { myPostsLoading.value = false; }
+}
+
+export async function loadLikedPosts() {
+  if (!authToken.value) return;
+  likedPostsLoading.value = true;
+  try {
+    const data = await fetchLikedPosts(authToken.value);
+    likedPosts.value = data.posts || [];
+  } catch {}
+  finally { likedPostsLoading.value = false; }
 }
 
 export function formatRelativeTime(isoString) {

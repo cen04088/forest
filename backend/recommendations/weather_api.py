@@ -9,7 +9,6 @@ from zoneinfo import ZoneInfo
 
 from .data import MOCK_WEATHER
 from .loaders import load_public_service_key
-from .mountain_weather_api import fetch_mountain_weather
 from .sun_api import fetch_sun_times
 from .wildfire_api import fetch_wildfire_risk
 
@@ -48,19 +47,7 @@ def fetch_current_weather(lat, lng, timeout=8):
 
 
 def merge_mountain_weather(weather, mountain_name="", mountain_num=None, timeout=8):
-    mountain_weather = fetch_mountain_weather(mountain_name, mountain_num, timeout=timeout)
-    if not mountain_weather.get("ok"):
-        weather["mountain_weather"] = mountain_weather
-        return weather
-
-    merged = {**weather}
-    for key in ("temperature_c", "rainfall_mm", "wind_speed_ms", "humidity_pct", "sunrise", "sunset"):
-        value = mountain_weather.get(key)
-        if value not in (None, ""):
-            merged[key] = value
-    merged["mountain_weather"] = mountain_weather
-    merged["source"] = f"{weather.get('source', 'weather')}+kma_mountain_weather"
-    return merged
+    return weather
 
 
 @lru_cache(maxsize=256)

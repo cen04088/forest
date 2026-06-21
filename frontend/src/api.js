@@ -114,14 +114,11 @@ export async function fetchMountainRecommendations(payload) {
   });
 }
 
-export async function fetchDataSources() {
-  return request("/data-sources/");
-}
-
 export async function fetchWeather(location) {
   const lat = location?.lat ?? 37.5665;
   const lng = location?.lng ?? 126.978;
   const params = new URLSearchParams({ lat, lng });
+  if (location?.mountain) params.set('mountain', location.mountain);
   return request(`/weather/?${params.toString()}`);
 }
 
@@ -152,6 +149,15 @@ export async function fetchVWorldTrails({ mountainName = "", lat, lng, radius = 
 export async function fetchSafetyReports(mountainName) {
   const params = new URLSearchParams({ mountain: mountainName || "" });
   return request(`/safety-reports/?${params.toString()}`);
+}
+
+export async function fetchMountainStory(mountainName) {
+  const params = new URLSearchParams({ mountain: mountainName || "" });
+  return request(`/mountain-story/?${params.toString()}`);
+}
+
+export async function fetchLikedPosts(token) {
+  return request("/liked-posts/", { headers: authHeaders(token) });
 }
 
 export async function fetchDisasterZones(mountainName) {
@@ -265,5 +271,12 @@ export async function fetchSafetyAdvice({ mountain, weather, profile, sunTimes }
   return request("/safety-advice/", {
     method: "POST",
     body: JSON.stringify({ mountain, weather, profile, sun_times: sunTimes }),
+  });
+}
+
+export async function fetchMountainIntro({ name, summary, selectionReason }) {
+  return request("/mountain-intro/", {
+    method: "POST",
+    body: JSON.stringify({ name, summary, selection_reason: selectionReason }),
   });
 }

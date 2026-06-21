@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { fetchChatResponse } from '../api.js';
-import { selectedMountain, weatherData } from './useGuide.js';
+import { selectedMountain, weatherData, recommendations } from './useGuide.js';
 
 export const chatMessages = ref([]); // { role: 'user'|'assistant', content: string }
 export const chatLoading = ref(false);
@@ -29,6 +29,7 @@ export async function sendMessage(text) {
   const context = {
     mountain: selectedMountain.value || null,
     weather: weatherData.value || null,
+    recommendedCourses: recommendations.value?.slice(0, 3) || [],
   };
 
   try {

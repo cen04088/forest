@@ -6,15 +6,12 @@ from . import community_views as cv
 
 urlpatterns = [
     path("health/", views.health),
-    path("data-sources/", views.data_sources),
     path("courses/", views.courses),
     path("mountains/", views.mountains),
     path("recommend-mountains/", views.recommend_mountains_view),
-    path("forest-spatial/", views.forest_spatial),
     path("vworld-trails/", views.vworld_trails),
     path("mountain-story/", views.mountain_story),
     path("weather/", views.weather),
-    path("mountain-weather/", views.mountain_weather),
     path("sun-times/", views.sun_times),
     path("wildfire/", views.wildfire),
     path("landslide/", views.landslide),
@@ -57,4 +54,5 @@ urlpatterns = [
     # AI
     path("chat/", views.chat_view),
     path("safety-advice/", views.safety_advice_view),
+    path("mountain-intro/", views.mountain_intro_view),
 ]

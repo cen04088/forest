@@ -1,3 +1,4 @@
+import html as html_mod
 import re
 import urllib.parse
 import urllib.request
@@ -93,9 +94,14 @@ def parse_mountain_story_xml(body):
 
 
 def clean_html(value):
-    text = re.sub(r"<br\s*/?>", "\n", str(value or ""), flags=re.IGNORECASE)
+    # 1단계: HTML 엔티티 디코딩 (&lt; → <, &gt; → > 등)
+    text = html_mod.unescape(str(value or ""))
+    # 2단계: <br> → 공백, 나머지 태그 제거
+    text = re.sub(r"<br\s*/?>", " ", text, flags=re.IGNORECASE)
     text = re.sub(r"<[^>]+>", "", text)
-    return re.sub(r"\s+", " ", text).strip()
+    # 3단계: 〈제목〉 형태 인라인 섹션 헤더 제거 (산림청 특유 포맷)
+    text = re.sub(r"[〈<「『][^〉>」』]{1,30}[〉>」』]", "", text)
+    return re.sub(r"\s{2,}", " ", text).strip()
 
 
 def text_of(node, path):

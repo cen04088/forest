@@ -28,6 +28,18 @@ def _build_system(context: dict, rag_context: str = "") -> str:
             f"풍속 {weather.get('wind_speed_ms', 0)}m/s"
         )
 
+    courses = context.get("recommendedCourses") or []
+    if courses:
+        diff_map = {"easy": "초급", "medium": "중급", "hard": "고급"}
+        lines = []
+        for c in courses[:3]:
+            diff = diff_map.get(c.get("difficulty", ""), "")
+            lines.append(
+                f"- {c.get('name', '')} ({diff}, {c.get('distance_km', '')}km, "
+                f"{c.get('duration_min', '')}분, {c.get('safety_label', '')})"
+            )
+        system += "\n\n[추천된 코스]\n" + "\n".join(lines)
+
     # 실시간 안전 현황 (wildfire, landslide, NIFOS)
     safety_lines = _build_realtime_safety(context)
     if safety_lines:

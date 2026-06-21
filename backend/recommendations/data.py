@@ -76,6 +76,7 @@ MOCK_WEATHER = {
     "rainfall_mm": 0,
     "wind_speed_ms": 2.7,
     "humidity_pct": 54,
+    "sunrise": "05:30",
     "sunset": "19:28",
     "wildfire_risk": "low",
 }

@@ -98,6 +98,7 @@ export const profile = reactive({
   difficultyFilter: 'all',
   transport: 'public',
   maxDistanceKm: 30,
+  companion: 'solo',
 });
 
 export const { location, gpsStatus, gpsError, detectGPS } = useLocation();
@@ -194,12 +195,12 @@ function _buildMountainSummary(mountains, profile) {
   return `${compLabel} 기준으로 ${top.name}(${top.region.split(' ')[0]})이 가장 적합합니다. 해발 ${top.elevation_m}m, 소요시간 ${Math.floor(top.walk_time_min / 60)}~${Math.floor(top.walk_time_max / 60)}시간 코스입니다.`;
 }
 
-export async function loadWeather(overrideLat, overrideLng) {
+export async function loadWeather(overrideLat, overrideLng, mountainName) {
   const mountain = mountainOptions.value.find((m) => m.name === profile.mountainName);
   const lat = overrideLat ?? location.value?.lat ?? mountain?.lat ?? 37.5665;
   const lng = overrideLng ?? location.value?.lng ?? mountain?.lng ?? 126.978;
   try {
-    const data = await fetchWeather({ lat, lng });
+    const data = await fetchWeather({ lat, lng, mountain: mountainName || '' });
     weatherData.value = data;
   } catch (e) {
     console.error('[loadWeather]', e);

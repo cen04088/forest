@@ -153,3 +153,15 @@ class EmergencyContact(models.Model):
     class Meta:
         ordering = ["created_at"]
         db_table = "recommendations_emergencycontact"
+
+
+class MountainIntro(models.Model):
+    """AI가 변환한 산 소개문 (산림청 원문 → 친근한 말투). 1회 생성 후 재사용."""
+    mountain_name = models.CharField(max_length=100, unique=True, db_index=True)
+    intro = models.TextField()
+    raw_summary = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "recommendations_mountainintro"

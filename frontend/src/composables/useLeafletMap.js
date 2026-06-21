@@ -270,18 +270,26 @@ export function useLeafletMap() {
   }
 
   function _makeCourseIcon(course, isSelected) {
-    const color = course._muted ? '#9ca3af' : _safetyPinColor(course);
-    const opacity = course._muted ? 0.45 : 1;
-    const size = isSelected ? 38 : 28;
-    const ring = isSelected
-      ? `box-shadow:0 0 0 5px ${color}44,0 3px 10px rgba(0,0,0,.4);`
-      : 'box-shadow:0 2px 6px rgba(0,0,0,.3);';
+    // 항상 난이도 기반 색상 사용
+    const baseColor = _difficultyColor(course.difficulty);
+    const opacity = course._muted ? 0.3 : 1;
+    const size = isSelected ? 38 : (course._highlighted ? 32 : 28);
+
+    let ring;
+    if (isSelected) {
+      ring = `box-shadow:0 0 0 5px ${baseColor}44,0 3px 10px rgba(0,0,0,.4);`;
+    } else if (course._highlighted) {
+      // 추천된 산: 금색 링으로 강조
+      ring = `box-shadow:0 0 0 3px #ffffff,0 0 0 6px #f59e0b,0 3px 12px rgba(0,0,0,.5);`;
+    } else {
+      ring = 'box-shadow:0 2px 6px rgba(0,0,0,.3);';
+    }
     return L.divIcon({
       className: '',
       html: `<div style="
         width:${size}px;height:${size}px;
         border-radius:50% 50% 50% 0;
-        background:${color};
+        background:${baseColor};
         border:3px solid rgba(255,255,255,${isSelected ? 1 : 0.9});
         transform:rotate(-45deg);
         opacity:${opacity};

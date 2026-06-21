@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 from django.core.cache import cache
 
 from .disaster_risk import disaster_risk_level, disaster_risk_messages, find_course_disaster_risks
-from .forest_api import fetch_forest_spatial_data, forest_spatial_items_to_courses
 from .loaders import load_public_trail_courses, load_disaster_risk_zones
 from .local_road_api import fetch_local_road_trails
 from .weather_api import fetch_current_weather, merge_mountain_weather
@@ -258,20 +257,23 @@ def _cached_weather(lat, lng):
 def recommend_courses(payload):
     profile = payload.get("profile", {})
     location = payload.get("location") or {"lat": 37.5665, "lng": 126.978}
-    weather = _cached_weather(location["lat"], location["lng"])
     courses = [dict(course) for course in load_public_trail_courses()]
 
     mountain_name = (profile.get("mountainName") or "").strip()
     query_lat = location.get("lat")
     query_lng = location.get("lng")
+    weather_lat, weather_lng = query_lat, query_lng
 
     if mountain_name:
-        weather = merge_mountain_weather(weather, mountain_name, profile.get("mountainNum"))
         from .mountain_coordinates import find_mountain_coordinates
         _, mtn_coords = find_mountain_coordinates(mountain_name)
         if mtn_coords:
             query_lat = mtn_coords["lat"]
             query_lng = mtn_coords["lng"]
+            weather_lat = mtn_coords["lat"]
+            weather_lng = mtn_coords["lng"]
+
+    weather = _cached_weather(weather_lat, weather_lng)
 
     weather_score = weather_safety_score(weather)
     all_disaster_zones = load_disaster_risk_zones()  # lru_cache — 한 번만 IO 발생
@@ -284,14 +286,10 @@ def recommend_courses(payload):
         def _fetch_vworld():
             return fetch_vworld_trails(lat=query_lat, lng=query_lng, mountain_name=mountain_name, radius_km=max(radius_km, 5), size=40)
 
-        def _fetch_forest():
-            return fetch_forest_spatial_data(mountain_name, 1, 10)
-
-        with ThreadPoolExecutor(max_workers=3) as pool:
+        with ThreadPoolExecutor(max_workers=2) as pool:
             futures = {
                 pool.submit(_fetch_local): "local",
                 pool.submit(_fetch_vworld): "vworld",
-                pool.submit(_fetch_forest): "forest",
             }
             results = {}
             for future in as_completed(futures):
@@ -302,8 +300,7 @@ def recommend_courses(payload):
                     results[key] = {}
 
         courses = (
-            forest_spatial_items_to_courses(results.get("forest", {}))
-            + results.get("vworld", {}).get("items", [])
+            results.get("vworld", {}).get("items", [])
             + results.get("local", {}).get("items", [])
             + courses
         )

@@ -7,31 +7,7 @@
       <button class="primary-btn" type="button" @click="showAuthModal = true">로그인 / 회원가입</button>
     </div>
 
-    <!-- ① 개인 설정 — col 1 -->
-    <section class="panel mypage-col-1">
-      <div class="section-title compact">
-        <div><p class="eyebrow">My Info</p><h2>개인 설정</h2></div>
-        <span class="mini-status">{{ myProfileStatus }}</span>
-      </div>
-      <div class="field">
-        <span>산행 경험</span>
-        <div class="segment-group">
-          <label class="segment-btn"><input type="radio" v-model="profile.experience" value="beginner" name="exp" /><span>🌱 초보</span></label>
-          <label class="segment-btn"><input type="radio" v-model="profile.experience" value="intermediate" name="exp" /><span>👟 보통</span></label>
-          <label class="segment-btn"><input type="radio" v-model="profile.experience" value="advanced" name="exp" /><span>⛰️ 숙련</span></label>
-        </div>
-      </div>
-      <div class="field">
-        <span>컨디션</span>
-        <div class="segment-group">
-          <label class="segment-btn"><input type="radio" v-model.number="profile.condition" :value="2" name="cond" /><span>📉 낮음</span></label>
-          <label class="segment-btn"><input type="radio" v-model.number="profile.condition" :value="3" name="cond" /><span>➖ 보통</span></label>
-          <label class="segment-btn"><input type="radio" v-model.number="profile.condition" :value="4" name="cond" /><span>💪 좋음</span></label>
-        </div>
-      </div>
-    </section>
-
-    <!-- ② 즐겨찾기 — col 2 -->
+    <!-- ① 즐겨찾기 — col 1 -->
     <section class="panel mypage-col-1">
       <div class="section-title compact">
         <div><p class="eyebrow">Favorites</p><h2>즐겨찾기 코스</h2></div>
@@ -81,6 +57,26 @@
       <div v-else class="mypost-grid">
         <div
           v-for="post in myPosts" :key="post.id"
+          class="mypost-item" @click="goToPost(post.id)"
+        >
+          <span class="category-tag">{{ post.category_label }}</span>
+          <strong>{{ post.title }}</strong>
+          <small>{{ formatRelativeTime(post.created_at) }} · 👍 {{ post.like_count }} · 💬 {{ post.comment_count }}</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④-b 좋아요한 글 — 전체 너비 -->
+    <section v-if="authUser" class="panel mypage-col-full">
+      <div class="section-title compact">
+        <div><p class="eyebrow">Liked Posts</p><h2>좋아요한 글</h2></div>
+        <span class="mini-status">{{ likedPosts.length }}개</span>
+      </div>
+      <div v-if="likedPostsLoading" class="community-loading">불러오는 중…</div>
+      <div v-else-if="likedPosts.length === 0" class="community-empty"><p>아직 좋아요한 글이 없습니다.</p></div>
+      <div v-else class="mypost-grid">
+        <div
+          v-for="post in likedPosts" :key="post.id"
           class="mypost-item" @click="goToPost(post.id)"
         >
           <span class="category-tag">{{ post.category_label }}</span>
@@ -142,8 +138,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authUser, showAuthModal } from '../composables/useAuth.js';
 import { favorites, hikingRecords, emergencyContacts, loadMyPageData, removeRecord, removeFav, addContact, removeContact } from '../composables/useUserData.js';
-import { myPosts, myPostsTotal, myPostsLoading, loadMyPosts, formatRelativeTime, openPost } from '../composables/useCommunity.js';
-import { profile } from '../composables/useGuide.js';
+import { myPosts, myPostsTotal, myPostsLoading, loadMyPosts, likedPosts, likedPostsLoading, loadLikedPosts, formatRelativeTime, openPost } from '../composables/useCommunity.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 
 const router = useRouter();
@@ -153,7 +148,6 @@ const contactLoading = ref(false);
 const contactError = ref('');
 
 const DEFAULT_CHECKLIST = [
-  '아이와 보호자 연락처를 서로 확인했어요',
   '물, 간식, 보조배터리를 챙겼어요',
   '입산 통제와 날씨 변화를 한 번 더 확인했어요',
   '해 지기 전에 내려오는 계획을 세웠어요',
@@ -162,7 +156,11 @@ const DEFAULT_CHECKLIST = [
 function loadChecklistFromStorage() {
   try {
     const saved = localStorage.getItem('olla_checklist');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const items = JSON.parse(saved);
+      // 구 버전 항목 제거
+      return items.filter((i) => i.text !== '아이와 보호자 연락처를 서로 확인했어요');
+    }
   } catch {}
   return DEFAULT_CHECKLIST.map((text, i) => ({ id: i, text, checked: false }));
 }
@@ -171,14 +169,6 @@ const checklistItems = ref(loadChecklistFromStorage());
 const newChecklistText = ref('');
 const checkedCount = computed(() => checklistItems.value.filter((i) => i.checked).length);
 
-const myProfileStatus = computed(() => {
-  const types = [
-    { value: 'vulnerable', label: '어린이·노약자 동반' },
-    { value: 'family', label: '가족 동반' },
-    { value: 'solo', label: '혼자 산행' },
-  ];
-  return (types.find((t) => t.value === profile.companion)?.label || '동반자').replace(' 동반', '');
-});
 
 function saveChecklist() {
   try { localStorage.setItem('olla_checklist', JSON.stringify(checklistItems.value)); } catch {}
@@ -221,6 +211,7 @@ onMounted(() => {
   if (authUser.value) {
     loadMyPageData();
     if (myPosts.value.length === 0) loadMyPosts();
+    if (likedPosts.value.length === 0) loadLikedPosts();
   }
 });
 </script>
