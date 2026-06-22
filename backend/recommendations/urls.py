@@ -11,6 +11,7 @@ urlpatterns = [
     path("mountains/", views.mountains),
     path("recommend-mountains/", views.recommend_mountains_view),
     path("vworld-trails/", views.vworld_trails),
+    path("local-road-trails/", views.local_road_trails),
     path("mountain-story/", views.mountain_story),
     path("weather/", views.weather),
     path("sun-times/", views.sun_times),

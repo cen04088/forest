@@ -4,6 +4,13 @@
     <!-- ── 지도 (왼쪽, 양 단계 공통) ── -->
     <div class="guide-map">
       <div ref="overviewMapEl" class="overview-map-container" aria-label="등산 추천 지도"></div>
+      <div v-if="guideStep === 'courses' && selectedMountain" class="trail-map-badge">
+        <span class="trail-map-dot"></span>
+        <strong>{{ selectedMountain.name }}</strong>
+        <span v-if="selectedMountainTrailStatus === 'loading'">탐방로 불러오는 중</span>
+        <span v-else-if="selectedMountainTrails.length">{{ selectedMountainTrails.length }}개 탐방로 표시</span>
+        <span v-else>표시 가능한 탐방로 없음</span>
+      </div>
       <div class="map-legend">
 <div class="map-legend-body">
           <div class="mli-col">
@@ -286,7 +293,7 @@
                 {{ Math.round(prob * 100) }}%
               </span>
             </div>
-            <p class="ml-risk-note">* 2024년 소방청 산악사고 10,134건 기반 1인당 사고율 분석</p>
+            <p class="ml-risk-note">* {{ mlTrainingNote }} 기반 1인당 사고율 분석</p>
           </div>
 
           <!-- 산 소개 -->
@@ -371,7 +378,7 @@ import {
   loadMountains, publicMountains, recommendedMountains, alternativeMountains,
   selectedMountain, gpsStatus, gpsError, detectGPS, loadWeather, weatherData,
   submitMountainRecommendation, loading, profile, agentSummary,
-  location, customStartLocation,
+  location, customStartLocation, loadMountainTrails, selectedMountainTrails, selectedMountainTrailStatus,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
 import { fetchDisasterZones, fetchSafetyAdvice, fetchMountainStory, fetchSafetyReports, fetchMountainIntro } from '../api.js';
@@ -532,6 +539,8 @@ function refreshOverviewMap() {
     {
       startLocation: customStartLocation.value || location.value,
       radiusKm: profile.maxDistanceKm,
+      trails: guideStep.value === 'courses' ? selectedMountainTrails.value : [],
+      selectedMountain: guideStep.value === 'courses' ? selectedMountain.value : null,
     },
   );
 }
@@ -551,6 +560,7 @@ async function enterCourseStep(mountain) {
   await nextTick();
   focusOverviewCourse(mountain);
   refreshOverviewMap();
+  loadMountainTrails(mountain).then(() => refreshOverviewMap());
 
   const [zonesData, storyData, reportsData] = await Promise.allSettled([
     fetchDisasterZones(mountain.name),
@@ -616,6 +626,16 @@ const mlRiskInfo = computed(() => {
   if (!m) return null;
   const scored = [...recommendedMountains.value, ...alternativeMountains.value].find((r) => r.id === m.id);
   return scored?.ml_risk_info || null;
+});
+
+const mlTrainingNote = computed(() => {
+  const training = mlRiskInfo.value?.training;
+  const rows = training?.rows;
+  const years = training?.year_range;
+  if (rows && Array.isArray(years) && years.length === 2) {
+    return `${years[0]}-${years[1]}년 소방청 산악사고 ${Number(rows).toLocaleString()}건`;
+  }
+  return '2010-2024년 소방청 산악사고 112,902건';
 });
 
 // ── 일몰 경고 ────────────────────────────────────────────────────────────────

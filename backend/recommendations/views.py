@@ -17,6 +17,7 @@ from .wildfire_api import fetch_wildfire_risk
 from .vworld_api import fetch_vworld_trails
 from . import safe_links as safe_link_store
 from .osm_trail_api import fetch_osm_trails
+from .local_road_api import fetch_local_road_trails
 
 
 @require_GET
@@ -79,6 +80,19 @@ def vworld_trails(request):
     num_of_rows = request.GET.get("size", 50)
     return JsonResponse(
         fetch_vworld_trails(lat, lng, mountain_name, radius_km, page_no, num_of_rows),
+        json_dumps_params={"ensure_ascii": False},
+    )
+
+
+@require_GET
+def local_road_trails(request):
+    mountain_name = request.GET.get("mountain", "")
+    lat = request.GET.get("lat")
+    lng = request.GET.get("lng")
+    radius_km = request.GET.get("radius", 8)
+    size = request.GET.get("size", 80)
+    return JsonResponse(
+        fetch_local_road_trails(lat, lng, mountain_name, radius_km, size),
         json_dumps_params={"ensure_ascii": False},
     )
 

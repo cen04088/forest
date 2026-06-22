@@ -146,6 +146,15 @@ export async function fetchVWorldTrails({ mountainName = "", lat, lng, radius = 
   return request(`/vworld-trails/?${params.toString()}`);
 }
 
+export async function fetchLocalRoadTrails({ mountainName = "", lat, lng, radius = 8, size = 80 } = {}) {
+  const params = new URLSearchParams({ mountain: mountainName || "", radius, size });
+  if (lat !== undefined && lng !== undefined) {
+    params.set("lat", lat);
+    params.set("lng", lng);
+  }
+  return request(`/local-road-trails/?${params.toString()}`);
+}
+
 export async function fetchSafetyReports(mountainName) {
   const params = new URLSearchParams({ mountain: mountainName || "" });
   return request(`/safety-reports/?${params.toString()}`);
