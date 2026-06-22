@@ -96,9 +96,10 @@ def _build_realtime_safety(context: dict) -> str:
 
 
 def get_chat_response(messages: list, context: dict) -> str:
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    gms_key = os.environ.get("GMS_KEY", "").strip()
+    api_key = gms_key or os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
-        return "AI 기능을 사용하려면 GEMINI_API_KEY 환경변수를 설정해 주세요."
+        return "AI 기능을 사용하려면 GMS_KEY 또는 GEMINI_API_KEY 환경변수를 설정해 주세요."
 
     # RAG: 마지막 사용자 메시지로 관련 문서 검색
     last_user_msg = next(
@@ -118,7 +119,13 @@ def get_chat_response(messages: list, context: dict) -> str:
         from google import genai
         from google.genai import types
 
-        client = genai.Client(api_key=api_key)
+        if gms_key:
+            client = genai.Client(
+                api_key=api_key,
+                http_options={"base_url": "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/"},
+            )
+        else:
+            client = genai.Client(api_key=api_key)
 
         contents = []
         for msg in messages:
