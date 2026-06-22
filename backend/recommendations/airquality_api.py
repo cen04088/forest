@@ -33,6 +33,34 @@ _DEFAULT_SIDO = "서울"
 
 _GRADE_LABEL = {"1": "좋음", "2": "보통", "3": "나쁨", "4": "매우나쁨"}
 
+# 위경도 범위로 시도 판별 (순서 중요 — 특별시/광역시를 도보다 먼저)
+_SIDO_BBOX = [
+    ("서울",   (37.41, 37.72, 126.76, 127.19)),
+    ("인천",   (37.24, 37.67, 126.19, 126.82)),
+    ("대전",   (36.20, 36.54, 127.22, 127.60)),
+    ("세종",   (36.40, 36.72, 127.10, 127.43)),
+    ("광주",   (35.03, 35.32, 126.70, 127.01)),
+    ("대구",   (35.68, 36.10, 128.38, 128.75)),
+    ("울산",   (35.37, 35.78, 128.88, 129.42)),
+    ("부산",   (34.98, 35.40, 128.73, 129.32)),
+    ("제주",   (33.10, 33.62, 126.08, 126.98)),
+    ("강원",   (37.00, 38.65, 127.68, 129.45)),
+    ("충북",   (36.38, 37.30, 127.28, 128.53)),
+    ("충남",   (35.95, 37.20, 125.90, 127.55)),
+    ("경북",   (35.68, 37.08, 127.95, 129.65)),
+    ("경남",   (34.58, 35.80, 127.65, 129.45)),
+    ("전북",   (35.25, 36.22, 126.43, 127.78)),
+    ("전남",   (33.95, 35.52, 125.75, 127.78)),
+    ("경기",   (36.95, 38.05, 126.40, 127.85)),
+]
+
+
+def sido_from_coords(lat: float, lng: float) -> str:
+    for sido, (lat_min, lat_max, lng_min, lng_max) in _SIDO_BBOX:
+        if lat_min <= lat <= lat_max and lng_min <= lng <= lng_max:
+            return sido
+    return _DEFAULT_SIDO
+
 
 def sido_for_mountain(mountain_name: str) -> str:
     name = (mountain_name or "").strip()
@@ -42,7 +70,7 @@ def sido_for_mountain(mountain_name: str) -> str:
     return _DEFAULT_SIDO
 
 
-def fetch_air_quality(mountain_name: str = "", timeout: int = 8) -> dict:
+def fetch_air_quality(mountain_name: str = "", lat: float | None = None, lng: float | None = None, timeout: int = 8) -> dict:
     """에어코리아 API로 산 인근 시도의 실시간 대기질 데이터 조회.
 
     Args:
@@ -56,7 +84,11 @@ def fetch_air_quality(mountain_name: str = "", timeout: int = 8) -> dict:
     if not service_key:
         return {"ok": False, "source": "airkorea", "error": "PUBLIC_SERVICE_KEY 미설정", "items": []}
 
-    sido = sido_for_mountain(mountain_name)
+    # 좌표가 있으면 좌표 우선, 없으면 산 이름 매핑 fallback
+    if lat is not None and lng is not None:
+        sido = sido_from_coords(lat, lng)
+    else:
+        sido = sido_for_mountain(mountain_name)
     return _cached_fetch_air_quality(sido, service_key, timeout)
 
 

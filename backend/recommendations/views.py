@@ -122,7 +122,7 @@ def weather(request):
     result = fetch_current_weather(lat, lng)
     # 미세먼지 통합 (에러 시 무시)
     try:
-        aq = fetch_air_quality(mountain)
+        aq = fetch_air_quality(mountain, lat=lat, lng=lng)
         if aq.get("ok"):
             result["pm10_ugm3"] = aq.get("pm10_ugm3")
             result["pm25_ugm3"] = aq.get("pm25_ugm3")
@@ -327,8 +327,11 @@ def _enrich_chat_context(context: dict) -> dict:
 
     try:
         from .airquality_api import fetch_air_quality
-        mountain_name = (context.get("mountain") or {}).get("name", "")
-        context["air_quality"] = fetch_air_quality(mountain_name)
+        mountain = context.get("mountain") or {}
+        mountain_name = mountain.get("name", "")
+        m_lat = mountain.get("lat") or mountain.get("course_lat")
+        m_lng = mountain.get("lng") or mountain.get("course_lng")
+        context["air_quality"] = fetch_air_quality(mountain_name, lat=m_lat, lng=m_lng)
     except Exception:
         pass
 
