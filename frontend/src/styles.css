@@ -2931,6 +2931,7 @@ p {
   color: #fff;
 }
 /* 난이도별 칩 활성 색상 */
+.chip.diff-all.active   { background: #64748b; border-color: #64748b; }
 .chip.diff-easy.active  { background: #22c55e; border-color: #22c55e; }
 .chip.diff-medium.active { background: #f97316; border-color: #f97316; }
 .chip.diff-hard.active  { background: #ef4444; border-color: #ef4444; }

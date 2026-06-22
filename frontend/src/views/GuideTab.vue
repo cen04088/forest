@@ -85,7 +85,7 @@
 
           <div class="recommend-form-grid">
             <div class="bfp-field">
-              <span class="bfp-label">가능 시간</span>
+              <span class="bfp-label">등산 가능 시간</span>
               <div class="range-card">
                 <strong>{{ Math.floor(profile.desiredHikingMinutes / 60) }}시간 {{ profile.desiredHikingMinutes % 60 }}분</strong>
                 <input v-model.number="profile.desiredHikingMinutes" type="range" min="90" max="480" step="30" />
@@ -95,6 +95,7 @@
             <div class="bfp-field">
               <span class="bfp-label">산행 강도</span>
               <div class="chips">
+                <button type="button" :class="['chip diff-all', profile.difficultyFilter === 'all' ? 'active' : '']" @click="setDifficulty('all')">전체</button>
                 <button type="button" :class="['chip diff-easy', profile.difficultyFilter === 'easy' ? 'active' : '']" @click="setDifficulty('easy')">초급</button>
                 <button type="button" :class="['chip diff-medium', profile.difficultyFilter === 'medium' ? 'active' : '']" @click="setDifficulty('medium')">중급</button>
                 <button type="button" :class="['chip diff-hard', profile.difficultyFilter === 'hard' ? 'active' : '']" @click="setDifficulty('hard')">고급</button>
@@ -442,7 +443,9 @@ function diffDotColor(difficulty) {
 function setDifficulty(level) {
   profile.difficultyFilter = level;
   const expMap = { easy: 'beginner', medium: 'intermediate', hard: 'advanced' };
-  profile.experience = expMap[level] || 'beginner';
+  if (expMap[level]) {
+    profile.experience = expMap[level];
+  }
 }
 
 async function handleMountainRecommend() {

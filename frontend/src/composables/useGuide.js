@@ -97,7 +97,7 @@ export const profile = reactive({
   experience: 'beginner',
   condition: 4,
   intensity: 'moderate',
-  difficultyFilter: 'easy',
+  difficultyFilter: 'all',
   transport: 'public',
   maxDistanceKm: 30,
   companion: 'solo',
