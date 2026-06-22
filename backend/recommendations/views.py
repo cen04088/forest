@@ -161,7 +161,154 @@ def landslide(request):
 
 @require_GET
 def mountains(request):
-    return JsonResponse({"mountains": MOUNTAINS}, json_dumps_params={"ensure_ascii": False})
+    return JsonResponse({"mountains": _get_mountains()}, json_dumps_params={"ensure_ascii": False})
+
+
+_NATIONAL_PARKS = {
+    "설악산","지리산","한라산","북한산","오대산","소백산","태백산","치악산",
+    "월악산","속리산","계룡산","덕유산","가야산","내장산","무등산","주왕산",
+    "월출산","팔공산",
+}
+_CROWDING_MAP = {
+    "북한산": 0.82, "도봉산": 0.78, "남산": 0.80, "인왕산": 0.72,
+    "관악산": 0.75, "청계산": 0.65, "아차산": 0.70, "수락산": 0.38,
+    "불암산": 0.42, "설악산": 0.68, "한라산": 0.70, "지리산": 0.55,
+    "계룡산": 0.55, "내장산": 0.58, "오대산": 0.48, "덕유산": 0.45,
+    "속리산": 0.52, "주왕산": 0.48, "가야산": 0.55, "치악산": 0.45,
+    "소백산": 0.40, "무등산": 0.58, "월출산": 0.42, "월악산": 0.42,
+    "팔공산": 0.60, "태백산": 0.40, "함백산": 0.32, "두타산": 0.35,
+    "금정산": 0.55, "마이산": 0.50, "황매산": 0.35,
+}
+_HARD_NAMES = {
+    "설악산","지리산","한라산","덕유산","치악산","두타산","함백산","점봉산",
+    "방태산","가리왕산","민주지산","화악산","청옥산","대암산","백덕산",
+    "황석산","운문산","재약산","신불산","가지산","응봉산",
+}
+_EASY_NAMES = {
+    "인왕산","아차산","수리산","칠갑산","천성산","불암산","선자령","삼악산",
+    "수락산","달마산","연화산","팔영산",
+}
+_HEALING_NAMES = {
+    "오대산","내장산","두륜산","천관산","조계산","달마산","연화산","팔영산",
+    "선자령","장안산","천성산",
+}
+_VIEW_NAMES = {
+    "설악산","한라산","지리산","북한산","팔공산","무등산","월출산","마이산",
+    "황매산","비슬산","팔영산","두타산","금정산",
+}
+_EASY_ACCESS = {
+    "인왕산","아차산","수리산","선자령","삼악산","불암산","수락산","청계산",
+    "달마산","두륜산","천관산","금정산","토함산","조계산","연화산","팔영산",
+    "천성산","내장산","주왕산","공작산","천마산","도봉산","관악산",
+}
+
+_KW_MAP = [
+    ("폭포", "폭포 경관"), ("단풍", "단풍 명소"), ("눈", "설경 명소"),
+    ("설", "설경 명소"), ("암릉", "암릉 경관"), ("바위", "암릉 경관"),
+    ("계곡", "계곡 트레킹"), ("사찰", "사찰 탐방"), ("절", "사찰 탐방"),
+    ("전망", "정상 전망 우수"), ("조망", "정상 전망 우수"),
+    ("철쭉", "철쭉 명소"), ("동백", "동백 명소"), ("억새", "억새 군락"),
+]
+
+
+def _infer_difficulty(height, name):
+    if name in _HARD_NAMES or height >= 1400:
+        return "hard"
+    if name in _EASY_NAMES or height <= 400:
+        return "easy"
+    return "medium"
+
+
+def _infer_companion_fit(difficulty, name):
+    if name in _EASY_ACCESS or difficulty == "easy":
+        return ["vulnerable", "family", "solo"]
+    if difficulty == "medium":
+        return ["family", "solo"]
+    return ["solo"]
+
+
+def _infer_purpose_fit(height, name):
+    fits = ["balanced"]
+    if name in _HEALING_NAMES:
+        fits.append("healing")
+    if name in _VIEW_NAMES:
+        fits.append("view")
+    if height >= 1200:
+        fits.append("workout")
+    if len(fits) == 1:
+        fits.append("healing" if height < 800 else "view")
+    return list(dict.fromkeys(fits))
+
+
+def _infer_walk_time(height, difficulty):
+    if difficulty == "easy":
+        return (60, 180)
+    if difficulty == "medium":
+        return (90, 240) if height < 800 else (150, 360)
+    if height >= 1700:
+        return (360, 720)
+    if height >= 1400:
+        return (270, 540)
+    return (200, 450)
+
+
+def _infer_highlights(name, summary):
+    tags = []
+    if name in _NATIONAL_PARKS:
+        tags.append("국립공원")
+    seen = set()
+    for kw, label in _KW_MAP:
+        if kw in summary and label not in seen:
+            tags.append(label)
+            seen.add(label)
+    if not tags:
+        tags.append("자연 경관 우수")
+    return tags[:4]
+
+
+def _get_mountains():
+    from .models import MountainKnowledge
+    from .mountain_data import MOUNTAINS as _STATIC
+
+    static_names = {m["name"] for m in _STATIC}
+
+    # MountainKnowledge 중 좌표 있는 것을 동적으로 추가
+    db_mountains = []
+    seen = set(static_names)
+    qs = (
+        MountainKnowledge.objects
+        .exclude(lat__isnull=True)
+        .exclude(lng__isnull=True)
+        .order_by("mountain_name", "source")
+    )
+    for mk in qs:
+        name = mk.mountain_name
+        if name in seen:
+            continue
+        seen.add(name)
+        height = mk.height_m or 0
+        difficulty = _infer_difficulty(height, name)
+        walk_min, walk_max = _infer_walk_time(height, difficulty)
+        db_mountains.append({
+            "id": f"m-{name}",
+            "name": name,
+            "region": mk.region or "",
+            "lat": mk.lat,
+            "lng": mk.lng,
+            "elevation_m": height if height > 0 else None,
+            "difficulty": difficulty,
+            "walk_time_min": walk_min,
+            "walk_time_max": walk_max,
+            "trail_count": 0,
+            "companion_fit": _infer_companion_fit(difficulty, name),
+            "purpose_fit": _infer_purpose_fit(height, name),
+            "crowding": _CROWDING_MAP.get(name, 0.35),
+            "national_park": name in _NATIONAL_PARKS,
+            "highlights": _infer_highlights(name, mk.summary),
+            "description": mk.summary[:130] if mk.summary else f"{name} — {mk.region}",
+        })
+
+    return _STATIC + db_mountains
 
 
 @csrf_exempt

@@ -165,6 +165,8 @@ class MountainKnowledge(models.Model):
     selection_reason = models.TextField(blank=True)
     source = models.CharField(max_length=30)  # 'culture_info' | 'mountain_story'
     fetched_at = models.DateTimeField(auto_now=True)
+    lat = models.FloatField(null=True, blank=True)
+    lng = models.FloatField(null=True, blank=True)
 
     class Meta:
         unique_together = ("mountain_name", "source")
