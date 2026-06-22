@@ -148,14 +148,11 @@
 
         <!-- 산 헤더 -->
         <section class="panel course-step-header">
-          <!-- 상단 내비 행: 뒤로가기 + 후기 버튼 -->
+          <!-- 상단 내비 행: 뒤로가기 -->
           <div class="csh-nav">
             <button class="back-to-browse-btn" type="button" @click="backToBrowse">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
               산 목록
-            </button>
-            <button class="community-link-btn" type="button" @click="goToCommunity(selectedMountain.name)">
-              💬 후기
             </button>
           </div>
 
