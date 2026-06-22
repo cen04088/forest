@@ -273,9 +273,9 @@ export function useLeafletMap() {
     const ICONS = { easy: '/marker-easy.png', medium: '/marker-medium.png', hard: '/marker-hard.png' };
     const iconUrl = ICONS[course.difficulty] ?? '/marker-easy.png';
     const opacity = course._muted ? 0.3 : 1;
-    // 이미지 비율 약 1:1.57 (텍스트 제거 후)
+    // 이미지 비율 약 1:1.34 (512x687)
     const w = isSelected ? 48 : (course._highlighted ? 40 : 34);
-    const h = Math.round(w * 1.57);
+    const h = Math.round(w * 1.34);
 
     let filterVal;
     if (isSelected) {
