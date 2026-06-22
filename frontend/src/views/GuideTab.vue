@@ -5,11 +5,10 @@
     <div class="guide-map">
       <div ref="overviewMapEl" class="overview-map-container" aria-label="등산 추천 지도"></div>
       <div class="map-legend">
-        <span class="map-legend-item"><i class="legend-dot" style="background:#22c55e"></i>초급</span>
-        <span class="map-legend-item"><i class="legend-dot" style="background:#f97316"></i>중급</span>
-        <span class="map-legend-item"><i class="legend-dot" style="background:#ef4444"></i>고급</span>
+        <span class="map-legend-item"><img src="/marker-easy.png" width="37" height="59" style="flex-shrink:0" /><span style="color:#22c55e">초급</span></span>
+        <span class="map-legend-item"><img src="/marker-medium.png" width="37" height="59" style="flex-shrink:0" /><span style="color:#0284c7">중급</span></span>
+        <span class="map-legend-item"><img src="/marker-hard.png" width="37" height="59" style="flex-shrink:0" /><span style="color:#9333ea">고급</span></span>
         <span v-if="hasRecommendationResult" class="map-legend-item"><i class="legend-dot" style="background:#f59e0b;box-shadow:0 0 0 2px #f59e0b55"></i>추천</span>
-        <span class="map-legend-hint">{{ guideStep === 'browse' ? '산을 선택하세요' : selectedMountain?.name }}</span>
       </div>
     </div>
 

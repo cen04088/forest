@@ -270,35 +270,28 @@ export function useLeafletMap() {
   }
 
   function _makeCourseIcon(course, isSelected) {
-    // 항상 난이도 기반 색상 사용
-    const baseColor = _difficultyColor(course.difficulty);
+    const ICONS = { easy: '/marker-easy.png', medium: '/marker-medium.png', hard: '/marker-hard.png' };
+    const iconUrl = ICONS[course.difficulty] ?? '/marker-easy.png';
     const opacity = course._muted ? 0.3 : 1;
-    const size = isSelected ? 38 : (course._highlighted ? 32 : 28);
+    // 이미지 비율 약 1:1.57 (텍스트 제거 후)
+    const w = isSelected ? 48 : (course._highlighted ? 40 : 34);
+    const h = Math.round(w * 1.57);
 
-    let ring;
+    let filterVal;
     if (isSelected) {
-      ring = `box-shadow:0 0 0 5px ${baseColor}44,0 3px 10px rgba(0,0,0,.4);`;
+      filterVal = 'drop-shadow(0 0 6px rgba(0,0,0,.55)) drop-shadow(0 4px 10px rgba(0,0,0,.4))';
     } else if (course._highlighted) {
-      // 추천된 산: 금색 링으로 강조
-      ring = `box-shadow:0 0 0 3px #ffffff,0 0 0 6px #f59e0b,0 3px 12px rgba(0,0,0,.5);`;
+      filterVal = 'drop-shadow(0 0 6px #f59e0b) drop-shadow(0 2px 6px rgba(0,0,0,.35))';
     } else {
-      ring = 'box-shadow:0 2px 6px rgba(0,0,0,.3);';
+      filterVal = 'drop-shadow(0 2px 5px rgba(0,0,0,.35))';
     }
+
     return L.divIcon({
       className: '',
-      html: `<div style="
-        width:${size}px;height:${size}px;
-        border-radius:50% 50% 50% 0;
-        background:${baseColor};
-        border:3px solid rgba(255,255,255,${isSelected ? 1 : 0.9});
-        transform:rotate(-45deg);
-        opacity:${opacity};
-        transition:width .15s,height .15s,box-shadow .15s;
-        ${ring}
-      "></div>`,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size],
-      popupAnchor: [0, -(size + 6)],
+      html: `<img src="${iconUrl}" width="${w}" height="${h}" style="opacity:${opacity};filter:${filterVal};display:block;transition:filter .15s;" />`,
+      iconSize: [w, h],
+      iconAnchor: [w / 2, h],
+      popupAnchor: [0, -(h + 4)],
     });
   }
 

@@ -2563,26 +2563,26 @@ p {
 
 .map-legend {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
+  top: 12px;
+  right: 12px;
   z-index: 1000;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255,255,255,.92);
-  backdrop-filter: blur(4px);
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #374151;
-  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+  flex-direction: column;
+  gap: 11px;
+  background: rgba(255,255,255,.95);
+  backdrop-filter: blur(6px);
+  border-radius: 16px;
+  padding: 16px 21px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a2e1a;
+  box-shadow: 0 2px 12px rgba(0,0,0,.18);
 }
 
 .map-legend-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 13px;
 }
 
 .legend-dot {
@@ -4136,8 +4136,8 @@ p {
   z-index: 1;
 }
 .pin-easy   { background: #22c55e; }
-.pin-medium { background: #f97316; }
-.pin-hard   { background: #ef4444; }
+.pin-medium { background: #0284c7; }
+.pin-hard   { background: #9333ea; }
 .minimap-attr {
   position: absolute;
   bottom: 3px;
