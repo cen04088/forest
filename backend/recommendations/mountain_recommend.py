@@ -1,6 +1,7 @@
 import math
 from datetime import datetime
 from .mountain_data import MOUNTAINS
+from .accident_model import predict_accident_risk
 
 
 def _haversine(lat1, lng1, lat2, lng2):
@@ -162,12 +163,13 @@ def _season_score(mountain):
 
 # ── 메인 추천 함수 ─────────────────────────────────────────────────────────────
 
-# 가중치 합계 = 1.0
+# 가중치 합계 = 1.0 (ML 위험 지수 추가로 기존 항목 소폭 감소)
 WEIGHTS = {
-    "duration":  0.30,
-    "sunset":    0.25,
-    "distance":  0.25,
-    "weather":   0.20,
+    "duration":  0.25,
+    "sunset":    0.20,
+    "distance":  0.20,
+    "weather":   0.17,
+    "ml_risk":   0.18,
 }
 
 
@@ -185,6 +187,16 @@ def recommend_mountains(payload):
 
     w_weather = _weather_score(weather)
 
+    # ML 위험 예측: 출발 시각 기반 (없으면 현재 시각)
+    dep_hhmm = departure_time or ""
+    try:
+        dep_hour = int(dep_hhmm.split(":")[0]) if dep_hhmm else datetime.now().hour
+    except Exception:
+        dep_hour = datetime.now().hour
+    now = datetime.now()
+    ml_risk = predict_accident_risk(month=now.month, hour=dep_hour, weekday=now.weekday())
+    ml_safety_score = ml_risk.get("ml_safety_score", 0.5)
+
     results = []
     for m in MOUNTAINS:
         # 난이도 하드 필터
@@ -197,10 +209,11 @@ def recommend_mountains(payload):
         season_score = _season_score(m)
 
         base = (
-            t_score      * WEIGHTS["duration"]
-            + sun_score  * WEIGHTS["sunset"]
-            + dist_score * WEIGHTS["distance"]
-            + w_weather  * WEIGHTS["weather"]
+            t_score           * WEIGHTS["duration"]
+            + sun_score       * WEIGHTS["sunset"]
+            + dist_score      * WEIGHTS["distance"]
+            + w_weather       * WEIGHTS["weather"]
+            + ml_safety_score * WEIGHTS["ml_risk"]
         )
         total = base * season_score
 
@@ -243,7 +256,9 @@ def recommend_mountains(payload):
                 "distance":  round(dist_score, 2),
                 "weather":   round(w_weather, 2),
                 "season":    round(season_score, 2),
+                "ml_risk":   round(ml_safety_score, 2),
             },
+            "ml_risk_info": ml_risk,
         })
 
     results.sort(key=lambda x: x["safety_score"], reverse=True)

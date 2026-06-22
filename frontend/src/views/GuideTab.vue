@@ -221,6 +221,36 @@
             <p v-if="selectedMountainSunsetNote" class="mwc-sunset-note">{{ selectedMountainSunsetNote }}</p>
           </div>
 
+          <!-- ML 사고 위험 분석 -->
+          <div v-if="mlRiskInfo" class="ml-risk-card">
+            <div class="ml-risk-header">
+              <span class="ml-risk-title">📊 소방청 사고 데이터 분석</span>
+              <span
+                :class="['ml-risk-badge',
+                  mlRiskInfo.risk_index >= 0.70 ? 'mlr-high' :
+                  mlRiskInfo.risk_index >= 0.45 ? 'mlr-medium' :
+                  mlRiskInfo.risk_index >= 0.20 ? 'mlr-low' : 'mlr-safe']"
+              >
+                {{ mlRiskInfo.risk_index >= 0.70 ? '1인당 사고율 높음' :
+                   mlRiskInfo.risk_index >= 0.45 ? '주의 구간' :
+                   mlRiskInfo.risk_index >= 0.20 ? '보통' : '상대적 안전' }}
+              </span>
+            </div>
+            <p class="ml-risk-warn">{{ mlRiskInfo.warning }}</p>
+            <div class="ml-risk-types">
+              <span
+                v-for="(prob, type) in mlRiskInfo.type_proba"
+                :key="type"
+                class="ml-type-chip"
+                :class="type === mlRiskInfo.top_type ? 'ml-type-top' : ''"
+              >
+                {{ { '부상사고':'실족·추락', '조난수색':'길잃음·조난', '질환':'탈진·질환', '기타':'기타' }[type] }}
+                {{ Math.round(prob * 100) }}%
+              </span>
+            </div>
+            <p class="ml-risk-note">* 2024년 소방청 산악사고 10,134건 기반 1인당 사고율 분석</p>
+          </div>
+
           <!-- 산 소개 -->
           <div v-if="storyText" class="mountain-story-card">
             <div class="msc-summary-wrap" :class="{ collapsed: storyNeedsToggle && !storyExpanded }">
@@ -534,6 +564,14 @@ const mountainSafetyDecision = computed(() => {
   if (rain >= 20 || wind >= 10) return { class: 'red', label: '비추천' };
   if (rain > 0 || wind >= 5) return { class: 'yellow', label: '주의' };
   return { class: 'green', label: '추천' };
+});
+
+// ── ML 위험 정보 ──────────────────────────────────────────────────────────────
+const mlRiskInfo = computed(() => {
+  const m = selectedMountain.value;
+  if (!m) return null;
+  const scored = [...recommendedMountains.value, ...alternativeMountains.value].find((r) => r.id === m.id);
+  return scored?.ml_risk_info || null;
 });
 
 // ── 일몰 경고 ────────────────────────────────────────────────────────────────
