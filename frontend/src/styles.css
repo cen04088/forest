@@ -2672,13 +2672,70 @@ p {
 }
 
 /* ── 통합 브라우즈 찾기 패널 ── */
-.browse-find-panel { display: flex; flex-direction: column; gap: 14px; }
+.browse-find-panel { display: flex; flex-direction: column; gap: 16px; }
+
+.recommend-hero {
+  display: grid;
+  gap: 6px;
+}
 
 .bfp-title {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 850;
   color: var(--ink);
   margin: 0;
+  line-height: 1.25;
+}
+
+.recommend-copy {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.recommend-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.range-card {
+  display: grid;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: #f9fafb;
+}
+
+.range-card strong {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.range-card input[type="range"] {
+  width: 100%;
+  accent-color: var(--forest);
+}
+
+.recommend-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.text-link-btn {
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.text-link-btn:hover {
+  color: var(--forest);
 }
 
 .bfp-search-row {
@@ -2859,6 +2916,42 @@ p {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.alternative-mountain-strip {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.alternative-mountain-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.alternative-mountain-btn:hover {
+  border-color: #86efac;
+  background: #f0faf2;
+}
+
+.alternative-mountain-btn strong {
+  font-size: 13px;
+}
+
+.alternative-mountain-btn span {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .clear-rec-btn {

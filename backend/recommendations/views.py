@@ -40,6 +40,36 @@ def courses(request):
 
 
 @require_GET
+def data_sources(request):
+    key = load_public_service_key()
+    return JsonResponse(
+        {
+            "connected_sources": [
+                {
+                    "id": "public_trails",
+                    "name": "National park trail courses",
+                    "status": "loaded",
+                    "count": len(load_public_trail_courses()),
+                },
+                {
+                    "id": "disaster_risk_zones",
+                    "name": "Disaster risk zones",
+                    "status": "loaded",
+                    "count": len(load_disaster_risk_zones()),
+                },
+                {
+                    "id": "weather",
+                    "name": "KMA nowcast and public safety APIs",
+                    "status": "configured" if key else "mock",
+                },
+            ],
+            "service_key_loaded": bool(key),
+        },
+        json_dumps_params={"ensure_ascii": False},
+    )
+
+
+@require_GET
 def vworld_trails(request):
     mountain_name = request.GET.get("mountain", "")
     lat = request.GET.get("lat")

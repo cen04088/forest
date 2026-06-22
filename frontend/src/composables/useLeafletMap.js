@@ -13,6 +13,8 @@ const _instances = new WeakMap();
 const _overviewMarkers = new Map(); // courseId → L.Marker
 let _overviewMapEl = null;
 let _overviewMapInst = null;
+let _overviewRangeCircle = null;
+let _overviewStartMarker = null;
 
 // 출발지 지도 선택 모드
 let _pickClickHandler = null;
@@ -342,7 +344,48 @@ export function useLeafletMap() {
       </div>`;
   }
 
-  function renderOverviewMap(el, courses, selectedId, onSelect) {
+  function _renderStartRangeOverlay(startLocation, radiusKm) {
+    if (!_overviewMapInst) return;
+    if (_overviewRangeCircle) {
+      _overviewRangeCircle.remove();
+      _overviewRangeCircle = null;
+    }
+    if (_overviewStartMarker) {
+      _overviewStartMarker.remove();
+      _overviewStartMarker = null;
+    }
+
+    const lat = startLocation?.lat;
+    const lng = startLocation?.lng;
+    const radiusMeters = Number(radiusKm || 0) * 1000;
+    if (lat == null || lng == null || !radiusMeters) return;
+
+    const center = [lat, lng];
+    _overviewRangeCircle = L.circle(center, {
+      radius: radiusMeters,
+      color: '#2563eb',
+      weight: 2,
+      opacity: 0.82,
+      fillColor: '#3b82f6',
+      fillOpacity: 0.08,
+      dashArray: '8 6',
+    }).addTo(_overviewMapInst);
+
+    _overviewStartMarker = L.circleMarker(center, {
+      radius: 7,
+      color: '#1d4ed8',
+      fillColor: '#2563eb',
+      fillOpacity: 0.95,
+      weight: 3,
+    }).addTo(_overviewMapInst).bindTooltip(`시작점 · ${radiusKm}km`, { permanent: false });
+
+    const bounds = _overviewRangeCircle.getBounds();
+    if (bounds.isValid()) {
+      _overviewMapInst.fitBounds(bounds, { padding: [28, 28], maxZoom: 11 });
+    }
+  }
+
+  function renderOverviewMap(el, courses, selectedId, onSelect, options = {}) {
     if (!el) return;
 
     if (_overviewMapEl !== el || !_overviewMapInst) {
@@ -384,6 +427,8 @@ export function useLeafletMap() {
       const bounds = L.latLngBounds(validCourses.map((c) => [c.lat, c.lng]));
       if (bounds.isValid()) _overviewMapInst.fitBounds(bounds, { padding: [32, 32] });
     }
+
+    _renderStartRangeOverlay(options.startLocation, options.radiusKm);
   }
 
   function focusOverviewCourse(course) {

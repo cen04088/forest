@@ -7,6 +7,7 @@ from . import community_views as cv
 urlpatterns = [
     path("health/", views.health),
     path("courses/", views.courses),
+    path("data-sources/", views.data_sources),
     path("mountains/", views.mountains),
     path("recommend-mountains/", views.recommend_mountains_view),
     path("vworld-trails/", views.vworld_trails),

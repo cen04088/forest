@@ -34,21 +34,11 @@
 
         <!-- ── 통합 찾기 패널 ── -->
         <section class="panel browse-find-panel">
-          <h2 class="bfp-title">오늘의 산 찾기</h2>
-
-          <!-- 산 검색 -->
-          <div class="bfp-search-row">
-            <svg class="bfp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-              v-model="mountainSearch"
-              class="bfp-search-input"
-              type="text"
-              placeholder="산 이름 또는 지역 검색…"
-              autocomplete="off"
-            />
+          <div class="recommend-hero">
+            <p class="eyebrow">Today Match</p>
+            <h2 class="bfp-title">오늘 어떤 산이 좋을까요?</h2>
+            <p class="recommend-copy">산 이름을 몰라도 괜찮아요. 오늘의 시간, 산행 강도, 이동 거리를 알려주면 지금 가기 좋은 산을 먼저 골라드릴게요.</p>
           </div>
-
-          <div class="bfp-divider"><span>AI 맞춤 추천</span></div>
 
           <!-- 출발지 -->
           <div class="bfp-field">
@@ -86,27 +76,48 @@
             <p v-else-if="gpsStatus === 'error'" class="bfp-error">⚠️ {{ gpsError }}</p>
           </div>
 
-          <!-- 산행 강도 -->
-          <div class="bfp-field">
-            <span class="bfp-label">산행 강도</span>
-            <div class="chips">
-              <button type="button" :class="['chip', profile.difficultyFilter === 'all' ? 'active' : '']" @click="setDifficulty('all')">전체</button>
-              <button type="button" :class="['chip diff-easy', profile.difficultyFilter === 'easy' ? 'active' : '']" @click="setDifficulty('easy')">초급</button>
-              <button type="button" :class="['chip diff-medium', profile.difficultyFilter === 'medium' ? 'active' : '']" @click="setDifficulty('medium')">중급</button>
-              <button type="button" :class="['chip diff-hard', profile.difficultyFilter === 'hard' ? 'active' : '']" @click="setDifficulty('hard')">고급</button>
+          <div class="recommend-form-grid">
+            <div class="bfp-field">
+              <span class="bfp-label">가능 시간</span>
+              <div class="range-card">
+                <strong>{{ Math.floor(profile.desiredHikingMinutes / 60) }}시간 {{ profile.desiredHikingMinutes % 60 }}분</strong>
+                <input v-model.number="profile.desiredHikingMinutes" type="range" min="90" max="480" step="30" />
+              </div>
+            </div>
+
+            <div class="bfp-field">
+              <span class="bfp-label">산행 강도</span>
+              <div class="chips">
+                <button type="button" :class="['chip diff-easy', profile.difficultyFilter === 'easy' ? 'active' : '']" @click="setDifficulty('easy')">초급</button>
+                <button type="button" :class="['chip diff-medium', profile.difficultyFilter === 'medium' ? 'active' : '']" @click="setDifficulty('medium')">중급</button>
+                <button type="button" :class="['chip diff-hard', profile.difficultyFilter === 'hard' ? 'active' : '']" @click="setDifficulty('hard')">고급</button>
+              </div>
+            </div>
+
+            <div class="bfp-field">
+              <span class="bfp-label">이동 거리</span>
+              <div class="range-card">
+                <strong>{{ profile.maxDistanceKm }}km 이내</strong>
+                <input v-model.number="profile.maxDistanceKm" type="range" min="10" max="500" step="10" />
+              </div>
             </div>
           </div>
 
-          <button class="primary-btn wide-field" type="button" :disabled="loading" @click="handleMountainRecommend">
-            {{ loading ? '분석 중…' : '🏔 AI 맞춤 추천받기' }}
-          </button>
+          <div class="recommend-actions">
+            <button class="primary-btn wide-field" type="button" :disabled="loading" @click="handleMountainRecommend">
+              {{ loading ? '분석 중…' : '오늘의 산 추천받기' }}
+            </button>
+            <button class="text-link-btn" type="button" @click="directBrowseOpen = !directBrowseOpen">
+              {{ directBrowseOpen ? '직접 찾기 닫기' : '산 이름을 알고 있어요' }}
+            </button>
+          </div>
         </section>
 
         <!-- ── AI 추천 결과 ── -->
         <section v-if="hasRecommendationResult && recommendedMountains.length" class="panel">
           <div class="section-title compact">
             <div><p class="eyebrow">AI Picks</p><h2>오늘의 추천 산</h2></div>
-            <button class="clear-rec-btn" type="button" @click="hasRecommendationResult = false">✕ 닫기</button>
+            <button class="clear-rec-btn" type="button" @click="handleRetryRecommendation">다시 추천</button>
           </div>
           <p v-if="agentSummary" class="rec-summary">{{ agentSummary }}</p>
           <div class="mountain-card-list">
@@ -119,12 +130,39 @@
               @select="enterCourseStep"
             />
           </div>
+          <div v-if="alternativeMountains.length" class="alternative-mountain-strip">
+            <p class="bfp-label">다른 선택지</p>
+            <button
+              v-for="mountain in alternativeMountains.slice(0, 2)"
+              :key="mountain.id"
+              class="alternative-mountain-btn"
+              type="button"
+              @click="enterCourseStep(mountain)"
+            >
+              <strong>{{ mountain.name }}</strong>
+              <span>{{ mountain.safety_label || '대안 코스' }}</span>
+            </button>
+          </div>
         </section>
 
-        <!-- ── 전체 산 목록 ── -->
-        <section class="panel mountain-list-panel">
+        <!-- ── 직접 찾기 ── -->
+        <section v-if="directBrowseOpen || mountainSearch" class="panel mountain-list-panel">
           <div class="section-title compact">
-            <h2>전체 산<span class="mini-status" style="margin-left:6px">{{ filteredMountains.length }}</span></h2>
+            <div>
+              <p class="eyebrow">Manual Search</p>
+              <h2>직접 산 찾기<span class="mini-status" style="margin-left:6px">{{ filteredMountains.length }}</span></h2>
+            </div>
+          </div>
+
+          <div class="bfp-search-row">
+            <svg class="bfp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              v-model="mountainSearch"
+              class="bfp-search-input"
+              type="text"
+              placeholder="산 이름 또는 지역 검색…"
+              autocomplete="off"
+            />
           </div>
 
           <div v-if="loading && !filteredMountains.length" class="community-loading">분석 중…</div>
@@ -350,6 +388,7 @@ const guideStep = ref('browse'); // 'browse' | 'courses'
 // ── 브라우즈 상태 ─────────────────────────────────────────────────────────────
 const mountainSearch = ref('');
 const hasRecommendationResult = ref(false);
+const directBrowseOpen = ref(false);
 
 // ── 출발지 선택 ───────────────────────────────────────────────────────────────
 const pickingLocation = ref(false);
@@ -394,21 +433,22 @@ function diffDotColor(difficulty) {
 }
 
 function setDifficulty(level) {
-  if (level === 'all' || profile.difficultyFilter === level) {
-    profile.difficultyFilter = 'all';
-    profile.experience = 'beginner';
-  } else {
-    profile.difficultyFilter = level;
-    const expMap = { easy: 'beginner', medium: 'intermediate', hard: 'advanced' };
-    profile.experience = expMap[level];
-  }
+  profile.difficultyFilter = level;
+  const expMap = { easy: 'beginner', medium: 'intermediate', hard: 'advanced' };
+  profile.experience = expMap[level] || 'beginner';
 }
 
 async function handleMountainRecommend() {
   await submitMountainRecommendation();
   hasRecommendationResult.value = true;
+  directBrowseOpen.value = false;
   await nextTick();
   refreshOverviewMap();
+}
+
+async function handleRetryRecommendation() {
+  hasRecommendationResult.value = false;
+  await handleMountainRecommend();
 }
 
 // ── 코스 단계 로컬 상태 ───────────────────────────────────────────────────────
@@ -489,6 +529,10 @@ function refreshOverviewMap() {
     mapMountains.value,
     selectedMountain.value?.id,
     (mountain) => enterCourseStep(mountain),
+    {
+      startLocation: customStartLocation.value || location.value,
+      radiusKm: profile.maxDistanceKm,
+    },
   );
 }
 
@@ -647,6 +691,7 @@ async function handleGPS() {
 // ── 반응성 ────────────────────────────────────────────────────────────────────
 watch(mapMountains, () => refreshOverviewMap());
 watch(selectedMountain, () => refreshOverviewMap());
+watch(() => [profile.maxDistanceKm, location.value, customStartLocation.value], () => refreshOverviewMap());
 
 onMounted(async () => {
   await loadMountains();
