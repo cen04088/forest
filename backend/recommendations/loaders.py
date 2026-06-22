@@ -84,6 +84,32 @@ KMA_API_HUB_KEY_FILE_PATH = settings.BASE_DIR.parent / "kma_api_hub_key.txt"
 
 @lru_cache(maxsize=1)
 def load_public_trail_courses():
+    # DB 우선, 없으면 CSV fallback
+    try:
+        from .models import TrailCourse
+        qs = TrailCourse.objects.filter(lat__isnull=False, lng__isnull=False)
+        if qs.exists():
+            return [
+                {
+                    "id": tc.course_id,
+                    "mountain": tc.mountain,
+                    "name": tc.name,
+                    "region": tc.region,
+                    "difficulty": tc.difficulty,
+                    "distance_km": tc.distance_km,
+                    "duration_min": tc.duration_min,
+                    "elevation_gain_m": tc.elevation_gain_m,
+                    "lat": tc.lat,
+                    "lng": tc.lng,
+                    "crowding": tc.crowding,
+                    "highlights": tc.highlights or [],
+                    "source": tc.source,
+                }
+                for tc in qs
+            ]
+    except Exception:
+        pass
+
     if not TRAIL_CSV_PATH.exists():
         return COURSES
 
@@ -115,6 +141,26 @@ def _read_trail_csv(path, encoding):
 
 @lru_cache(maxsize=1)
 def load_disaster_risk_zones():
+    # DB 우선, 없으면 CSV fallback
+    try:
+        from .models import DisasterRiskZone
+        qs = DisasterRiskZone.objects.all()
+        if qs.exists():
+            return [
+                {
+                    "id": dz.zone_id,
+                    "district": dz.district,
+                    "location": dz.location,
+                    "facility": dz.facility,
+                    "risk_factor": dz.risk_factor,
+                    "evacuation_place": dz.evacuation_place,
+                    "search_text": dz.search_text,
+                }
+                for dz in qs
+            ]
+    except Exception:
+        pass
+
     if not DISASTER_RISK_CSV_PATH.exists():
         return []
 

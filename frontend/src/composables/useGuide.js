@@ -1,5 +1,5 @@
 import { computed, reactive, ref } from 'vue';
-import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations, fetchVWorldTrails, fetchOSMTrails, fetchMountains, fetchMountainRecommendations, fetchLocalRoadTrails } from '../api.js';
+import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations, fetchVWorldTrails, fetchOSMTrails, fetchMountains, fetchMountainRecommendations } from '../api.js';
 
 // 경로 geometry 캐시 (courseId → { geometry, source })
 const _geometryCache = new Map();
@@ -76,8 +76,6 @@ export const alternatives = ref([]);
 export const selectedCourse = ref(null);
 export const weatherData = ref(null);
 export const disasterZones = ref([]);
-export const selectedMountainTrails = ref([]);
-export const selectedMountainTrailStatus = ref('idle');
 export const resultState = ref('idle');
 export const agentSummary = ref('산과 출발 조건을 선택하면 실제 탐방로, 날씨, 일몰, 위험 데이터를 종합해 안전 등급을 계산합니다.');
 export const alternativeActions = ref([]);
@@ -161,33 +159,6 @@ export async function loadMountains() {
     const data = await fetchMountains();
     publicMountains.value = data.mountains || [];
   } catch { publicMountains.value = []; }
-}
-
-export async function loadMountainTrails(mountain) {
-  selectedMountainTrails.value = [];
-  if (!mountain?.name) {
-    selectedMountainTrailStatus.value = 'idle';
-    return [];
-  }
-  selectedMountainTrailStatus.value = 'loading';
-  try {
-    const result = await fetchLocalRoadTrails({
-      mountainName: mountain.name,
-      lat: mountain.lat,
-      lng: mountain.lng,
-      radius: 10,
-      size: 120,
-    });
-    selectedMountainTrails.value = (result.items || []).filter(
-      (trail) => Array.isArray(trail.route_geometry) && trail.route_geometry.length >= 2,
-    );
-    selectedMountainTrailStatus.value = selectedMountainTrails.value.length ? 'loaded' : 'empty';
-    return selectedMountainTrails.value;
-  } catch {
-    selectedMountainTrailStatus.value = 'error';
-    selectedMountainTrails.value = [];
-    return [];
-  }
 }
 
 export async function submitMountainRecommendation() {

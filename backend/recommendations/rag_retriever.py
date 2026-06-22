@@ -510,6 +510,41 @@ def retrieve_disaster_context(mountain_name: str, top_k: int = 3) -> list:
     return passages
 
 
+def retrieve_mountain_knowledge(query: str, mountain_name: str = "", top_k: int = 3) -> list:
+    """DB의 MountainKnowledge에서 관련 산 정보 검색."""
+    try:
+        from .models import MountainKnowledge
+    except Exception:
+        return []
+
+    qs = MountainKnowledge.objects.filter(summary__gt="")
+    if mountain_name:
+        # 해당 산 정보를 우선 포함
+        qs = qs.filter(mountain_name__icontains=mountain_name.replace(" ", ""))
+
+    query_tokens = _cached_tokenize(query)
+    scored = []
+    for obj in qs[:500]:
+        text = f"{obj.mountain_name} {obj.summary} {obj.detail} {obj.selection_reason}"
+        doc_tokens = _cached_tokenize(text)
+        score = _weighted_score(query_tokens, doc_tokens)
+        if mountain_name and mountain_name in obj.mountain_name:
+            score += 1.5
+        if score > 0:
+            scored.append((score, obj))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    passages = []
+    for _, obj in scored[:top_k]:
+        body = obj.summary[:300] or obj.detail[:300]
+        reason = f"  선정이유: {obj.selection_reason[:100]}" if obj.selection_reason else ""
+        height = f" ({obj.height_m}m)" if obj.height_m else ""
+        passages.append(
+            f"[산 정보] {obj.mountain_name}{height} / {obj.region}: {body}{reason}"
+        )
+    return passages
+
+
 def build_rag_context(query: str, mountain_name: str = "") -> str:
     """사용자 질문에 대한 RAG 컨텍스트 문자열 생성.
 
@@ -523,6 +558,10 @@ def build_rag_context(query: str, mountain_name: str = "") -> str:
             f"• [{doc['title']}] {doc['content'][:220]}" for doc in kb_docs
         )
         sections.append(f"[산림 안전 지식 - 출처: NIFOS/국립공원공단]\n{kb_lines}")
+
+    mk_passages = retrieve_mountain_knowledge(query, mountain_name, top_k=3)
+    if mk_passages:
+        sections.append("[산 상세 정보 - 출처: 산림청]\n" + "\n".join(mk_passages))
 
     trail_passages = retrieve_trail_context(query, mountain_name, top_k=3)
     if trail_passages:

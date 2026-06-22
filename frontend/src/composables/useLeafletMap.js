@@ -15,7 +15,6 @@ let _overviewMapEl = null;
 let _overviewMapInst = null;
 let _overviewRangeCircle = null;
 let _overviewStartMarker = null;
-let _overviewTrailLayer = null;
 
 // 출발지 지도 선택 모드
 let _pickClickHandler = null;
@@ -386,45 +385,6 @@ export function useLeafletMap() {
     }
   }
 
-  function _renderMountainTrailOverlay(trails, selectedMountain) {
-    if (!_overviewMapInst) return;
-    if (_overviewTrailLayer) {
-      _overviewTrailLayer.remove();
-      _overviewTrailLayer = null;
-    }
-
-    const validTrails = (trails || []).filter((trail) => Array.isArray(trail.route_geometry) && trail.route_geometry.length >= 2);
-    if (!validTrails.length) return;
-
-    _overviewTrailLayer = L.layerGroup().addTo(_overviewMapInst);
-    const bounds = [];
-    validTrails.forEach((trail, index) => {
-      const points = trail.route_geometry.map((p) => [p.lat, p.lng]).filter(([lat, lng]) => lat && lng);
-      if (points.length < 2) return;
-      bounds.push(...points);
-      const color = _difficultyColor(trail.difficulty);
-      L.polyline(points, {
-        color,
-        weight: index < 12 ? 4 : 3,
-        opacity: index < 12 ? 0.78 : 0.45,
-        lineCap: 'round',
-        lineJoin: 'round',
-      })
-        .addTo(_overviewTrailLayer)
-        .bindTooltip(
-          `${trail.name || '탐방로'}${trail.distance_km ? ` · ${trail.distance_km}km` : ''}`,
-          { sticky: true },
-        );
-    });
-
-    if (bounds.length) {
-      const trailBounds = L.latLngBounds(bounds);
-      if (trailBounds.isValid()) _overviewMapInst.fitBounds(trailBounds, { padding: [28, 28], maxZoom: 14 });
-    } else if (selectedMountain?.lat && selectedMountain?.lng) {
-      _overviewMapInst.setView([selectedMountain.lat, selectedMountain.lng], 13);
-    }
-  }
-
   function renderOverviewMap(el, courses, selectedId, onSelect, options = {}) {
     if (!el) return;
 
@@ -469,7 +429,6 @@ export function useLeafletMap() {
     }
 
     _renderStartRangeOverlay(options.startLocation, options.radiusKm);
-    _renderMountainTrailOverlay(options.trails, options.selectedMountain);
   }
 
   function focusOverviewCourse(course) {

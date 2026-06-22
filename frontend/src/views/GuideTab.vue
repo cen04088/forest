@@ -4,13 +4,6 @@
     <!-- ── 지도 (왼쪽, 양 단계 공통) ── -->
     <div class="guide-map">
       <div ref="overviewMapEl" class="overview-map-container" aria-label="등산 추천 지도"></div>
-      <div v-if="guideStep === 'courses' && selectedMountain" class="trail-map-badge">
-        <span class="trail-map-dot"></span>
-        <strong>{{ selectedMountain.name }}</strong>
-        <span v-if="selectedMountainTrailStatus === 'loading'">탐방로 불러오는 중</span>
-        <span v-else-if="selectedMountainTrails.length">{{ selectedMountainTrails.length }}개 탐방로 표시</span>
-        <span v-else>표시 가능한 탐방로 없음</span>
-      </div>
       <div class="map-legend">
 <div class="map-legend-body">
           <div class="mli-col">
@@ -379,7 +372,7 @@ import {
   loadMountains, publicMountains, recommendedMountains, alternativeMountains,
   selectedMountain, gpsStatus, gpsError, detectGPS, loadWeather, weatherData,
   submitMountainRecommendation, loading, profile, agentSummary,
-  location, customStartLocation, loadMountainTrails, selectedMountainTrails, selectedMountainTrailStatus,
+  location, customStartLocation,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
 import { fetchDisasterZones, fetchSafetyAdvice, fetchMountainStory, fetchSafetyReports, fetchMountainIntro } from '../api.js';
@@ -542,7 +535,6 @@ function refreshOverviewMap() {
     {
       startLocation: customStartLocation.value || location.value,
       radiusKm: profile.maxDistanceKm,
-      trails: guideStep.value === 'courses' ? selectedMountainTrails.value : [],
       selectedMountain: guideStep.value === 'courses' ? selectedMountain.value : null,
     },
   );
@@ -563,8 +555,6 @@ async function enterCourseStep(mountain) {
   await nextTick();
   focusOverviewCourse(mountain);
   refreshOverviewMap();
-  loadMountainTrails(mountain).then(() => refreshOverviewMap());
-
   const [zonesData, storyData, reportsData] = await Promise.allSettled([
     fetchDisasterZones(mountain.name),
     fetchMountainStory(mountain.name),

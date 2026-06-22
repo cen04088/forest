@@ -155,6 +155,59 @@ class EmergencyContact(models.Model):
         db_table = "recommendations_emergencycontact"
 
 
+class MountainKnowledge(models.Model):
+    """산림청 API에서 사전 수집한 산 정보 (RAG 검색용)."""
+    mountain_name = models.CharField(max_length=100, db_index=True)
+    height_m = models.IntegerField(null=True, blank=True)
+    region = models.CharField(max_length=200, blank=True)
+    summary = models.TextField(blank=True)
+    detail = models.TextField(blank=True)
+    selection_reason = models.TextField(blank=True)
+    source = models.CharField(max_length=30)  # 'culture_info' | 'mountain_story'
+    fetched_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("mountain_name", "source")
+        db_table = "recommendations_mountainknowledge"
+        indexes = [models.Index(fields=["mountain_name"])]
+
+
+class TrailCourse(models.Model):
+    """국립공원공단 탐방로 CSV → DB 이식본 (RAG + 추천 검색용)."""
+    course_id = models.CharField(max_length=60, unique=True)
+    mountain = models.CharField(max_length=100, db_index=True)
+    name = models.CharField(max_length=200)
+    region = models.CharField(max_length=200, blank=True)
+    difficulty = models.CharField(max_length=20, blank=True)
+    distance_km = models.FloatField(null=True, blank=True)
+    duration_min = models.IntegerField(null=True, blank=True)
+    elevation_gain_m = models.IntegerField(null=True, blank=True)
+    lat = models.FloatField(null=True, blank=True)
+    lng = models.FloatField(null=True, blank=True)
+    crowding = models.FloatField(default=0.4)
+    highlights = models.JSONField(default=list)
+    source = models.CharField(max_length=60, blank=True)
+
+    class Meta:
+        db_table = "recommendations_trailcourse"
+        indexes = [models.Index(fields=["mountain"])]
+
+
+class DisasterRiskZone(models.Model):
+    """국립공원공단 재난위험지구 CSV → DB 이식본 (RAG 검색용)."""
+    zone_id = models.CharField(max_length=40, unique=True)
+    district = models.CharField(max_length=200, blank=True, db_index=True)
+    location = models.CharField(max_length=200, blank=True)
+    facility = models.CharField(max_length=200, blank=True)
+    risk_factor = models.CharField(max_length=200, blank=True)
+    evacuation_place = models.CharField(max_length=200, blank=True)
+    search_text = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "recommendations_disasterriskzone"
+        indexes = [models.Index(fields=["district"])]
+
+
 class MountainIntro(models.Model):
     """AI가 변환한 산 소개문 (산림청 원문 → 친근한 말투). 1회 생성 후 재사용."""
     mountain_name = models.CharField(max_length=100, unique=True, db_index=True)
