@@ -68,31 +68,29 @@
                   title="현재 위치 감지"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" :class="gpsStatus === 'loading' ? 'spin' : ''"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
-                  GPS
+                  현재 위치 감지
                 </button>
-                <select class="bfp-city-select" v-model="manualCity" @change="applyManualCity">
-                  <option value="">도시 선택</option>
-                  <option value="seoul">서울</option>
-                  <option value="suwon">수원</option>
-                  <option value="incheon">인천</option>
-                  <option value="chuncheon">춘천</option>
-                  <option value="gangneung">강릉</option>
-                  <option value="daejeon">대전</option>
-                  <option value="jeonju">전주</option>
-                  <option value="gwangju">광주</option>
-                  <option value="daegu">대구</option>
-                  <option value="busan">부산</option>
-                  <option value="jeju">제주</option>
-                </select>
+                <button
+                  type="button"
+                  class="bfp-loc-btn"
+                  :class="{ active: pickingLocation }"
+                  @click="toggleLocationPick"
+                  title="지도에서 출발지 선택"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {{ pickingLocation ? '취소' : '지도 선택' }}
+                </button>
               </div>
             </div>
-            <p v-if="gpsStatus === 'error'" class="bfp-error">⚠️ {{ gpsError }}</p>
+            <p v-if="pickingLocation" class="bfp-error" style="color:var(--accent)">🗺 지도를 클릭해 출발지를 선택하세요</p>
+            <p v-else-if="gpsStatus === 'error'" class="bfp-error">⚠️ {{ gpsError }}</p>
           </div>
 
           <!-- 산행 강도 -->
           <div class="bfp-field">
             <span class="bfp-label">산행 강도</span>
             <div class="chips">
+              <button type="button" :class="['chip', profile.difficultyFilter === 'all' ? 'active' : '']" @click="setDifficulty('all')">전체</button>
               <button type="button" :class="['chip diff-easy', profile.difficultyFilter === 'easy' ? 'active' : '']" @click="setDifficulty('easy')">초급</button>
               <button type="button" :class="['chip diff-medium', profile.difficultyFilter === 'medium' ? 'active' : '']" @click="setDifficulty('medium')">중급</button>
               <button type="button" :class="['chip diff-hard', profile.difficultyFilter === 'hard' ? 'active' : '']" @click="setDifficulty('hard')">고급</button>
@@ -314,7 +312,7 @@ import MountainCard from '../components/MountainCard.vue';
 
 const router = useRouter();
 const overviewMapEl = ref(null);
-const { renderOverviewMap, focusOverviewCourse } = useLeafletMap();
+const { renderOverviewMap, focusOverviewCourse, enableLocationPick, disableLocationPick, clearLocationPickMarker } = useLeafletMap();
 
 // ── 단계 상태 ────────────────────────────────────────────────────────────────
 const guideStep = ref('browse'); // 'browse' | 'courses'
@@ -324,27 +322,32 @@ const mountainSearch = ref('');
 const hasRecommendationResult = ref(false);
 
 // ── 출발지 선택 ───────────────────────────────────────────────────────────────
-const CITY_COORDS = {
-  seoul:     { lat: 37.5665, lng: 126.9780, name: '서울' },
-  suwon:     { lat: 37.2636, lng: 127.0286, name: '수원' },
-  incheon:   { lat: 37.4563, lng: 126.7052, name: '인천' },
-  chuncheon: { lat: 37.8813, lng: 127.7298, name: '춘천' },
-  gangneung: { lat: 37.7519, lng: 128.8761, name: '강릉' },
-  daejeon:   { lat: 36.3504, lng: 127.3845, name: '대전' },
-  jeonju:    { lat: 35.8242, lng: 127.1480, name: '전주' },
-  gwangju:   { lat: 35.1595, lng: 126.8526, name: '광주' },
-  daegu:     { lat: 35.8714, lng: 128.6014, name: '대구' },
-  busan:     { lat: 35.1796, lng: 129.0756, name: '부산' },
-  jeju:      { lat: 33.4996, lng: 126.5312, name: '제주' },
-};
+const pickingLocation = ref(false);
 
-const manualCity = ref('');
-
-function applyManualCity() {
-  const city = CITY_COORDS[manualCity.value];
-  if (city) {
-    customStartLocation.value = city;
+function toggleLocationPick() {
+  if (pickingLocation.value) {
+    pickingLocation.value = false;
+    disableLocationPick();
+    return;
   }
+  pickingLocation.value = true;
+  enableLocationPick(async ({ lat, lng }) => {
+    pickingLocation.value = false;
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=ko`,
+        { headers: { 'Accept-Language': 'ko' } },
+      );
+      const data = await res.json();
+      const addr = data.address || {};
+      const name = addr.city || addr.county || addr.town || addr.village
+        || data.display_name?.split(',')[0]
+        || '선택한 위치';
+      customStartLocation.value = { lat, lng, name };
+    } catch {
+      customStartLocation.value = { lat, lng, name: '선택한 위치' };
+    }
+  });
 }
 
 const locationLabel = computed(() => {
@@ -360,10 +363,8 @@ function diffDotColor(difficulty) {
   return '#9ca3af';
 }
 
-// profile.experience(UI표시용) 와 profile.difficultyFilter(백엔드 필터)를 동기화
 function setDifficulty(level) {
-  if (profile.difficultyFilter === level) {
-    // 같은 칩 재클릭 → 필터 해제
+  if (level === 'all' || profile.difficultyFilter === level) {
     profile.difficultyFilter = 'all';
     profile.experience = 'beginner';
   } else {
@@ -397,6 +398,7 @@ const storyNeedsToggle = computed(() => storyText.value.length > 160);
 // ── 브라우즈 단계: 필터된 산 목록 ────────────────────────────────────────────
 const filteredMountains = computed(() => {
   const search = mountainSearch.value.trim().toLowerCase();
+  const diff = profile.difficultyFilter;
   const safetyMap = new Map(
     [...recommendedMountains.value, ...alternativeMountains.value].map((m) => [m.id, m])
   );
@@ -405,6 +407,10 @@ const filteredMountains = computed(() => {
     const scored = safetyMap.get(m.id);
     return scored ? { ...m, ...scored } : m;
   });
+
+  if (diff && diff !== 'all') {
+    base = base.filter((m) => m.difficulty === diff);
+  }
 
   if (search) {
     base = base.filter(
@@ -592,8 +598,10 @@ function goToChat() {
 }
 
 async function handleGPS() {
-  customStartLocation.value = null; // GPS 사용 시 수동 도시 초기화
-  manualCity.value = '';
+  pickingLocation.value = false;
+  disableLocationPick();
+  clearLocationPickMarker();
+  customStartLocation.value = null;
   await detectGPS();
   loadWeather();
 }

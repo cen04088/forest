@@ -16,14 +16,13 @@
         ref="hiddenInput"
         class="code-hidden-input"
         type="text"
-        inputmode="latin"
+        inputmode="text"
         autocomplete="off"
         autocorrect="off"
-        autocapitalize="characters"
+        autocapitalize="off"
         spellcheck="false"
-        maxlength="6"
-        :value="rawCode"
         @input="onInput"
+        @keydown="onKeydown"
         @keydown.enter="lookupCode"
         @paste="onPaste"
       />
@@ -76,11 +75,20 @@ function focusInput() {
   hiddenInput.value?.focus();
 }
 
+function onKeydown(event) {
+  if (event.key === 'Backspace') {
+    event.preventDefault();
+    rawCode.value = rawCode.value.slice(0, -1);
+    if (hiddenInput.value) hiddenInput.value.value = rawCode.value;
+  }
+}
+
 function onInput(event) {
   const clean = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
   rawCode.value = clean;
-  // input 값도 동기화 (IME 등으로 어긋날 경우 대비)
-  if (event.target.value !== clean) event.target.value = clean;
+  event.target.value = clean;
+  // 커서를 항상 맨 끝으로 고정 (모바일 중간 삽입 방지)
+  event.target.setSelectionRange(clean.length, clean.length);
 }
 
 function onPaste(event) {

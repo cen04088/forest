@@ -14,6 +14,10 @@ const _overviewMarkers = new Map(); // courseId → L.Marker
 let _overviewMapEl = null;
 let _overviewMapInst = null;
 
+// 출발지 지도 선택 모드
+let _pickClickHandler = null;
+let _pickMarker = null;
+
 // OSM 타일 레이어
 function _osmTile() {
   return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -389,6 +393,51 @@ export function useLeafletMap() {
     if (m) m.openPopup();
   }
 
+  // ─── 출발지 지도 선택 모드 ────────────────────────────────────────────────
+  function enableLocationPick(onPick) {
+    if (!_overviewMapInst) return;
+    disableLocationPick();
+    _overviewMapInst.getContainer().style.cursor = 'crosshair';
+    _pickClickHandler = (e) => {
+      const { lat, lng } = e.latlng;
+      if (_pickMarker) { _pickMarker.remove(); _pickMarker = null; }
+      _pickMarker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          className: '',
+          html: `
+            <div style="position:relative;width:40px;height:56px;filter:drop-shadow(0 4px 10px rgba(37,99,235,0.45))">
+              <svg width="40" height="52" viewBox="0 0 40 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 1C9.5 1 1 9.5 1 20C1 33.5 20 51 20 51C20 51 39 33.5 39 20C39 9.5 30.5 1 20 1Z" fill="#2563eb" stroke="white" stroke-width="2"/>
+                <circle cx="20" cy="20" r="9" fill="white" fill-opacity="0.95"/>
+                <circle cx="20" cy="17" r="3.5" fill="#2563eb"/>
+                <path d="M12 27c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <div style="position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);white-space:nowrap;background:white;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;border:1.5px solid #bfdbfe;letter-spacing:0.04em;box-shadow:0 1px 4px rgba(0,0,0,0.12)">출발지</div>
+            </div>`,
+          iconSize: [40, 66],
+          iconAnchor: [20, 52],
+          popupAnchor: [0, -56],
+        }),
+      }).addTo(_overviewMapInst);
+      disableLocationPick();
+      onPick({ lat, lng });
+    };
+    _overviewMapInst.on('click', _pickClickHandler);
+  }
+
+  function disableLocationPick() {
+    if (!_overviewMapInst) return;
+    if (_pickClickHandler) {
+      _overviewMapInst.off('click', _pickClickHandler);
+      _pickClickHandler = null;
+    }
+    _overviewMapInst.getContainer().style.cursor = '';
+  }
+
+  function clearLocationPickMarker() {
+    if (_pickMarker) { _pickMarker.remove(); _pickMarker = null; }
+  }
+
   // ─── 산행자 실시간 지도 (SafeLinkTab 산행 중) ─────────────────────────────
   async function renderLiveHikingMap(el, lat, lng, trail) {
     if (!el || lat == null || lng == null) return;
@@ -436,5 +485,8 @@ export function useLeafletMap() {
     addDisasterZoneOverlays,
     renderOverviewMap,
     focusOverviewCourse,
+    enableLocationPick,
+    disableLocationPick,
+    clearLocationPickMarker,
   };
 }

@@ -2775,19 +2775,9 @@ p {
 .bfp-loc-btn:hover { background: #f0fdf4; border-color: #86efac; }
 .bfp-loc-btn.loading { color: var(--muted); }
 .bfp-loc-btn.error { border-color: #fca5a5; color: #ef4444; }
+.bfp-loc-btn.active { background: #eff6ff; border-color: #3b82f6; color: #2563eb; }
 .bfp-loc-btn svg { width: 13px; height: 13px; }
 .bfp-loc-btn svg.spin { animation: spin 1s linear infinite; }
-
-.bfp-city-select {
-  padding: 7px 8px;
-  font-size: 12px;
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink);
-  cursor: pointer;
-  max-width: 90px;
-}
 .bfp-city-select:focus { outline: none; border-color: var(--forest); }
 
 .bfp-error {

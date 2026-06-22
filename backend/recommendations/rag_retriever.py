@@ -387,6 +387,7 @@ KNOWLEDGE_BASE = [
 
 
 # ── 검색 엔진 ──────────────────────────────────────────────────────────────────
+import math as _math
 
 def _tokenize(text: str) -> set:
     """Korean/English text tokenizer: word tokens + bigrams."""
@@ -402,28 +403,55 @@ def _cached_tokenize(text: str) -> frozenset:
     return frozenset(_tokenize(text))
 
 
-def _bm25_score(query_tokens: frozenset, doc_tokens: frozenset) -> float:
+# ── IDF 사전 (지식베이스 전체 문서 기준, 첫 검색 시 1회 계산) ──────────────────
+_IDF: dict = {}
+
+def _build_idf() -> dict:
+    N = len(KNOWLEDGE_BASE)
+    df: dict = {}
+    for doc in KNOWLEDGE_BASE:
+        doc_text = f"{doc['title']} {doc['content']} {' '.join(doc['keywords'])}"
+        for token in _cached_tokenize(doc_text):
+            df[token] = df.get(token, 0) + 1
+    return {token: _math.log((N + 1) / (cnt + 1)) + 1 for token, cnt in df.items()}
+
+
+def _get_idf(token: str) -> float:
+    global _IDF
+    if not _IDF:
+        _IDF = _build_idf()
+    return _IDF.get(token, 1.0)
+
+
+def _weighted_score(query_tokens: frozenset, doc_tokens: frozenset) -> float:
+    """IDF 가중 점수: 드문 단어 일치에 높은 가중치."""
     if not query_tokens:
         return 0.0
-    overlap = len(query_tokens & doc_tokens)
-    return overlap / (len(query_tokens) + 0.5)
+    matched = query_tokens & doc_tokens
+    if not matched:
+        return 0.0
+    idf_sum = sum(_get_idf(t) for t in matched)
+    return idf_sum / (len(query_tokens) + 0.5)
 
 
-def retrieve_from_knowledge_base(query: str, top_k: int = 2) -> list:
-    """정적 지식 베이스에서 관련 문서 검색."""
+def retrieve_from_knowledge_base(query: str, top_k: int = 3) -> list:
+    """정적 지식 베이스에서 관련 문서 검색 (IDF 가중 + 키워드 직접 매칭 보너스)."""
     query_tokens = _cached_tokenize(query)
+    query_lower = query.lower()
     scored = []
     for doc in KNOWLEDGE_BASE:
         doc_text = f"{doc['title']} {doc['content']} {' '.join(doc['keywords'])}"
         doc_tokens = _cached_tokenize(doc_text)
-        score = _bm25_score(query_tokens, doc_tokens)
+        score = _weighted_score(query_tokens, doc_tokens)
         if score > 0:
-            scored.append((score, doc))
+            # keywords 리스트에 쿼리가 직접 포함된 단어마다 +0.4 보너스
+            kw_bonus = sum(0.4 for kw in doc["keywords"] if kw in query_lower)
+            scored.append((score + min(kw_bonus, 1.2), doc))
     scored.sort(key=lambda x: x[0], reverse=True)
     return [doc for _, doc in scored[:top_k]]
 
 
-def retrieve_trail_context(query: str, mountain_name: str = "", top_k: int = 2) -> list:
+def retrieve_trail_context(query: str, mountain_name: str = "", top_k: int = 3) -> list:
     """국립공원 탐방로 데이터에서 관련 코스 검색."""
     from .loaders import load_public_trail_courses
     courses = load_public_trail_courses()
@@ -439,7 +467,10 @@ def retrieve_trail_context(query: str, mountain_name: str = "", top_k: int = 2) 
             " ".join(course.get("highlights", []) or []),
         ])
         course_tokens = _cached_tokenize(course_text)
-        score = _bm25_score(query_tokens, course_tokens)
+        score = _weighted_score(query_tokens, course_tokens)
+        # 산 이름 직접 일치 시 강하게 부스팅
+        if mountain_name and mountain_name in course.get("mountain", ""):
+            score += 1.5
         if score > 0:
             results.append((score, course))
 
@@ -456,7 +487,7 @@ def retrieve_trail_context(query: str, mountain_name: str = "", top_k: int = 2) 
     return passages
 
 
-def retrieve_disaster_context(mountain_name: str, top_k: int = 2) -> list:
+def retrieve_disaster_context(mountain_name: str, top_k: int = 3) -> list:
     """국립공원 재난위험지구 데이터에서 해당 산 위험 지구 검색."""
     from .loaders import load_disaster_risk_zones, normalize_search_text
     if not mountain_name:
@@ -486,19 +517,19 @@ def build_rag_context(query: str, mountain_name: str = "") -> str:
     """
     sections = []
 
-    kb_docs = retrieve_from_knowledge_base(query, top_k=2)
+    kb_docs = retrieve_from_knowledge_base(query, top_k=3)
     if kb_docs:
         kb_lines = "\n".join(
-            f"• [{doc['title']}] {doc['content'][:200]}" for doc in kb_docs
+            f"• [{doc['title']}] {doc['content'][:220]}" for doc in kb_docs
         )
         sections.append(f"[산림 안전 지식 - 출처: NIFOS/국립공원공단]\n{kb_lines}")
 
-    trail_passages = retrieve_trail_context(query, mountain_name, top_k=2)
+    trail_passages = retrieve_trail_context(query, mountain_name, top_k=3)
     if trail_passages:
         sections.append("[관련 탐방로 정보 - 출처: 국립공원공단]\n" + "\n".join(trail_passages))
 
     if mountain_name:
-        disaster_passages = retrieve_disaster_context(mountain_name, top_k=2)
+        disaster_passages = retrieve_disaster_context(mountain_name, top_k=3)
         if disaster_passages:
             sections.append("[재난위험 지구 - 출처: 국립공원공단]\n" + "\n".join(disaster_passages))
 

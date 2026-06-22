@@ -41,14 +41,14 @@
       <!-- 대기 상태 -->
       <div v-if="!safeLinkActive && safeLinkStatus !== 'ended'">
         <p class="safe-link-guide">
-          산을 선택한 뒤 산행을 시작하면 보호자 전용 실시간 위치 링크가 생성됩니다.
+          산행을 시작하면 보호자 전용 실시간 위치 링크가 생성됩니다.
         </p>
-        <p v-if="!selectedMountain" class="safe-link-guide" style="color:var(--amber);font-size:12px;">
-          ⚠️ 안전코스 탭에서 산을 먼저 선택해 주세요.
+        <p v-if="!selectedMountain" class="safe-link-guide" style="color:var(--muted);font-size:12px;">
+          💡 안전코스 탭에서 산을 선택하면 안전 정보도 함께 공유됩니다.
         </p>
         <button
           class="primary-btn wide-field" type="button"
-          :disabled="!selectedMountain || safeLinkStatus === 'creating'"
+          :disabled="safeLinkStatus === 'creating'"
           @click="startHiking(mountainAsCourse)"
         >
           {{ safeLinkStatus === 'creating' ? '링크 생성 중…' : '산행 시작 & 세이프링크 생성' }}
@@ -190,9 +190,10 @@ const distanceLabel = computed(() => {
 
 
 // 산 → 세이프링크 API가 기대하는 형태로 변환
+// 산 미선택 시에도 현재 위치 추적용 세션 생성 가능
 const mountainAsCourse = computed(() => {
   const m = selectedMountain.value;
-  if (!m) return null;
+  if (!m) return { name: '현재 위치 추적', safety_label: '위치 추적 중', safety_decision: 'caution' };
   return {
     id: m.id,
     name: m.name,
