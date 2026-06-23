@@ -1,0 +1,764 @@
+{
+  "박달산": {
+    "lat": 36.836526,
+    "lng": 127.920915,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "박달산, 장연면, 괴산군, 충청북도, 대한민국"
+  },
+  "상원산": {
+    "lat": 37.5083548,
+    "lng": 128.6767948,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "상원산, 북평면, 정선군, 강원특별자치도, 대한민국"
+  },
+  "광려산": {
+    "lat": 35.187804,
+    "lng": 128.478888,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "광려산, 내서읍, 창원시, 경상남도, 대한민국"
+  },
+  "신어산": {
+    "lat": 35.2701011,
+    "lng": 128.9204059,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "신어산, 김해시, 경상남도, 대한민국"
+  },
+  "제암산": {
+    "lat": 34.7097468,
+    "lng": 126.977309,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "제암산, 하산리, 장흥군, 전라남도, 대한민국"
+  },
+  "금전산": {
+    "lat": 34.9248102,
+    "lng": 127.3500583,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "금전산, 순천시, 전라남도, 57918, 대한민국"
+  },
+  "희양산": {
+    "lat": 36.714641,
+    "lng": 128.005065,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "희양산, 문경시, 경상북도, 대한민국"
+  },
+  "서산가야산": {
+    "lat": 36.7066212,
+    "lng": 126.6083242,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "가야산 가야봉, 서산시, 충청남도, 31962, 대한민국"
+  },
+  "문경황장산": {
+    "lat": 36.81274,
+    "lng": 128.278182,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "황장산, 문경시, 경상북도, 36900, 대한민국"
+  },
+  "학가산": {
+    "lat": 36.6631534,
+    "lng": 128.6046671,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "학가산, 산성리, 예천군, 경상북도, 대한민국"
+  },
+  "소백산": {
+    "lat": 36.9574928,
+    "lng": 128.4848972,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "소백산 비로봉, 단양군, 충청북도, 27023, 대한민국"
+  },
+  "태백산": {
+    "lat": 37.0985621,
+    "lng": 128.9161522,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "태백산 장군봉, 태백시, 강원특별자치도, 26042, 대한민국"
+  },
+  "치악산": {
+    "lat": 37.3651455,
+    "lng": 128.0556322,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "치악산(비로봉), 원주시, 강원특별자치도, 26304, 대한민국"
+  },
+  "월악산": {
+    "lat": 36.8860792,
+    "lng": 128.1058367,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "월악산 영봉, 제천시, 충청북도, 27225, 대한민국"
+  },
+  "덕유산": {
+    "lat": 35.8600127,
+    "lng": 127.7465185,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "덕유산 향적봉, 설천면, 무주군, 전북특별자치도, 대한민국"
+  },
+  "가야산": {
+    "lat": 35.8225637,
+    "lng": 128.1229428,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "가야산칠불봉, 합천군, 경상남도, 40061, 대한민국"
+  },
+  "주왕산": {
+    "lat": 36.3893554,
+    "lng": 129.1623858,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "주왕산 주봉, 주왕산면, 청송군, 경상북도, 37438, 대한민국"
+  },
+  "월출산": {
+    "lat": 34.7666192,
+    "lng": 126.7040428,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "월출산(천황봉), 교동리, 영암군, 전라남도, 58418, 대한민국"
+  },
+  "함백산": {
+    "lat": 37.161159,
+    "lng": 128.917602,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "함백산, 태백시, 강원특별자치도, 26010, 대한민국"
+  },
+  "민주지산": {
+    "lat": 36.0397937,
+    "lng": 127.8492728,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "민주지산, 영동군, 충청북도, 대한민국"
+  },
+  "황매산": {
+    "lat": 35.4942361,
+    "lng": 127.9745887,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "황매산, 대병면, 합천군, 경상남도, 50216, 대한민국"
+  },
+  "금오산": {
+    "lat": 36.0917364,
+    "lng": 128.3001983,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "금오산(현월봉), 구미시, 경상북도, 39309, 대한민국"
+  },
+  "재약산": {
+    "lat": 35.5454243,
+    "lng": 128.9806162,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "재약산, 밀양시, 경상남도, 44909, 대한민국"
+  },
+  "공작산": {
+    "lat": 37.7159579,
+    "lng": 128.0106651,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "공작산, 화촌면, 홍천군, 강원특별자치도, 25159, 대한민국"
+  },
+  "화악산": {
+    "lat": 37.9946674,
+    "lng": 127.5034314,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "화악산, 북면, 가평군, 경기도, 12401, 대한민국"
+  },
+  "명지산": {
+    "lat": 37.9414798,
+    "lng": 127.4321451,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "명지산, 북면, 가평군, 경기도, 12401, 대한민국"
+  },
+  "용문산": {
+    "lat": 37.5496994,
+    "lng": 127.5343239,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "용문산 함왕봉, 용천리, 양평군, 경기도, 12509, 대한민국"
+  },
+  "천마산": {
+    "lat": 37.6802108,
+    "lng": 127.2733462,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "천마산, 남양주시, 경기도, 12157, 대한민국"
+  },
+  "조계산": {
+    "lat": 35.0013041,
+    "lng": 127.3136274,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "조계산, 순천시, 전라남도, 57914, 대한민국"
+  },
+  "두륜산": {
+    "lat": 34.471912,
+    "lng": 126.6375673,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "두륜산(가련봉), 흥촌리, 해남군, 전라남도, 59051, 대한민국"
+  },
+  "천관산": {
+    "lat": 34.5317274,
+    "lng": 126.91966,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "천관산연대봉, 관산읍, 장흥군, 전라남도, 59349, 대한민국"
+  },
+  "서대산": {
+    "lat": 36.22066,
+    "lng": 127.53837,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "서대산, 보광리, 금산군, 충청남도, 대한민국"
+  },
+  "오서산": {
+    "lat": 36.4584205,
+    "lng": 126.6593697,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "오서산, 보령시, 충청남도, 대한민국"
+  },
+  "칠갑산": {
+    "lat": 36.4130234,
+    "lng": 126.8848823,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "칠갑산, 천장리, 청양군, 충청남도, 33345, 대한민국"
+  },
+  "토함산": {
+    "lat": 35.8017722,
+    "lng": 129.3452135,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "토함산, 경주시, 경상북도, 38127, 대한민국"
+  },
+  "내연산": {
+    "lat": 36.2786758,
+    "lng": 129.2899056,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "내연산(삼지봉), 포항시, 경상북도, 대한민국"
+  },
+  "방태산": {
+    "lat": 37.8882546,
+    "lng": 128.3901797,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "방태산, 상남면, 인제군, 강원특별자치도, 24666, 대한민국"
+  },
+  "대암산": {
+    "lat": 38.2110649,
+    "lng": 128.1347132,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "대암산, 북면, 인제군, 강원특별자치도, 24610, 대한민국"
+  },
+  "백덕산": {
+    "lat": 37.3964738,
+    "lng": 128.2935238,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "백덕산, 무릉도원면, 영월군, 강원특별자치도, 26201, 대한민국"
+  },
+  "선자령": {
+    "lat": 37.7224224,
+    "lng": 128.7451558,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "선자령, 대관령면, 평창군, 강원특별자치도, 25341, 대한민국"
+  },
+  "삼악산": {
+    "lat": 37.8397223,
+    "lng": 127.6603714,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "삼악산, 춘천시, 강원특별자치도, 24462, 대한민국"
+  },
+  "불암산": {
+    "lat": 37.6292009,
+    "lng": 127.0932135,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "불암산, 공릉2동, 노원구, 서울특별시, 대한민국"
+  },
+  "달마산": {
+    "lat": 34.3825578,
+    "lng": 126.5852185,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "달마산, 북평면, 해남군, 전라남도, 59055, 대한민국"
+  },
+  "가리산": {
+    "lat": 37.8713832,
+    "lng": 127.9564688,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "가리산, 두촌면, 홍천군, 강원특별자치도, 25164, 대한민국"
+  },
+  "응봉산": {
+    "lat": 37.0766173,
+    "lng": 129.2305241,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "응봉산, 삼척시, 강원특별자치도, 25959, 대한민국"
+  },
+  "대야산": {
+    "lat": 36.6692579,
+    "lng": 127.9294814,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "대야산, 문경시, 경상북도, 대한민국"
+  },
+  "장안산": {
+    "lat": 35.6291843,
+    "lng": 127.5950744,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "장안산, 장수군, 전북특별자치도, 대한민국"
+  },
+  "천성산": {
+    "lat": 35.4015733,
+    "lng": 129.1062817,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "천성산(원효봉), 양산시, 경상남도, 50516, 대한민국"
+  },
+  "연화산": {
+    "lat": 35.0710342,
+    "lng": 128.2650363,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "연화산, 북평리, 고성군, 경상남도, 52904, 대한민국"
+  },
+  "팔영산": {
+    "lat": 34.6171525,
+    "lng": 127.4364443,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "팔영산 깃대봉, 영남면, 고흥군, 전라남도, 59520, 대한민국"
+  },
+  "무학산": {
+    "lat": 35.2101065,
+    "lng": 128.535514,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "무학산, 창원시, 경상남도, 51250, 대한민국"
+  },
+  "화왕산": {
+    "lat": 35.5471482,
+    "lng": 128.531694,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "화왕산, 우천리, 창녕군, 경상남도, 50328, 대한민국"
+  },
+  "가지산": {
+    "lat": 35.6202857,
+    "lng": 129.0029231,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "가지산, 밀양시, 경상남도, 대한민국"
+  },
+  "황석산": {
+    "lat": 35.6551172,
+    "lng": 127.7554842,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "황석산, 서하면, 함양군, 경상남도, 대한민국"
+  },
+  "검단산": {
+    "lat": 37.5176552,
+    "lng": 127.2493539,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "검단산, 하남시, 경기도, 13025, 대한민국"
+  },
+  "예봉산": {
+    "lat": 37.5591522,
+    "lng": 127.2611318,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "예봉산, 남양주시, 경기도, 12277, 대한민국"
+  },
+  "유명산": {
+    "lat": 37.5753362,
+    "lng": 127.486706,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "유명산, 설악면, 가평군, 경기도, 12505, 대한민국"
+  },
+  "축령산": {
+    "lat": 37.7527629,
+    "lng": 127.333886,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "축령산, 남양주시, 경기도, 12448, 대한민국"
+  },
+  "소요산": {
+    "lat": 37.938516,
+    "lng": 127.087934,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "소요산, 동두천시, 경기도, 11307, 대한민국"
+  },
+  "무갑산": {
+    "lat": 37.4044974,
+    "lng": 127.333871,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "무갑산, 광주시, 경기도, 12731, 대한민국"
+  },
+  "운길산": {
+    "lat": 37.5726039,
+    "lng": 127.2945857,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "운길산, 남양주시, 경기도, 12281, 대한민국"
+  },
+  "천보산": {
+    "lat": 37.8553322,
+    "lng": 127.1104726,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "천보산, 양주시, 경기도, 11464, 대한민국"
+  },
+  "왕방산": {
+    "lat": 37.8957622,
+    "lng": 127.1556066,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "왕방산, 포천시, 경기도, 11150, 대한민국"
+  },
+  "노인봉": {
+    "lat": 37.782627,
+    "lng": 128.639816,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "노인봉, 강릉시, 강원특별자치도, 25400, 대한민국"
+  },
+  "매봉산": {
+    "lat": 37.2112,
+    "lng": 128.966903,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "매봉산, 태백시, 강원특별자치도, 26003, 대한민국"
+  },
+  "금대봉": {
+    "lat": 37.2260222,
+    "lng": 128.9300528,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "금대봉, 태백시, 강원특별자치도, 26002, 대한민국"
+  },
+  "가칠봉": {
+    "lat": 37.8794767,
+    "lng": 128.4585512,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "가칠봉, 기린면, 인제군, 강원특별자치도, 24656, 대한민국"
+  },
+  "용봉산": {
+    "lat": 36.6437036,
+    "lng": 126.6492774,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "용봉산, 상하리, 홍성군, 충청남도, 32252, 대한민국"
+  },
+  "덕숭산": {
+    "lat": 36.6717743,
+    "lng": 126.6243386,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "덕숭산, 광천리, 예산군, 충청남도, 32409, 대한민국"
+  },
+  "도락산": {
+    "lat": 36.8562636,
+    "lng": 128.3112796,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "도락산, 단양군, 충청북도, 27026, 대한민국"
+  },
+  "황학산": {
+    "lat": 36.9429525,
+    "lng": 128.064314,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "황학산, 제천시, 충청북도, 27221, 대한민국"
+  },
+  "금수산": {
+    "lat": 36.9847255,
+    "lng": 128.2569094,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "금수산, 제천시, 충청북도, 27218, 대한민국"
+  },
+  "제비봉": {
+    "lat": 36.9217785,
+    "lng": 128.271332,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "제비봉, 고평리, 단양군, 충청북도, 27025, 대한민국"
+  },
+  "구병산": {
+    "lat": 36.4695827,
+    "lng": 127.8617468,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "구병산, 구병리, 보은군, 충청북도, 37137, 대한민국"
+  },
+  "군자산": {
+    "lat": 36.7136944,
+    "lng": 127.8880917,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "군자산, 칠성면, 괴산군, 충청북도, 28021, 대한민국"
+  },
+  "낙영산": {
+    "lat": 36.6414833,
+    "lng": 127.8339111,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "낙영산, 청천면, 괴산군, 충청북도, 28059, 대한민국"
+  },
+  "일월산": {
+    "lat": 36.8032791,
+    "lng": 129.1029082,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "일월산, 일월면, 영양군, 경상북도, 대한민국"
+  },
+  "갑장산": {
+    "lat": 36.3473778,
+    "lng": 128.1890056,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "갑장산, 상주시, 경상북도, 대한민국"
+  },
+  "단석산": {
+    "lat": 35.794619,
+    "lng": 129.0889232,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "단석산, 경주시, 경상북도, 38183, 대한민국"
+  },
+  "남덕유산": {
+    "lat": 35.7675361,
+    "lng": 127.6795216,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "남덕유산, 함양군, 경상남도, 대한민국"
+  },
+  "웅석봉": {
+    "lat": 35.363662,
+    "lng": 127.8775089,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "웅석봉, 산청군, 경상남도, 52233, 대한민국"
+  },
+  "정병산": {
+    "lat": 35.263242,
+    "lng": 128.692297,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "정병산, 창원시, 경상남도, 51132, 대한민국"
+  },
+  "방어산": {
+    "lat": 35.2534935,
+    "lng": 128.2935395,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "방어산, 박곡리, 함안군, 경상남도, 52610, 대한민국"
+  },
+  "미륵산": {
+    "lat": 34.8106641,
+    "lng": 128.4161136,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "미륵산, 통영시, 경상남도, 53075, 대한민국"
+  },
+  "백운산": {
+    "lat": 35.1063783,
+    "lng": 127.6213246,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "백운산, 광양시, 구례군, 전라남도, 대한민국"
+  },
+  "추월산": {
+    "lat": 35.3999299,
+    "lng": 126.9760399,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "추월산, 용면, 담양군, 전라남도, 57302, 대한민국"
+  },
+  "병풍산": {
+    "lat": 35.3247157,
+    "lng": 126.8857018,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "병풍산, 담양군, 전라남도, 57314, 대한민국"
+  },
+  "봉황산": {
+    "lat": 35.01745,
+    "lng": 127.11345,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "봉황산, 사평면, 화순군, 전라남도, 58144, 대한민국"
+  },
+  "백아산": {
+    "lat": 35.1717364,
+    "lng": 127.1611177,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "백아산, 백아면, 화순군, 전라남도, 58101, 대한민국"
+  },
+  "성산일출봉": {
+    "lat": 33.4588891,
+    "lng": 126.9408178,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "성산일출봉, 284-12, 서귀포시, 제주특별자치도, 63643, 대한민국"
+  },
+  "산방산": {
+    "lat": 33.2415557,
+    "lng": 126.3133432,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "산방산, 서귀포시, 제주특별자치도, 63528, 대한민국"
+  },
+  "한라산": {
+    "lat": 33.3617536,
+    "lng": 126.5291977,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "한라산, 서귀포시, 제주특별자치도, 63064, 대한민국"
+  },
+  "내장산": {
+    "lat": 35.4783324,
+    "lng": 126.8889872,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "내장산(신선봉), 복흥면, 순창군, 전북특별자치도, 대한민국"
+  },
+  "무등산": {
+    "lat": 35.1250388,
+    "lng": 127.0085732,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "무등산(천왕봉), 광주광역시, 61512, 대한민국"
+  },
+  "비슬산": {
+    "lat": 35.715597,
+    "lng": 128.5231844,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "비슬산, 대구광역시, 42990, 대한민국"
+  },
+  "가리왕산": {
+    "lat": 37.4614337,
+    "lng": 128.5633877,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "가리왕산, 진부면, 평창군, 강원특별자치도, 25338, 대한민국"
+  },
+  "감악산": {
+    "lat": 37.941156,
+    "lng": 126.9700763,
+    "source": "OSM Nominatim natural=peak",
+    "display_name": "감악산, 양주시, 경기도, 11402, 대한민국"
+  },
+  "팔봉산": {
+    "lat": 37.6958831,
+    "lng": 127.6971195,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "팔봉산(홍천), 강원 홍천군, 대한민국"
+  },
+  "강천산": {
+    "lat": 35.40192,
+    "lng": 127.04838,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "강천산, OSM natural=peak"
+  },
+  "계방산": {
+    "lat": 37.7282723,
+    "lng": 128.4654808,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "계방산, OSM natural=peak"
+  },
+  "고헌산": {
+    "lat": 35.6413942,
+    "lng": 129.0846907,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "고헌산, OSM natural=peak"
+  },
+  "관악산": {
+    "lat": 37.4451398,
+    "lng": 126.9642379,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "관악산, OSM natural=peak"
+  },
+  "광교산": {
+    "lat": 37.3449403,
+    "lng": 127.0344434,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "광교산, OSM natural=peak"
+  },
+  "달음산": {
+    "lat": 35.3078051,
+    "lng": 129.2109706,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "달음산, OSM natural=peak"
+  },
+  "대둔산": {
+    "lat": 36.124594,
+    "lng": 127.3204771,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "대둔산, OSM natural=peak"
+  },
+  "두타산": {
+    "lat": 37.4266369,
+    "lng": 129.0044248,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "두타산, OSM natural=peak"
+  },
+  "모악산": {
+    "lat": 35.7285867,
+    "lng": 127.0851739,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "모악산, OSM natural=peak"
+  },
+  "문복산": {
+    "lat": 35.6760888,
+    "lng": 129.0341305,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "문복산, OSM natural=peak"
+  },
+  "방장산": {
+    "lat": 35.4557175,
+    "lng": 126.7543608,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "방장산, OSM natural=peak"
+  },
+  "불모산": {
+    "lat": 35.1662763,
+    "lng": 128.7409748,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "불모산, OSM natural=peak"
+  },
+  "삼봉산": {
+    "lat": 35.4474142,
+    "lng": 127.6694469,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "삼봉산, OSM natural=peak"
+  },
+  "삼성산": {
+    "lat": 37.4359147,
+    "lng": 126.9393711,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "삼성산, OSM natural=peak"
+  },
+  "수락산": {
+    "lat": 37.6992644,
+    "lng": 127.0813401,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "수락산, OSM natural=peak"
+  },
+  "신불산": {
+    "lat": 35.5394127,
+    "lng": 129.0540979,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "신불산, OSM natural=peak"
+  },
+  "수리산": {
+    "lat": 37.3728882,
+    "lng": 126.9139443,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "태을봉, OSM natural=peak"
+  },
+  "아차산": {
+    "lat": 37.5711235,
+    "lng": 127.1043503,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "아차산, OSM natural=peak"
+  },
+  "영축산": {
+    "lat": 35.5160152,
+    "lng": 129.0527504,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "영축산, OSM natural=peak"
+  },
+  "용화산": {
+    "lat": 38.0381932,
+    "lng": 127.7479919,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "용화산, OSM natural=peak"
+  },
+  "운문산": {
+    "lat": 35.6155103,
+    "lng": 128.9596632,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "운문산, OSM natural=peak"
+  },
+  "운악산": {
+    "lat": 37.87869,
+    "lng": 127.32288,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "운악산, OSM natural=peak"
+  },
+  "인왕산": {
+    "lat": 37.5849526,
+    "lng": 126.957877,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "인왕산, OSM natural=peak"
+  },
+  "입암산": {
+    "lat": 35.4834815,
+    "lng": 126.8289654,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "입암산, OSM natural=peak"
+  },
+  "점봉산": {
+    "lat": 38.04874,
+    "lng": 128.425643,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "점봉산, OSM natural=peak"
+  },
+  "주금산": {
+    "lat": 37.7843935,
+    "lng": 127.2680294,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "주금산, OSM natural=peak"
+  },
+  "천황산": {
+    "lat": 35.5579292,
+    "lng": 128.9721951,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "천황산, OSM natural=peak"
+  },
+  "청계산": {
+    "lat": 37.421899,
+    "lng": 127.0432171,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "청계산, OSM natural=peak"
+  },
+  "청옥산": {
+    "lat": 37.4346712,
+    "lng": 128.9727262,
+    "source": "OSM Overpass natural=peak",
+    "display_name": "청옥산, OSM natural=peak"
+  }
+}
