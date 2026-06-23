@@ -452,9 +452,17 @@ const storyExpanded = ref(false);
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
 let _courseStepToken = 0;
 
-const storyText = computed(() =>
-  selectedMountain.value?.intro || selectedMountain.value?.description || ''
-);
+const storyText = computed(() => {
+  const story = mountainStory.value;
+  return (
+    story?.intro ||
+    story?.summary ||
+    story?.detail ||
+    selectedMountain.value?.intro ||
+    selectedMountain.value?.description ||
+    ''
+  );
+});
 const storyNeedsToggle = computed(() => storyText.value.length > 160);
 
 // ── 브라우즈 단계: 필터된 산 목록 ────────────────────────────────────────────
@@ -556,6 +564,14 @@ async function enterCourseStep(mountain) {
   selectedDisasterZones.value = zonesData.status === 'fulfilled' ? (zonesData.value.zones || []) : [];
   const story = storyData.status === 'fulfilled' ? (storyData.value.items?.[0] ?? null) : null;
   mountainStory.value = story;
+  if (story) {
+    selectedMountain.value = {
+      ...selectedMountain.value,
+      intro: story.intro || story.summary || selectedMountain.value?.intro || '',
+      description: story.summary || story.detail || selectedMountain.value?.description || '',
+      description_source: story.source || selectedMountain.value?.description_source || '',
+    };
+  }
   mountainSafetyReports.value = reportsData.status === 'fulfilled' ? (reportsData.value.posts || []) : [];
 
 }

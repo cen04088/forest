@@ -102,10 +102,58 @@ def mountain_story(request):
     mountain_name = request.GET.get("mountain", "")
     page_no = request.GET.get("page", 1)
     num_of_rows = request.GET.get("size", 5)
+
+    db_story = _get_db_mountain_story(mountain_name)
+    if db_story:
+        return JsonResponse(
+            {
+                "ok": True,
+                "items": [db_story],
+                "source": "database",
+            },
+            json_dumps_params={"ensure_ascii": False},
+        )
+
     return JsonResponse(
         fetch_mountain_story(mountain_name, page_no, num_of_rows),
         json_dumps_params={"ensure_ascii": False},
     )
+
+
+def _get_db_mountain_story(mountain_name):
+    name = (mountain_name or "").strip()
+    if not name:
+        return None
+
+    from .models import MountainIntro, MountainKnowledge
+
+    intro = MountainIntro.objects.filter(mountain_name=name).first()
+    knowledge = (
+        MountainKnowledge.objects
+        .filter(mountain_name=name)
+        .order_by("source")
+        .first()
+    )
+
+    if not intro and not knowledge:
+        return None
+
+    intro_text = intro.intro.strip() if intro else ""
+    summary = intro_text or (knowledge.summary.strip() if knowledge and knowledge.summary else "")
+    detail = (knowledge.detail.strip() if knowledge and knowledge.detail else "") or summary
+
+    return {
+        "mountain_id": f"db-{name}",
+        "mountain": name,
+        "height_m": knowledge.height_m if knowledge else None,
+        "address": knowledge.region if knowledge else "",
+        "manager": "",
+        "summary": summary,
+        "detail": detail,
+        "intro": intro_text,
+        "selection_reason": knowledge.selection_reason if knowledge else "",
+        "source": "database",
+    }
 
 
 @require_GET
@@ -267,10 +315,34 @@ def _infer_highlights(name, summary):
 
 
 def _get_mountains():
-    from .models import MountainKnowledge
+    from .models import MountainIntro, MountainKnowledge
     from .mountain_data import MOUNTAINS as _STATIC
 
-    static_names = {m["name"] for m in _STATIC}
+    intros = {obj.mountain_name: obj.intro for obj in MountainIntro.objects.all()}
+    knowledge_by_name = {}
+    for obj in MountainKnowledge.objects.order_by("mountain_name", "source"):
+        knowledge_by_name.setdefault(obj.mountain_name, obj)
+
+    static_mountains = []
+    for mountain in _STATIC:
+        item = dict(mountain)
+        name = item["name"]
+        intro = (intros.get(name) or "").strip()
+        knowledge = knowledge_by_name.get(name)
+        db_description = intro
+        if not db_description and knowledge:
+            db_description = (knowledge.summary or knowledge.detail or "").strip()
+
+        if db_description:
+            item["description"] = db_description
+            item["intro"] = intro
+            item["description_source"] = "database"
+        else:
+            item["description_source"] = "static"
+
+        static_mountains.append(item)
+
+    static_names = {m["name"] for m in static_mountains}
 
     # MountainKnowledge 중 좌표 있는 것을 동적으로 추가
     db_mountains = []
@@ -305,10 +377,12 @@ def _get_mountains():
             "crowding": _CROWDING_MAP.get(name, 0.35),
             "national_park": name in _NATIONAL_PARKS,
             "highlights": _infer_highlights(name, mk.summary),
-            "description": mk.summary[:130] if mk.summary else f"{name} — {mk.region}",
+            "description": (intros.get(name) or mk.summary or mk.detail or f"{name} — {mk.region}").strip(),
+            "intro": (intros.get(name) or "").strip(),
+            "description_source": "database",
         })
 
-    return _STATIC + db_mountains
+    return static_mountains + db_mountains
 
 
 @csrf_exempt
