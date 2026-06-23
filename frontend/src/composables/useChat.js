@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { fetchChatResponse } from '../api.js';
-import { selectedMountain, weatherData, recommendations, profile, disasterZones } from './useGuide.js';
+import { selectedMountain, weatherData, recommendations, profile, disasterZones, profileIsExplicitlySet } from './useGuide.js';
 
 export const chatMessages = ref([]); // { role: 'user'|'assistant', content: string }
 export const chatLoading = ref(false);
@@ -44,12 +44,7 @@ export async function sendMessage(text) {
       departureDate: p.departureDate,
       maxDistanceKm: p.maxDistanceKm,
       intensity: p.intensity,
-      isDefault: (
-        p.experience === 'beginner' &&
-        p.companion === 'solo' &&
-        p.availableMinutes === 240 &&
-        p.intensity === 'moderate'
-      ),
+      isDefault: !profileIsExplicitlySet.value,
     },
     disasterZones: (disasterZones.value || []).slice(0, 5).map((z) => ({
       district: z.district,

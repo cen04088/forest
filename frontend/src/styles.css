@@ -5182,3 +5182,147 @@ p {
   from { opacity: 0; transform: translateY(16px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ── 산행 기록 통계 ─────────────────────────────────────────────────────────── */
+.hiking-stats {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--wash);
+  border-radius: 10px;
+}
+.hstat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+.hstat-wide { flex: 1.5; }
+.hstat-n {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--green-deep);
+  line-height: 1;
+}
+.hstat-mountain {
+  font-size: 13px;
+  font-weight: 800;
+}
+.hstat-l {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── 나의 등산 프로필 폼 ─────────────────────────────────────────────────────── */
+.hiking-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hpf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: default;
+}
+.hpf-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  flex-shrink: 0;
+  width: 68px;
+}
+.hpf-select {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+.hpf-select:focus { outline: none; border-color: var(--green); }
+.hpf-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.hpf-number {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  text-align: right;
+}
+.hpf-number:focus { outline: none; border-color: var(--green); }
+.hpf-unit {
+  font-size: 13px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.hpf-save-btn {
+  margin-top: 4px;
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+}
+.hpf-hint {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  margin: 0;
+}
+.hpf-saved-ok {
+  color: var(--green-deep) !important;
+  font-weight: 700;
+}
+
+/* ── 내 활동 탭 ──────────────────────────────────────────────────────────────── */
+.activity-tabs {
+  display: flex;
+  gap: 4px;
+}
+.act-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.act-tab:hover { border-color: var(--green); color: var(--green-deep); }
+.act-tab.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.act-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9px;
+  background: rgba(255,255,255,.25);
+  color: inherit;
+}
+.act-tab:not(.active) .act-count {
+  background: var(--line);
+  color: var(--muted);
+}

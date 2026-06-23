@@ -102,6 +102,29 @@ export const profile = reactive({
   companion: 'solo',
 });
 
+// 마이페이지에서 사용자가 직접 저장한 프로필 여부
+const _PROFILE_FIELDS = ['experience', 'companion', 'intensity', 'maxDistanceKm', 'availableMinutes'];
+export const profileIsExplicitlySet = ref(localStorage.getItem('olla_profile_saved') === 'true');
+
+// 앱 시작 시 저장된 프로필 반영
+try {
+  const _saved = JSON.parse(localStorage.getItem('olla_user_profile') || '{}');
+  for (const k of _PROFILE_FIELDS) {
+    if (_saved[k] !== undefined) profile[k] = _saved[k];
+  }
+} catch {}
+
+export function applyAndSaveProfile(updates) {
+  for (const k of _PROFILE_FIELDS) {
+    if (updates[k] !== undefined) profile[k] = updates[k];
+  }
+  try {
+    localStorage.setItem('olla_user_profile', JSON.stringify(Object.fromEntries(_PROFILE_FIELDS.map(k => [k, profile[k]]))));
+    localStorage.setItem('olla_profile_saved', 'true');
+  } catch {}
+  profileIsExplicitlySet.value = true;
+}
+
 export const { location, gpsStatus, gpsError, detectGPS } = useLocation();
 
 // 사용자가 직접 지정한 출발지 (null이면 GPS 위치 사용)
