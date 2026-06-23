@@ -329,17 +329,6 @@
           </div>
         </section>
 
-        <!-- AI 맞춤 안전 조언 -->
-        <div class="safety-advice-panel" v-if="safetyAdviceLines.length || safetyAdviceLoading">
-          <div class="safety-advice-header">
-            <span class="safety-advice-icon">🧭</span>
-            <p class="safety-advice-title">AI 맞춤 안전 조언</p>
-            <span v-if="safetyAdviceLoading" class="advice-loading-dot"></span>
-          </div>
-          <ul class="safety-advice-list">
-            <li v-for="(line, i) in safetyAdviceLines" :key="i">{{ line }}</li>
-          </ul>
-        </div>
 
         <!-- 하이라이트 -->
         <section v-if="selectedMountain.highlights?.length" class="panel">
@@ -375,7 +364,7 @@ import {
   location, customStartLocation,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchSafetyAdvice, fetchMountainStory, fetchSafetyReports } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import MountainCard from '../components/MountainCard.vue';
 
@@ -456,8 +445,6 @@ async function handleRetryRecommendation() {
 
 // ── 코스 단계 로컬 상태 ───────────────────────────────────────────────────────
 const selectedDisasterZones = ref([]);
-const safetyAdviceText = ref('');
-const safetyAdviceLoading = ref(false);
 const mountainStory = ref(null);
 const mountainSafetyReports = ref([]);
 const storyExpanded = ref(false);
@@ -548,7 +535,6 @@ async function enterCourseStep(mountain) {
 
   guideStep.value = 'courses';
   selectedMountain.value = mountain;
-  safetyAdviceText.value = '';
   mountainStory.value = null;
   mountainSafetyReports.value = [];
   selectedDisasterZones.value = [];
@@ -572,13 +558,11 @@ async function enterCourseStep(mountain) {
   mountainStory.value = story;
   mountainSafetyReports.value = reportsData.status === 'fulfilled' ? (reportsData.value.posts || []) : [];
 
-  loadSafetyAdvice(mountain, token);
 }
 
 function backToBrowse() {
   guideStep.value = 'browse';
   selectedMountain.value = null;
-  safetyAdviceText.value = '';
   refreshOverviewMap();
 }
 
@@ -644,31 +628,6 @@ const selectedMountainSunsetNote = computed(() => {
   return scored?.sunset_note || null;
 });
 
-// ── AI 안전 조언 ──────────────────────────────────────────────────────────────
-async function loadSafetyAdvice(mountain, token) {
-  safetyAdviceLoading.value = true;
-  try {
-    const data = await fetchSafetyAdvice({
-      mountain,
-      weather: weatherData.value || {},
-      profile: {},
-      sunTimes: null,
-    });
-    if (token !== _courseStepToken) return;
-    safetyAdviceText.value = data.advice || '';
-  } catch {
-    if (token !== _courseStepToken) return;
-    safetyAdviceText.value = '';
-  } finally {
-    if (token === _courseStepToken) safetyAdviceLoading.value = false;
-  }
-}
-
-const safetyAdviceLines = computed(() =>
-  safetyAdviceText.value
-    ? safetyAdviceText.value.split('\n').map((l) => l.trim()).filter(Boolean)
-    : [],
-);
 
 // ── 유틸 ──────────────────────────────────────────────────────────────────────
 function crowdingLabel(c) {
