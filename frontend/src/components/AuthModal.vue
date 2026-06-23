@@ -1,7 +1,9 @@
 <template>
   <div class="modal-overlay" role="dialog" aria-modal="true" @click.self="showAuthModal = false">
     <div class="auth-modal">
-      <button class="modal-close" type="button" aria-label="닫기" @click="showAuthModal = false">✕</button>
+      <div class="auth-modal-header">
+        <button class="modal-close" type="button" aria-label="닫기" @click="showAuthModal = false">✕</button>
+      </div>
       <div class="auth-tabs">
         <button :class="{ active: authMode === 'login' }" type="button" @click="authMode = 'login'; authError = ''">로그인</button>
         <button :class="{ active: authMode === 'register' }" type="button" @click="authMode = 'register'; authError = ''">회원가입</button>
