@@ -3800,6 +3800,10 @@ p {
     grid-column: 1 / -1;
   }
 
+  /* 즐겨찾기·기록 리스트 최대 높이 (패널 균형) */
+  .fav-list { max-height: 280px; overflow-y: auto; }
+  .hiking-record-list { max-height: 200px; overflow-y: auto; }
+
   /* 긴급 연락처 전체 너비일 때 내부 2열 */
   .emergency-inner {
     display: grid;
@@ -3810,6 +3814,16 @@ p {
   .emergency-inner .contact-add-form,
   .emergency-inner .auth-error {
     grid-column: 1 / -1;
+  }
+
+  /* 연락처 추가 폼: 풀 너비에서 한 줄 4컬럼 */
+  .emergency-inner .contact-add-form {
+    grid-template-columns: 1fr 1.5fr 1fr auto;
+    align-items: end;
+  }
+  .emergency-inner .contact-add-form button {
+    grid-column: unset;
+    white-space: nowrap;
   }
 
   /* 내가 쓴 글: 포스트를 2열로 */
@@ -4584,50 +4598,112 @@ p {
 }
 
 /* ── 내정보 탭 — 전반 ────────────────────────────────────────────────────── */
-.mypage-login-prompt { text-align: center; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; color: #64748b; }
-.mypage-login-needed { font-size: 13px; color: #94a3b8; padding: 12px 0; }
+.mypage-login-prompt {
+  text-align: center;
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+}
+.mypage-login-needed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 16px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+.mypage-login-needed::before {
+  content: '🔒';
+  font-size: 20px;
+  opacity: 0.55;
+  line-height: 1;
+}
 
 /* 즐겨찾기 목록 */
-.fav-list { display: flex; flex-direction: column; gap: 4px; }
-.fav-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border-radius: 8px; }
-.fav-info { display: flex; flex-direction: column; gap: 2px; }
-.fav-info strong { font-size: 14px; color: #1e293b; }
-.fav-info small { font-size: 12px; color: #94a3b8; }
-.fav-remove-btn { background: none; border: none; font-size: 13px; color: #94a3b8; cursor: pointer; padding: 4px 6px; }
-.fav-remove-btn:hover { color: var(--red); }
+.fav-list { display: flex; flex-direction: column; gap: 6px; }
+.fav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  transition: border-color .15s;
+}
+.fav-item:hover { border-color: var(--green); }
+.fav-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fav-info strong { font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-info small { font-size: 11px; color: var(--muted); }
+.fav-remove-btn { background: none; border: none; font-size: 13px; color: var(--muted); cursor: pointer; padding: 4px 6px; flex-shrink: 0; opacity: .5; }
+.fav-remove-btn:hover { color: var(--red); opacity: 1; }
 
 /* 산행 기록 */
-.hiking-record-list { display: flex; flex-direction: column; gap: 4px; }
-.hiking-record-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f0fdf4; border-radius: 8px; }
-.record-info { display: flex; flex-direction: column; gap: 3px; }
-.record-info strong { font-size: 14px; color: #1e293b; }
-.record-info small { font-size: 12px; color: #94a3b8; }
+.hiking-record-list { display: flex; flex-direction: column; gap: 6px; }
+.hiking-record-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  transition: border-color .15s;
+}
+.hiking-record-item:hover { border-color: var(--green); }
+.record-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.record-info strong { font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.record-info small { font-size: 11px; color: var(--muted); }
 
 /* 내가 쓴 글 */
-.mypost-item { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; flex-direction: column; gap: 3px; }
-.mypost-item:last-child { border-bottom: none; }
-.mypost-item:hover { background: #f8fafc; border-radius: 8px; }
-.mypost-item strong { font-size: 14px; color: #1e293b; }
-.mypost-item small { font-size: 12px; color: #94a3b8; }
+.mypost-item {
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-bottom-color: var(--line);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: background .12s, border-color .12s;
+}
+.mypost-item:last-child { border-bottom-color: transparent; }
+.mypost-item:hover { background: var(--wash); border-color: var(--line); border-radius: 8px; }
+.mypost-item strong { font-size: 13px; color: var(--ink); }
+.mypost-item small { font-size: 11px; color: var(--muted); }
 
 /* 긴급 연락처 */
-.contact-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #fef2f2; border-radius: 8px; margin-bottom: 6px; }
+.contact-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  background: #fff5f5;
+}
 .contact-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.contact-info strong { font-size: 14px; color: #1e293b; }
-.contact-relation { font-size: 12px; color: #94a3b8; background: #f1f5f9; padding: 1px 6px; border-radius: 10px; }
-.contact-phone { font-size: 13px; color: var(--green); text-decoration: none; font-weight: 600; }
-.contact-add-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-.contact-add-form input { padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; }
+.contact-info strong { font-size: 14px; color: var(--ink); }
+.contact-relation { font-size: 11px; color: var(--muted); background: var(--wash); padding: 2px 7px; border-radius: 10px; border: 1px solid var(--line); }
+.contact-phone { font-size: 13px; color: var(--green-deep); text-decoration: none; font-weight: 600; }
+.contact-add-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.contact-add-form input { padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 8px; font-size: 13px; font-family: inherit; }
 .contact-add-form input:focus { outline: none; border-color: var(--green); }
 .contact-add-form button { grid-column: 1 / -1; }
 
-/* 체크리스트 개선 */
-.checklist-del-btn { margin-left: auto; background: none; border: none; font-size: 12px; color: #cbd5e1; cursor: pointer; padding: 2px 4px; }
-.checklist-del-btn:hover { color: var(--red); }
-.custom-check-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
-.checklist-add-row { display: flex; gap: 8px; margin-top: 12px; }
-.checklist-add-row input { flex: 1; padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; }
-.checklist-add-row input:focus { outline: none; border-color: var(--green); }
 
 /* ── 날씨 mock 배지 ──────────────────────────────────────────────────────── */
 .mock-badge { background: #64748b !important; }
