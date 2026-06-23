@@ -44,6 +44,12 @@ export async function sendMessage(text) {
       departureDate: p.departureDate,
       maxDistanceKm: p.maxDistanceKm,
       intensity: p.intensity,
+      isDefault: (
+        p.experience === 'beginner' &&
+        p.companion === 'solo' &&
+        p.availableMinutes === 240 &&
+        p.intensity === 'moderate'
+      ),
     },
     disasterZones: (disasterZones.value || []).slice(0, 5).map((z) => ({
       district: z.district,
