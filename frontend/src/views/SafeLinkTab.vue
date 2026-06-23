@@ -1,32 +1,59 @@
 <template>
   <section class="screen-stack safelink-layout">
-    <!-- 왼쪽 컬럼: 지도 + 상태 카드 -->
+    <!-- 왼쪽 컬럼: 보호자 코드 입력 -->
     <div class="safelink-col-map">
     <section class="panel">
-      <div class="section-title">
-        <div><p class="eyebrow">Safe Link</p><h2>보호자 공유카드</h2></div>
+      <div class="section-title compact">
+        <div><p class="eyebrow">보호자 연결</p><h2>산행자 코드 입력</h2></div>
       </div>
 
-      <article class="safe-link-card">
-        <div class="safe-link-map">
-          <div ref="safeLinkMapEl" class="kakao-map" aria-label="보호자 공유 지도"></div>
-        </div>
-        <div v-if="safeLinkMapStatus" class="map-status-msg">
-          <span class="info-icon">ℹ️</span><span>{{ safeLinkMapStatus }}</span>
-        </div>
-        <div class="safe-link-status">
-          <span :class="['safety-badge', selectedMountain ? badgeClass : 'yellow']">
-            {{ selectedMountain?.safety_label || '진단 대기' }}
-          </span>
-          <h3>{{ selectedMountain?.name || '안전 진단 후 공유 가능' }}</h3>
-          <p>{{ safeLinkSummary }}</p>
-        </div>
-      </article>
+      <div v-if="!guardianResolved">
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 20px;">
+          산행자가 알려준 6자리 코드를 입력하면<br>현재 위치를 실시간으로 확인할 수 있습니다.
+        </p>
 
-      <div v-if="selectedMountain" class="safe-link-status-bar">
-        <div class="status-dot" :class="selectedMountain.safety_decision === 'recommend' ? 'dot-green' : 'dot-yellow'"></div>
-        <span>{{ selectedMountain.safety_label || '정상 이동' }}</span>
-        <span class="status-time">마지막 확인: 방금 전</span>
+        <input
+          ref="hiddenInput"
+          class="code-hidden-input"
+          type="text"
+          inputmode="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          @input="onGuardianInput"
+          @keydown="onGuardianKeydown"
+          @keydown.enter="lookupCode"
+          @paste="onGuardianPaste"
+        />
+
+        <div class="code-input-row" @click="focusGuardianInput">
+          <div
+            v-for="i in 6" :key="i"
+            class="code-digit-input"
+            :class="{ filled: guardianCode.length >= i, active: guardianCode.length === i - 1 }"
+          >{{ guardianCode[i - 1] || '' }}</div>
+        </div>
+
+        <p v-if="guardianError" class="guardian-entry-error">{{ guardianError }}</p>
+
+        <button
+          class="primary-btn wide-field"
+          style="margin-bottom:16px"
+          :disabled="guardianCode.length < 6 || guardianLoading"
+          type="button"
+          @click="lookupCode"
+        >
+          {{ guardianLoading ? '확인 중…' : '위치 확인하기' }}
+        </button>
+
+        <p style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5;">
+          코드는 산행자의 앱 안전공유 탭에서 확인할 수 있습니다.
+        </p>
+      </div>
+
+      <div v-else style="font-size:14px;color:var(--muted);margin-top:20px;">
+        위치 정보를 불러오는 중입니다…
       </div>
     </section>
     </div>
@@ -144,16 +171,74 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { selectedMountain, weatherData } from '../composables/useGuide.js';
 import { saveHikingRecord } from '../composables/useUserData.js';
 import { useSafeLink } from '../composables/useSafeLink.js';
-import { useLeafletMap } from '../composables/useLeafletMap.js';
+import { getSafeLinkByCode } from '../api.js';
 
-const safeLinkMapEl = ref(null);
+const router = useRouter();
 const shareStatus = ref('');
 
-const { safeLinkMapStatus, renderSafeLinkMap } = useLeafletMap();
+// ── 보호자 코드 입력 ──────────────────────────────────────────────────────────
+const hiddenInput = ref(null);
+const guardianCode = ref('');
+const guardianLoading = ref(false);
+const guardianError = ref('');
+const guardianResolved = ref(false);
+
+onMounted(() => nextTick(() => hiddenInput.value?.focus()));
+
+function focusGuardianInput() {
+  hiddenInput.value?.focus();
+}
+
+function onGuardianKeydown(event) {
+  if (event.key === 'Backspace') {
+    event.preventDefault();
+    guardianCode.value = guardianCode.value.slice(0, -1);
+    if (hiddenInput.value) hiddenInput.value.value = guardianCode.value;
+  }
+}
+
+function onGuardianInput(event) {
+  const clean = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  guardianCode.value = clean;
+  event.target.value = clean;
+  event.target.setSelectionRange(clean.length, clean.length);
+}
+
+function onGuardianPaste(event) {
+  event.preventDefault();
+  const text = (event.clipboardData || window.clipboardData)
+    .getData('text')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 6);
+  guardianCode.value = text;
+  if (hiddenInput.value) hiddenInput.value.value = text;
+}
+
+async function lookupCode() {
+  if (guardianCode.value.length < 6 || guardianLoading.value) return;
+  guardianLoading.value = true;
+  guardianError.value = '';
+  try {
+    const session = await getSafeLinkByCode(guardianCode.value);
+    guardianResolved.value = true;
+    router.push(`/safe/${session.id}`);
+  } catch (err) {
+    guardianError.value = err.message || '오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+    guardianCode.value = '';
+    if (hiddenInput.value) hiddenInput.value.value = '';
+    await nextTick();
+    hiddenInput.value?.focus();
+  } finally {
+    guardianLoading.value = false;
+  }
+}
+
 const {
   sessionStatus: safeLinkStatus,
   shareUrl: safeLinkUrl,
@@ -209,13 +294,6 @@ const mountainAsCourse = computed(() => {
   };
 });
 
-const badgeClass = computed(() => {
-  const d = selectedMountain.value?.safety_decision;
-  if (d === 'recommend') return 'green';
-  if (d === 'caution') return 'yellow';
-  return 'red';
-});
-
 const hasLocation = computed(() => {
   const m = selectedMountain.value;
   return m && Number.isFinite(Number(m.lat)) && Number.isFinite(Number(m.lng));
@@ -225,12 +303,6 @@ const kakaoMapUrl = computed(() => {
   if (!hasLocation.value) return '';
   const m = selectedMountain.value;
   return `https://map.kakao.com/link/map/${encodeURIComponent(m.name)},${m.lat},${m.lng}`;
-});
-
-const safeLinkSummary = computed(() => {
-  if (!selectedMountain.value) return '안전 진단 후 보호자에게 보낼 공유 카드가 생성됩니다.';
-  const m = selectedMountain.value;
-  return `${m.name}(${m.region}) 산행 안전 등급과 위치를 보호자에게 공유합니다.`;
 });
 
 const safeLinkMessage = computed(() => {
@@ -300,15 +372,5 @@ async function shareMessage() {
   if (hasLocation.value) window.open(kakaoMapUrl.value, '_blank', 'noreferrer');
 }
 
-// 지도: 산 위치 핀 표시
-async function renderMap() {
-  await nextTick();
-  const m = selectedMountain.value;
-  if (!m) { renderSafeLinkMap(safeLinkMapEl.value, null); return; }
-  // 산 데이터를 renderSafeLinkMap이 이해하는 형태로 전달
-  renderSafeLinkMap(safeLinkMapEl.value, mountainAsCourse.value);
-}
 
-watch(selectedMountain, renderMap);
-onMounted(renderMap);
 </script>
