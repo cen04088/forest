@@ -32,5 +32,5 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 # collectstatic: frontend/dist/assets → staticfiles/
 RUN cd backend && python manage.py collectstatic --noinput
 
-# 마이그레이션 후 gunicorn 시작 (Railway PostgreSQL이 붙어 있으면 자동으로 연결)
-CMD ["sh", "-c", "cd backend && python manage.py migrate --noinput && gunicorn forestrx.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120"]
+# 마이그레이션과 산 설명 시드 반영 후 gunicorn 시작 (Railway PostgreSQL이 붙어 있으면 자동으로 연결)
+CMD ["sh", "-c", "cd backend && python manage.py migrate --noinput && python manage.py seed_mountain_descriptions && gunicorn forestrx.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120"]
