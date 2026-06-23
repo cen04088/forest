@@ -12,27 +12,29 @@
           산행자가 알려준 6자리 코드를 입력하면<br>현재 위치를 실시간으로 확인할 수 있습니다.
         </p>
 
-        <input
-          ref="hiddenInput"
-          class="code-hidden-input"
-          type="text"
-          inputmode="text"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="off"
-          spellcheck="false"
-          @input="onGuardianInput"
-          @keydown="onGuardianKeydown"
-          @keydown.enter="lookupCode"
-          @paste="onGuardianPaste"
-        />
-
-        <div class="code-input-row" @click="focusGuardianInput">
-          <div
-            v-for="i in 6" :key="i"
-            class="code-digit-input"
-            :class="{ filled: guardianCode.length >= i, active: guardianCode.length === i - 1 }"
-          >{{ guardianCode[i - 1] || '' }}</div>
+        <div class="code-input-wrap" @click="focusGuardianInput">
+          <input
+            ref="hiddenInput"
+            class="code-hidden-input"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            maxlength="6"
+            @input="onGuardianInput"
+            @keydown="onGuardianKeydown"
+            @keydown.enter="lookupCode"
+            @paste="onGuardianPaste"
+          />
+          <div class="code-input-row">
+            <div
+              v-for="i in 6" :key="i"
+              class="code-digit-input"
+              :class="{ filled: guardianCode.length >= i, active: guardianCode.length === i - 1 }"
+            >{{ guardianCode[i - 1] || '' }}</div>
+          </div>
         </div>
 
         <p v-if="guardianError" class="guardian-entry-error">{{ guardianError }}</p>
