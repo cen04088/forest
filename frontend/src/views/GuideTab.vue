@@ -210,7 +210,9 @@
               :mountain="mountain"
               :rank="idx + 1"
               :is-selected="false"
+              :is-favorite="isMountainFavorite(mountain.id)"
               @select="enterCourseStep"
+              @toggle-favorite="toggleMountainFavorite"
             />
           </div>
 
@@ -466,6 +468,7 @@ import { communitySearch, communityCategory } from '../composables/useCommunity.
 import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import MountainCard from '../components/MountainCard.vue';
+import { isMountainFavorite, toggleMountainFavorite } from '../composables/useUserData.js';
 
 const router = useRouter();
 const overviewMapEl = ref(null);

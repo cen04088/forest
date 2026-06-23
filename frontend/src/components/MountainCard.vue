@@ -20,9 +20,17 @@
         <span :class="['safety-badge', safetyColorClass]">{{ mountain.safety_label }}</span>
         <span v-if="mountain.national_park" class="mc-np-badge">국립공원</span>
       </div>
-      <span v-if="mountain.distance_from_user_km != null" class="mc-dist">
-        📍 {{ mountain.distance_from_user_km }}km
-      </span>
+      <div class="mc-meta-right">
+        <span v-if="mountain.distance_from_user_km != null" class="mc-dist">
+          📍 {{ mountain.distance_from_user_km }}km
+        </span>
+        <button
+          :class="['mc-fav-btn', { favorited: isFavorite }]"
+          type="button"
+          :title="isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가'"
+          @click.stop="$emit('toggleFavorite', mountain)"
+        >{{ isFavorite ? '♥' : '♡' }}</button>
+      </div>
     </div>
 
     <!-- 산 이름 -->
@@ -56,9 +64,10 @@ const props = defineProps({
   mountain: { type: Object, required: true },
   isSelected: { type: Boolean, default: false },
   rank: { type: Number, default: null },
+  isFavorite: { type: Boolean, default: false },
 });
 
-defineEmits(['select']);
+defineEmits(['select', 'toggleFavorite']);
 
 const DIFF_LABEL = { easy: '초급', medium: '중급', hard: '고급' };
 const DIFF_CLASS = { easy: 'easy', medium: 'medium', hard: 'hard' };

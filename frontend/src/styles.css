@@ -713,8 +713,16 @@ p {
 .mc-top-reason { font-size: 11px; color: rgba(255,255,255,.85); }
 .mc-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
 .mc-meta-left { display: flex; align-items: center; gap: 5px; }
+.mc-meta-right { display: flex; align-items: center; gap: 6px; }
 .mc-np-badge { font-size: 10px; background: #eff6ff; color: #1d4ed8; border-radius: 6px; padding: 2px 6px; font-weight: 600; }
 .mc-dist { font-size: 11px; color: #6b7280; }
+.mc-fav-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 18px; color: #d1d5db; line-height: 1; padding: 2px 4px;
+  transition: color .15s, transform .1s;
+}
+.mc-fav-btn:hover { color: #f87171; transform: scale(1.15); }
+.mc-fav-btn.favorited { color: #ef4444; }
 .mc-name { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
 .mc-region { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
 .mc-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
@@ -4653,8 +4661,9 @@ p {
 }
 .fav-item:hover { border-color: var(--green); }
 .fav-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.fav-info strong { font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fav-info strong { font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 5px; }
 .fav-info small { font-size: 11px; color: var(--muted); }
+.fav-type-badge { font-size: 10px; font-weight: 700; background: var(--green-soft); color: var(--green-deep); border-radius: 4px; padding: 1px 5px; flex-shrink: 0; }
 .fav-remove-btn { background: none; border: none; font-size: 13px; color: var(--muted); cursor: pointer; padding: 4px 6px; flex-shrink: 0; opacity: .5; }
 .fav-remove-btn:hover { color: var(--red); opacity: 1; }
 

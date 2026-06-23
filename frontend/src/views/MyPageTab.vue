@@ -18,8 +18,14 @@
       <div v-else class="fav-list">
         <div v-for="fav in favorites" :key="fav.course_id" class="fav-item">
           <div class="fav-info">
-            <strong>{{ fav.course_name }}</strong>
-            <small>{{ fav.mountain }} · {{ fav.distance_km ?? '-' }}km · {{ fav.duration_min ? durationLabel(fav.duration_min) : '-' }}</small>
+            <strong>
+              <span v-if="fav.course_id.startsWith('mountain_')" class="fav-type-badge">산</span>
+              {{ fav.course_name }}
+            </strong>
+            <small v-if="!fav.course_id.startsWith('mountain_')">
+              {{ fav.mountain }} · {{ fav.distance_km ?? '-' }}km · {{ fav.duration_min ? durationLabel(fav.duration_min) : '-' }}
+            </small>
+            <small v-else>{{ fav.mountain }}</small>
           </div>
           <button class="fav-remove-btn" type="button" title="즐겨찾기 해제" @click="removeFav(fav.course_id)">✕</button>
         </div>
