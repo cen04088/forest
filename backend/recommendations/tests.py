@@ -33,18 +33,29 @@ class RecommendationApiTests(TestCase):
     def test_homonymous_mountain_uses_verified_location(self):
         from .views import _get_mountains
 
-        mountain = next(
+        bakdalsan = next(
             item for item in _get_mountains()
             if item["name"] == "\ubc15\ub2ec\uc0b0"
         )
+        sangwonsan = next(
+            item for item in _get_mountains()
+            if item["name"] == "\uc0c1\uc6d0\uc0b0"
+        )
 
-        self.assertEqual(mountain["region"], "\ucda9\ubd81 \uad34\uc0b0\uad70")
-        self.assertAlmostEqual(mountain["lat"], 36.836526)
-        self.assertAlmostEqual(mountain["lng"], 127.920915)
-        self.assertIn("\uad34\uc0b0", mountain["description"])
-        self.assertNotIn("\uc591\ud3c9", mountain["description"])
-        self.assertNotIn("\uc81c\ucc9c", mountain["description"])
-        self.assertNotIn("\ub2e8\uc591", mountain["description"])
+        self.assertEqual(bakdalsan["region"], "\ucda9\ubd81 \uad34\uc0b0\uad70")
+        self.assertAlmostEqual(bakdalsan["lat"], 36.836526)
+        self.assertAlmostEqual(bakdalsan["lng"], 127.920915)
+        self.assertIn("\uad34\uc0b0", bakdalsan["description"])
+        self.assertNotIn("\uc591\ud3c9", bakdalsan["description"])
+        self.assertNotIn("\uc81c\ucc9c", bakdalsan["description"])
+        self.assertNotIn("\ub2e8\uc591", bakdalsan["description"])
+
+        self.assertEqual(sangwonsan["region"], "\uac15\uc6d0 \uc815\uc120\uad70")
+        self.assertAlmostEqual(sangwonsan["lat"], 37.5083548)
+        self.assertAlmostEqual(sangwonsan["lng"], 128.6767948)
+        self.assertEqual(sangwonsan["elevation_m"], 1421)
+        self.assertIn("\uc815\uc120", sangwonsan["description"])
+        self.assertNotIn("\uc591\ud3c9", sangwonsan["description"])
 
     def test_mountain_story_rejects_seed_when_region_or_height_conflicts(self):
         response = Client().get(

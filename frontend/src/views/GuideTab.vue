@@ -210,7 +210,7 @@
           <div class="mountain-card-list">
             <MountainCard
               v-for="(mountain, idx) in (recommendedMountains.length ? recommendedMountains.slice(0, 3) : alternativeMountains.slice(0, 3))"
-              :key="mountain.id"
+              :key="mountain.mountain_key || mountain.id"
               :mountain="mountain"
               :rank="idx + 1"
               :is-selected="false"
@@ -221,7 +221,7 @@
             <p class="bfp-label">다른 선택지</p>
             <button
               v-for="mountain in alternativeMountains.slice(0, recommendedMountains.length ? 2 : 5)"
-              :key="mountain.id"
+              :key="mountain.mountain_key || mountain.id"
               class="alternative-mountain-btn"
               type="button"
               @click="enterCourseStep(mountain)"
@@ -257,7 +257,7 @@
           <div class="mountain-browse-list">
             <button
               v-for="mountain in filteredMountains"
-              :key="mountain.id"
+              :key="mountain.mountain_key || mountain.id"
               class="mountain-browse-row"
               type="button"
               @click="enterCourseStep(mountain)"
@@ -660,7 +660,12 @@ const selectedMountainCourseRecommendations = computed(() => {
     .filter((course) => {
       const mountainName = normalizeText(course.mountain);
       const courseName = normalizeText(course.name);
-      return mountainName.includes(target) || courseName.includes(target);
+      const nameMatches = mountainName.includes(target) || courseName.includes(target);
+      if (!nameMatches) return false;
+      if (mountain.lat && mountain.lng && course.lat && course.lng) {
+        return haversineKm(mountain.lat, mountain.lng, course.lat, course.lng) <= 18;
+      }
+      return true;
     })
     .map((course) => ({
       ...course,
@@ -713,6 +718,16 @@ function browseBadgeClass(mountain) {
 
 function normalizeText(value) {
   return String(value || '').replace(/\s/g, '').toLowerCase();
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const toRad = (v) => Number(v) * Math.PI / 180;
+  const radius = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return radius * 2 * Math.asin(Math.sqrt(a));
 }
 
 function scoreTrailForSelectedMountain(course, desiredMinutes, maxMinutes, difficultyFilter) {
@@ -780,7 +795,7 @@ function refreshOverviewMap() {
   renderOverviewMap(
     overviewMapEl.value,
     mapMountains.value,
-    selectedMountain.value?.id,
+    selectedMountain.value?.mountain_key || selectedMountain.value?.id,
     (mountain) => enterCourseStep(mountain),
     {
       startLocation: customStartLocation.value || location.value,

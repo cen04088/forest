@@ -8,6 +8,7 @@ from django.views.decorators.http import require_GET, require_POST
 from .landslide_api import fetch_landslide_prediction
 from .loaders import load_public_service_key, load_public_trail_courses, load_disaster_risk_zones
 from .mountain_coordinates import MOUNTAIN_COORDINATES
+from .mountain_identity import mountain_key, with_mountain_identity
 from .services import recommend_courses
 from .mountain_recommend import recommend_mountains
 from .mountain_data import MOUNTAINS
@@ -378,6 +379,7 @@ def _get_mountains():
         intro = seed_intro or (item.get("description") or "").strip()
         item["description"] = intro
         item["intro"] = intro
+        item["mountain_key"] = mountain_key(name, item.get("region", ""))
         item["description_source"] = (
             "seed_mountain_descriptions"
             if seed_intro
@@ -386,11 +388,11 @@ def _get_mountains():
 
         static_mountains.append(item)
 
-    static_names = {m["name"] for m in static_mountains}
+    static_keys = {mountain_key(m.get("name", ""), m.get("region", "")) for m in static_mountains}
 
     # MountainKnowledge 중 좌표 있는 것을 동적으로 추가
     db_mountains = []
-    seen = set(static_names)
+    seen = set(static_keys)
     qs = (
         MountainKnowledge.objects
         .exclude(lat__isnull=True)
@@ -399,16 +401,17 @@ def _get_mountains():
     )
     for mk in qs:
         name = mk.mountain_name
-        if name in seen:
+        key = mountain_key(name, mk.region or "")
+        if key in seen:
             continue
-        seen.add(name)
+        seen.add(key)
         height = mk.height_m or 0
         difficulty = _infer_difficulty(height, name)
         walk_min, walk_max = _infer_walk_time(height, difficulty)
         seed_intro = _seeded_intro_for_mountain(name, mk.region or "", height)
         db_intro = (mk.summary or mk.detail or "").strip()
         intro = seed_intro or db_intro
-        db_mountains.append({
+        db_mountains.append(with_mountain_identity({
             "id": f"m-{name}",
             "name": name,
             "region": mk.region or "",
@@ -431,7 +434,7 @@ def _get_mountains():
                 if seed_intro
                 else (mk.source if intro else "")
             ),
-        })
+        }))
 
     return static_mountains + db_mountains
 

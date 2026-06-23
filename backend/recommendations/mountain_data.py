@@ -1624,9 +1624,9 @@ MOUNTAINS = [
     {
         "id": "m-상원산",
         "name": "상원산",
-        "region": "경기 양평군",
-        "lat": 37.469,
-        "lng": 127.674,
+        "region": "강원 정선군",
+        "lat": 37.5083548,
+        "lng": 128.6767948,
         "elevation_m": 1421,
         "difficulty": "hard",
         "walk_time_min": 270,
@@ -1637,7 +1637,7 @@ MOUNTAINS = [
         "crowding": 0.4,
         "national_park": False,
         "highlights": ["자연 경관 우수"],
-        "description": "",
+        "description": "상원산은 강원특별자치도 정선군 북평면 일대에 있는 해발 1,421m의 산입니다. 두위봉과 이어지는 고원 능선과 강원 내륙의 깊은 숲을 조망할 수 있는 고산 산행지입니다.",
     },
     {
         "id": "m-계방산",

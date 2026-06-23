@@ -47,6 +47,10 @@ function _difficultyColor(difficulty) {
   return { easy: '#22c55e', medium: '#f97316', hard: '#ef4444' }[difficulty] ?? '#22c55e';
 }
 
+function _mapItemKey(item) {
+  return item?.mountain_key || item?.id || `${item?.name || item?.mountain || 'item'}_${item?.region || ''}_${item?.lat || ''}_${item?.lng || ''}`;
+}
+
 // 위험 요인에 따른 구간별 색상
 function _segmentColor(course, segIndex, totalSegs) {
   const risks = course.risk_factors || [];
@@ -398,7 +402,7 @@ export function useLeafletMap() {
     }
 
     const validCourses = (courses || []).filter((c) => c.lat && c.lng);
-    const ids = new Set(validCourses.map((c) => c.id));
+    const ids = new Set(validCourses.map((c) => _mapItemKey(c)));
 
     // 사라진 코스 마커 제거
     for (const [id, m] of _overviewMarkers) {
@@ -407,11 +411,12 @@ export function useLeafletMap() {
 
     let isFirstLoad = false;
     validCourses.forEach((course) => {
-      const isSelected = course.id === selectedId;
+      const key = _mapItemKey(course);
+      const isSelected = key === selectedId || course.id === selectedId;
       const icon = _makeCourseIcon(course, isSelected);
 
-      if (_overviewMarkers.has(course.id)) {
-        const m = _overviewMarkers.get(course.id);
+      if (_overviewMarkers.has(key)) {
+        const m = _overviewMarkers.get(key);
         m.setIcon(icon);
         m.setPopupContent(_makeCoursePopup(course));
       } else {
@@ -419,7 +424,7 @@ export function useLeafletMap() {
           .addTo(_overviewMapInst)
           .bindPopup(_makeCoursePopup(course));
         m.on('click', () => { m.openPopup(); onSelect?.(course); });
-        _overviewMarkers.set(course.id, m);
+        _overviewMarkers.set(key, m);
         isFirstLoad = true;
       }
     });
@@ -436,7 +441,7 @@ export function useLeafletMap() {
   function focusOverviewCourse(course) {
     if (!_overviewMapInst || !course?.lat) return;
     _overviewMapInst.setView([course.lat, course.lng], 14, { animate: true });
-    const m = _overviewMarkers.get(course.id);
+    const m = _overviewMarkers.get(_mapItemKey(course));
     if (m) m.openPopup();
   }
 
