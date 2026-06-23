@@ -48,7 +48,7 @@
 
     <!-- ─── 탭바 ──────────────────────────────────────────────────────── -->
     <nav class="tabbar" aria-label="주요 화면">
-      <div class="sidebar-brand">
+      <div class="sidebar-brand" style="cursor:pointer" @click="goHome">
         <img src="/logo.png" alt="올라" class="sidebar-logo-img" />
       </div>
       <router-link to="/guide" class="tabbar-item" active-class="active">
@@ -142,14 +142,22 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { authUser, loadMe, showAuthModal } from './composables/useAuth.js';
 import { loadMyPageData } from './composables/useUserData.js';
-import { guideError, weatherData, loadWeather, selectedMountain } from './composables/useGuide.js';
+import { guideError, weatherData, loadWeather, selectedMountain, guideStep } from './composables/useGuide.js';
 import { communityError } from './composables/useCommunity.js';
 import AuthModal from './components/AuthModal.vue';
 import OnboardingModal from './components/OnboardingModal.vue';
 
 const showOnboarding = ref(!localStorage.getItem('ollaOnboarded'));
+const router = useRouter();
+
+function goHome() {
+  guideStep.value = 'browse';
+  selectedMountain.value = null;
+  router.push('/guide');
+}
 
 const swWeatherIcon = computed(() => {
   const w = weatherData.value;

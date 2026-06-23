@@ -77,14 +77,7 @@
           </div>
 
           <div class="recommend-form-grid">
-            <div class="bfp-field">
-              <span class="bfp-label">등산 가능 시간</span>
-              <div class="range-card">
-                <strong>{{ Math.floor(profile.desiredHikingMinutes / 60) }}시간 {{ profile.desiredHikingMinutes % 60 }}분</strong>
-                <input v-model.number="profile.desiredHikingMinutes" type="range" min="90" max="480" step="30" />
-              </div>
-            </div>
-
+            <!-- 산행 강도 -->
             <div class="bfp-field">
               <span class="bfp-label">산행 강도</span>
               <div class="chips">
@@ -95,13 +88,63 @@
               </div>
             </div>
 
+            <!-- 등산 가능 시간 스텝퍼 -->
             <div class="bfp-field">
-              <span class="bfp-label">이동 거리</span>
-              <div class="range-card">
-                <strong>{{ profile.maxDistanceKm }}km 이내</strong>
-                <input v-model.number="profile.maxDistanceKm" type="range" min="10" max="500" step="10" />
+              <span class="bfp-label">등산 가능 시간</span>
+              <div class="stepper-card">
+                <button type="button" class="stepper-btn"
+                  :disabled="profile.desiredHikingMinutes <= 60"
+                  @click="profile.desiredHikingMinutes = Math.max(60, profile.desiredHikingMinutes - 60)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <div class="stepper-display">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="stepper-icon" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span class="stepper-val">{{ profile.desiredHikingMinutes / 60 }}시간</span>
+                </div>
+                <button type="button" class="stepper-btn"
+                  :disabled="profile.desiredHikingMinutes >= 480"
+                  @click="profile.desiredHikingMinutes = Math.min(480, profile.desiredHikingMinutes + 60)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
               </div>
             </div>
+
+            <!-- 이동 거리 스텝퍼 -->
+            <div class="bfp-field">
+              <span class="bfp-label">이동 거리</span>
+              <div class="stepper-card">
+                <button type="button" class="stepper-btn"
+                  :disabled="profile.maxDistanceKm <= 50"
+                  @click="profile.maxDistanceKm = Math.max(50, profile.maxDistanceKm - 50)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <div class="stepper-display">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="stepper-icon" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span class="stepper-val">{{ profile.maxDistanceKm }}km</span>
+                </div>
+                <button type="button" class="stepper-btn"
+                  :disabled="profile.maxDistanceKm >= 500"
+                  @click="profile.maxDistanceKm = Math.min(500, profile.maxDistanceKm + 50)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 선택 요약 -->
+          <div class="selection-summary">
+            <span class="ss-pill" :class="`ss-diff-${profile.difficultyFilter}`">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/></svg>
+              {{ difficultyLabel }}
+            </span>
+            <span class="ss-pill ss-time">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              {{ profile.desiredHikingMinutes / 60 }}시간
+            </span>
+            <span class="ss-pill ss-distance">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              {{ profile.maxDistanceKm }}km 이내
+            </span>
           </div>
 
           <div class="recommend-actions">
@@ -361,7 +404,7 @@ import {
   loadMountains, publicMountains, recommendedMountains, alternativeMountains,
   selectedMountain, gpsStatus, gpsError, detectGPS, loadWeather, weatherData,
   submitMountainRecommendation, loading, profile, agentSummary,
-  location, customStartLocation,
+  location, customStartLocation, guideStep,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
 import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports } from '../api.js';
@@ -371,9 +414,6 @@ import MountainCard from '../components/MountainCard.vue';
 const router = useRouter();
 const overviewMapEl = ref(null);
 const { renderOverviewMap, focusOverviewCourse, enableLocationPick, disableLocationPick, clearLocationPickMarker } = useLeafletMap();
-
-// ── 단계 상태 ────────────────────────────────────────────────────────────────
-const guideStep = ref('browse'); // 'browse' | 'courses'
 
 // ── 브라우즈 상태 ─────────────────────────────────────────────────────────────
 const mountainSearch = ref('');
@@ -415,6 +455,10 @@ const locationLabel = computed(() => {
   return '위치 미설정';
 });
 
+const difficultyLabel = computed(() => ({
+  all: '전체 난이도', easy: '초급', medium: '중급', hard: '고급',
+}[profile.difficultyFilter] || '전체 난이도'));
+
 function diffDotColor(difficulty) {
   if (difficulty === 'easy') return '#22c55e';
   if (difficulty === 'medium') return '#f97316';
@@ -427,6 +471,7 @@ function setDifficulty(level) {
   const expMap = { easy: 'beginner', medium: 'intermediate', hard: 'advanced' };
   if (expMap[level]) {
     profile.experience = expMap[level];
+    directBrowseOpen.value = true;
   }
 }
 

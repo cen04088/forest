@@ -2753,6 +2753,83 @@ p {
   accent-color: var(--forest);
 }
 
+/* ── 스텝퍼 ── */
+.stepper-card {
+  display: flex;
+  align-items: center;
+  background: #f9fafb;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.stepper-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.stepper-btn:hover:not(:disabled) { background: #f0faf2; color: var(--forest); }
+.stepper-btn:active:not(:disabled) { background: #dcfce7; }
+.stepper-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
+
+.stepper-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.stepper-icon { color: var(--forest); flex-shrink: 0; }
+
+.stepper-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+
+/* ── 선택 요약 ── */
+.selection-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #f0faf2 0%, #f9fafb 100%);
+  border-radius: 10px;
+  border: 1.5px solid #d1fae5;
+}
+
+.ss-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #fff;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  border: 1px solid var(--border);
+}
+.ss-pill.ss-time     { color: #1d4ed8; border-color: #bfdbfe; background: #eff6ff; }
+.ss-pill.ss-distance { color: #7c3aed; border-color: #ddd6fe; background: #f5f3ff; }
+.ss-pill.ss-diff-all    { color: #475569; border-color: #cbd5e1; background: #f1f5f9; }
+.ss-pill.ss-diff-easy   { color: #15803d; border-color: #86efac; background: #dcfce7; }
+.ss-pill.ss-diff-medium { color: #c2410c; border-color: #fdba74; background: #ffedd5; }
+.ss-pill.ss-diff-hard   { color: #b91c1c; border-color: #fca5a5; background: #fee2e2; }
+
 .recommend-actions {
   display: grid;
   gap: 8px;

@@ -66,6 +66,7 @@ import { useLocation } from './useLocation.js';
 import { addDays, addMinutes, formatDateForInput, formatTimeForInput } from '../utils/dateHelpers.js';
 
 // ── 싱글톤 상태 ─────────────────────────────────────────────────────────────
+export const guideStep = ref('browse'); // 'browse' | 'courses'
 export const publicCourses = ref([]);
 export const publicMountains = ref([]);
 export const recommendedMountains = ref([]);
@@ -97,7 +98,7 @@ export const profile = reactive({
   intensity: 'moderate',
   difficultyFilter: 'all',
   transport: 'public',
-  maxDistanceKm: 30,
+  maxDistanceKm: 50,
   companion: 'solo',
 });
 
