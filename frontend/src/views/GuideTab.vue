@@ -565,19 +565,16 @@ async function enterCourseStep(mountain) {
   mountainStory.value = story;
   mountainSafetyReports.value = reportsData.status === 'fulfilled' ? (reportsData.value.posts || []) : [];
 
-  // 산림청 원문 또는 기본 설명을 AI가 친근한 말투로 변환 (DB 캐시)
-  const rawSummary = story?.summary || mountain.description || '';
-  if (rawSummary) {
-    fetchMountainIntro({
-      name: mountain.name,
-      summary: rawSummary,
-      selectionReason: story?.selection_reason || '',
-    }).then((res) => {
-      if (res?.intro && selectedMountain.value?.name === mountain.name) {
-        aiIntro.value = res.intro;
-      }
-    }).catch(() => {});
-  }
+  // DB 설명 조회 (없으면 산림청 원문으로 AI 생성)
+  fetchMountainIntro({
+    name: mountain.name,
+    summary: story?.summary || mountain.description || '',
+    selectionReason: story?.selection_reason || '',
+  }).then((res) => {
+    if (res?.intro && selectedMountain.value?.name === mountain.name) {
+      aiIntro.value = res.intro;
+    }
+  }).catch(() => {});
 
   loadSafetyAdvice(mountain);
 }

@@ -434,17 +434,23 @@ def safe_link_detail(request, session_id):
 def chat_view(request):
     try:
         body = json.loads(request.body.decode("utf-8") or "{}")
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return JsonResponse({"error": "Invalid request body"}, status=400)
 
     messages = body.get("messages", [])
     context = body.get("context", {})
     if not messages:
         return JsonResponse({"error": "messages required"}, status=400)
 
-    context = _enrich_chat_context(context)
-    from .chat_ai import get_chat_response
-    return JsonResponse({"response": get_chat_response(messages, context)})
+    try:
+        context = _enrich_chat_context(context)
+        from .chat_ai import get_chat_response
+        response_text = get_chat_response(messages, context)
+        return JsonResponse({"response": response_text})
+    except Exception as exc:
+        import traceback, logging
+        logging.getLogger(__name__).error("chat_view error: %s", traceback.format_exc())
+        return JsonResponse({"error": str(exc), "response": "일시적인 오류가 발생했습니다."}, status=500)
 
 
 def _enrich_chat_context(context: dict) -> dict:
@@ -536,17 +542,26 @@ def safety_advice_view(request):
 @csrf_exempt
 @require_POST
 def mountain_intro_view(request):
-    """산 소개문 AI 변환 — DB에 저장하여 재사용."""
+    """산 소개문 — DB 우선 반환, 없으면 AI 생성."""
     try:
         body = json.loads(request.body.decode("utf-8") or "{}")
-    except json.JSONDecodeError:
+    except (UnicodeDecodeError, json.JSONDecodeError):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
     name = (body.get("name") or "").strip()
     summary = (body.get("summary") or "").strip()
     reason = (body.get("selection_reason") or "").strip()
 
-    if not name or not summary:
+    if not name:
+        return JsonResponse({"intro": ""})
+
+    from .models import MountainIntro
+    stored = MountainIntro.objects.filter(mountain_name=name).first()
+    if stored:
+        return JsonResponse({"intro": stored.intro}, json_dumps_params={"ensure_ascii": False})
+
+    # DB에 없는 경우 — AI 생성 시도 (summary가 있을 때만)
+    if not summary:
         return JsonResponse({"intro": ""})
 
     from .mountain_intro_ai import get_or_generate_intro
