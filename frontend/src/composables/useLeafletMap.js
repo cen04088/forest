@@ -344,7 +344,7 @@ export function useLeafletMap() {
       </div>`;
   }
 
-  function _renderStartRangeOverlay(startLocation, radiusKm) {
+  function _renderStartRangeOverlay(startLocation, radiusKm, skipFit = false) {
     if (!_overviewMapInst) return;
     if (_overviewRangeCircle) {
       _overviewRangeCircle.remove();
@@ -379,9 +379,11 @@ export function useLeafletMap() {
       weight: 3,
     }).addTo(_overviewMapInst).bindTooltip(`시작점 · ${radiusKm}km`, { permanent: false });
 
-    const bounds = _overviewRangeCircle.getBounds();
-    if (bounds.isValid()) {
-      _overviewMapInst.fitBounds(bounds, { padding: [28, 28], maxZoom: 11 });
+    if (!skipFit) {
+      const bounds = _overviewRangeCircle.getBounds();
+      if (bounds.isValid()) {
+        _overviewMapInst.fitBounds(bounds, { padding: [28, 28], maxZoom: 11 });
+      }
     }
   }
 
@@ -428,7 +430,7 @@ export function useLeafletMap() {
       if (bounds.isValid()) _overviewMapInst.fitBounds(bounds, { padding: [32, 32] });
     }
 
-    _renderStartRangeOverlay(options.startLocation, options.radiusKm);
+    _renderStartRangeOverlay(options.startLocation, options.radiusKm, !!options.selectedMountain);
   }
 
   function focusOverviewCourse(course) {
