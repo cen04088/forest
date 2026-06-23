@@ -79,12 +79,12 @@
           <!-- 출발 시간 -->
           <div class="bfp-field">
             <span class="bfp-label">출발 시간</span>
-            <label class="bfp-time-card">
+            <div class="bfp-time-card" @click="openTimePicker">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="bfp-time-icon" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               <span class="bfp-time-label">{{ profile.departureTime || '시간 선택' }}</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bfp-time-chevron" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
-              <input v-model="profile.departureTime" type="time" class="bfp-time-native" />
-            </label>
+              <input ref="timeInputRef" v-model="profile.departureTime" type="time" class="bfp-time-native" />
+            </div>
           </div>
 
           <div class="recommend-form-grid">
@@ -438,6 +438,13 @@ import MountainCard from '../components/MountainCard.vue';
 
 const router = useRouter();
 const overviewMapEl = ref(null);
+const timeInputRef = ref(null);
+
+function openTimePicker() {
+  const el = timeInputRef.value;
+  if (!el) return;
+  try { el.showPicker(); } catch { el.focus(); }
+}
 const { renderOverviewMap, focusOverviewCourse, enableLocationPick, disableLocationPick, clearLocationPickMarker } = useLeafletMap();
 
 // ── 브라우즈 상태 ─────────────────────────────────────────────────────────────
