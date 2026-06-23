@@ -2859,6 +2859,16 @@ p {
 }
 .chip-now:hover { background: #dcfce7; }
 
+.chip.time-seg-chip.active {
+  background: #fff;
+  border: 2.5px solid #166534;
+  color: #166534;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(22, 101, 52, 0.18);
+}
+
 .time-bar-wrap {
   display: flex;
   flex-direction: column;

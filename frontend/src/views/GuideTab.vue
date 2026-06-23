@@ -83,7 +83,7 @@
             <div class="chips">
               <button type="button" class="chip chip-now" @click="setTimeNow">지금</button>
               <button v-for="seg in TIME_SEGMENTS" :key="seg.key" type="button"
-                :class="['chip', activeTimeSegment === seg.key ? 'active' : '']"
+                :class="['chip time-seg-chip', activeTimeSegment === seg.key ? 'active' : '']"
                 @click="selectTimeSegment(seg.key)">{{ seg.label }}</button>
             </div>
             <!-- 타임바 -->
