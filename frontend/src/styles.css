@@ -2952,6 +2952,46 @@ p {
 
 .bfp-field { display: flex; flex-direction: column; gap: 8px; }
 
+/* ── 산사태 경고 카드 ─────────────────────────────────────────────────────── */
+.landslide-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin: 4px 0 8px;
+  border: 2px solid transparent;
+}
+.landslide-alert.ls-danger {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+.landslide-alert.ls-caution {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+.ls-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+.ls-body { flex: 1; }
+.ls-title {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: #991b1b;
+}
+.ls-caution .ls-title { color: #92400e; }
+.ls-desc {
+  font-size: 12px;
+  color: #7f1d1d;
+  margin: 0;
+  line-height: 1.5;
+}
+.ls-caution .ls-desc { color: #78350f; }
+
 .bfp-label {
   font-size: 11px;
   font-weight: 700;

@@ -2,6 +2,7 @@ import math
 from datetime import datetime
 from .mountain_data import MOUNTAINS
 from .accident_model import predict_accident_risk
+from .landslide_api import fetch_landslide_prediction
 
 
 def _haversine(lat1, lng1, lat2, lng2):
@@ -161,6 +162,35 @@ def _season_score(mountain):
     return min(1.0, max(0.0, score))
 
 
+# ── 산사태 위험 ──────────────────────────────────────────────────────────────────
+
+
+def _build_landslide_risk_map():
+    """현재 산사태 예보를 시군구→위험도 맵으로 반환. 실패하면 빈 딕셔너리."""
+    try:
+        result = fetch_landslide_prediction(sgg="", page_no=1, num_of_rows=100, timeout=3)
+        risk_map = {}
+        for item in result.get("items", []):
+            sigungu = (item.get("sigungu") or "").strip()
+            risk = item.get("risk", "low")
+            if sigungu and risk != "low":
+                existing = risk_map.get(sigungu, "low")
+                if risk == "danger" or existing == "low":
+                    risk_map[sigungu] = risk
+        return risk_map
+    except Exception:
+        return {}
+
+
+def _landslide_multiplier(mountain, risk_map):
+    """산의 지역이 산사태 경보/주의 지역과 겹치면 감점 배수 반환."""
+    region = mountain.get("region") or ""
+    for sigungu, risk in risk_map.items():
+        if sigungu and sigungu in region:
+            return 0.3 if risk == "danger" else 0.7
+    return 1.0
+
+
 # ── 메인 추천 함수 ─────────────────────────────────────────────────────────────
 
 # 가중치 합계 = 1.0 (ML 위험 지수 추가로 기존 항목 소폭 감소)
@@ -187,6 +217,9 @@ def recommend_mountains(payload):
 
     w_weather = _weather_score(weather)
 
+    # 산사태 예보 (한 번만 조회)
+    landslide_risk_map = _build_landslide_risk_map()
+
     # ML 위험 예측: 출발 시각 기반 (없으면 현재 시각)
     dep_hhmm = departure_time or ""
     try:
@@ -207,6 +240,14 @@ def recommend_mountains(payload):
         dist_score = _distance_score(m, user_lat, user_lng)
         sun_score, margin_min = _sunset_score(m, departure_time, sun_times)
         season_score = _season_score(m)
+        ls_mult = _landslide_multiplier(m, landslide_risk_map)
+
+        # 산사태 위험 지역 식별
+        landslide_risk = "low"
+        for sg, r in landslide_risk_map.items():
+            if sg and sg in (m.get("region") or ""):
+                landslide_risk = r
+                break
 
         base = (
             t_score           * WEIGHTS["duration"]
@@ -215,7 +256,7 @@ def recommend_mountains(payload):
             + w_weather       * WEIGHTS["weather"]
             + ml_safety_score * WEIGHTS["ml_risk"]
         )
-        total = base * season_score
+        total = base * season_score * ls_mult
 
         safety_score = round(total * 100)
         if safety_score >= 72:
@@ -250,13 +291,15 @@ def recommend_mountains(payload):
             "safety_class": safety_class,
             "distance_from_user_km": dist_km,
             "sunset_note": sunset_note,
+            "landslide_risk": landslide_risk,
             "score_breakdown": {
-                "duration":  round(t_score, 2),
-                "sunset":    round(sun_score, 2),
-                "distance":  round(dist_score, 2),
-                "weather":   round(w_weather, 2),
-                "season":    round(season_score, 2),
-                "ml_risk":   round(ml_safety_score, 2),
+                "duration":   round(t_score, 2),
+                "sunset":     round(sun_score, 2),
+                "distance":   round(dist_score, 2),
+                "weather":    round(w_weather, 2),
+                "season":     round(season_score, 2),
+                "ml_risk":    round(ml_safety_score, 2),
+                "landslide":  round(ls_mult, 2),
             },
             "ml_risk_info": ml_risk,
         })

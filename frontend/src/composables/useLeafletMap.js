@@ -15,6 +15,7 @@ let _overviewMapEl = null;
 let _overviewMapInst = null;
 let _overviewRangeCircle = null;
 let _overviewStartMarker = null;
+let _overviewDisasterLayers = []; // 재난위험지구 레이어 추적
 
 // 출발지 지도 선택 모드
 let _pickClickHandler = null;
@@ -265,6 +266,34 @@ export function useLeafletMap() {
     _addDisasterZoneOverlays(map, zones, lat, lng);
   }
 
+  // ─── 개요 지도용 재난위험지구 마커 (레이어 참조 반환) ──────────────────────────
+  function _renderOverviewDisasterZones(map, zones, mountLat, mountLng) {
+    const OFFSETS = [
+      [0.004, 0.003], [-0.005, 0.006], [0.006, -0.004],
+      [-0.003, -0.007], [0.007, 0.005], [-0.006, -0.002],
+    ];
+    const layers = [];
+    zones.slice(0, 6).forEach((zone, i) => {
+      const [dlat, dlng] = OFFSETS[i % OFFSETS.length];
+      const pos = [mountLat + dlat, mountLng + dlng];
+      const circle = L.circle(pos, {
+        radius: 150, color: '#b91c1c', fillColor: '#ef4444', fillOpacity: 0.18,
+        weight: 2, dashArray: '6 4',
+      }).addTo(map);
+      const label = (zone.district || zone.location || '위험지구').slice(0, 12);
+      const tooltip = zone.risk_factor ? `${label} · ${zone.risk_factor.slice(0, 20)}` : label;
+      const marker = L.marker(pos, {
+        icon: L.divIcon({
+          html: `<div style="background:#b91c1c;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3);">⚠ ${label}</div>`,
+          className: '',
+          iconAnchor: [0, 0],
+        }),
+      }).addTo(map).bindTooltip(tooltip, { direction: 'top', offset: [0, -4] });
+      layers.push(circle, marker);
+    });
+    return layers;
+  }
+
   // ─── 코스 개요 지도: 전체 핀 보기 ─────────────────────────────────────────
   function _safetyPinColor(course) {
     if (course.safety_score != null) {
@@ -431,6 +460,16 @@ export function useLeafletMap() {
     }
 
     _renderStartRangeOverlay(options.startLocation, options.radiusKm, !!options.selectedMountain);
+
+    // 재난위험지구 — 이전 레이어 제거 후 선택된 산의 인근에 재표시
+    _overviewDisasterLayers.forEach((l) => l.remove());
+    _overviewDisasterLayers = [];
+    const sm = options.selectedMountain;
+    if (sm?.lat && sm?.lng && options.disasterZones?.length) {
+      _overviewDisasterLayers = _renderOverviewDisasterZones(
+        _overviewMapInst, options.disasterZones, sm.lat, sm.lng,
+      );
+    }
   }
 
   function focusOverviewCourse(course) {

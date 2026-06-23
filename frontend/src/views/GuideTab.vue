@@ -396,6 +396,15 @@
             </div>
           </div>
 
+          <!-- 산사태 예보 경고 -->
+          <div v-if="landslideRisk !== 'low'" :class="['landslide-alert', landslideRisk === 'danger' ? 'ls-danger' : 'ls-caution']">
+            <div class="ls-icon">{{ landslideRisk === 'danger' ? '⛰' : '⚠️' }}</div>
+            <div class="ls-body">
+              <p class="ls-title">{{ landslideRisk === 'danger' ? '산사태 경보 발령 지역' : '산사태 주의보 발령 지역' }}</p>
+              <p class="ls-desc">{{ landslideRisk === 'danger' ? '현재 이 지역에 산사태 경보가 발령되었습니다. 산행을 삼가세요.' : '현재 이 지역에 산사태 주의보가 발령되었습니다. 산행 시 주의가 필요합니다.' }}</p>
+            </div>
+          </div>
+
           <!-- 재난위험지구 -->
           <div v-if="selectedDisasterZones.length" class="disaster-zone-panel">
             <p class="disaster-zone-title">⚠️ 인근 재난위험지구 {{ selectedDisasterZones.length }}개</p>
@@ -454,7 +463,7 @@ import {
   location, customStartLocation, guideStep,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import MountainCard from '../components/MountainCard.vue';
 
@@ -591,6 +600,7 @@ const selectedDisasterZones = ref([]);
 const mountainStory = ref(null);
 const mountainSafetyReports = ref([]);
 const storyExpanded = ref(false);
+const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
 
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
 let _courseStepToken = 0;
@@ -677,6 +687,7 @@ function refreshOverviewMap() {
       startLocation: customStartLocation.value || location.value,
       radiusKm: profile.maxDistanceKm,
       selectedMountain: guideStep.value === 'courses' ? selectedMountain.value : null,
+      disasterZones: guideStep.value === 'courses' ? selectedDisasterZones.value : [],
     },
   );
 }
@@ -690,6 +701,7 @@ async function enterCourseStep(mountain) {
   mountainStory.value = null;
   mountainSafetyReports.value = [];
   selectedDisasterZones.value = [];
+  landslideRisk.value = 'low';
   storyExpanded.value = false;
 
   if (mountain?.lat && mountain?.lng) loadWeather(mountain.lat, mountain.lng, mountain.name);
@@ -698,14 +710,29 @@ async function enterCourseStep(mountain) {
 
   focusOverviewCourse(mountain);
   refreshOverviewMap();
-  const [zonesData, storyData, reportsData] = await Promise.allSettled([
+  const [zonesData, storyData, reportsData, landslideData] = await Promise.allSettled([
     fetchDisasterZones(mountain.name),
     fetchMountainStory(mountain.name),
     fetchSafetyReports(mountain.name),
+    fetchLandslide(mountain.region || ''),
   ]);
   if (token !== _courseStepToken) return;
 
   selectedDisasterZones.value = zonesData.status === 'fulfilled' ? (zonesData.value.zones || []) : [];
+
+  // 산사태 예보: 이 지역에 경보/주의가 있으면 표시
+  if (landslideData.status === 'fulfilled') {
+    const items = landslideData.value?.items || [];
+    const worstRisk = items.reduce((acc, item) => {
+      if (item.risk === 'danger') return 'danger';
+      if (item.risk === 'caution' && acc !== 'danger') return 'caution';
+      return acc;
+    }, 'low');
+    landslideRisk.value = worstRisk;
+  }
+
+  // 재난위험지구 로딩 후 지도 갱신
+  refreshOverviewMap();
   const story = storyData.status === 'fulfilled' ? (storyData.value.items?.[0] ?? null) : null;
   mountainStory.value = story;
   if (story?.source === 'seed_mountain_descriptions') {
