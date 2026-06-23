@@ -76,6 +76,17 @@
             <p v-else-if="gpsStatus === 'error'" class="bfp-error">⚠️ {{ gpsError }}</p>
           </div>
 
+          <!-- 출발 시간 -->
+          <div class="bfp-field">
+            <span class="bfp-label">출발 시간</span>
+            <label class="bfp-time-card">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="bfp-time-icon" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span class="bfp-time-label">{{ profile.departureTime || '시간 선택' }}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bfp-time-chevron" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+              <input v-model="profile.departureTime" type="time" class="bfp-time-native" />
+            </label>
+          </div>
+
           <div class="recommend-form-grid">
             <!-- 산행 강도 -->
             <div class="bfp-field">
@@ -137,8 +148,12 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/></svg>
               {{ difficultyLabel }}
             </span>
-            <span class="ss-pill ss-time">
+            <span v-if="profile.departureTime" class="ss-pill ss-depart">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              출발 {{ profile.departureTime }}
+            </span>
+            <span class="ss-pill ss-time">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               {{ profile.desiredHikingMinutes / 60 }}시간
             </span>
             <span class="ss-pill ss-distance">
