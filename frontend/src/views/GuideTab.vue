@@ -454,14 +454,15 @@ let _courseStepToken = 0;
 
 const storyText = computed(() => {
   const story = mountainStory.value;
-  return (
-    story?.intro ||
-    story?.summary ||
-    story?.detail ||
-    selectedMountain.value?.intro ||
-    selectedMountain.value?.description ||
-    ''
-  );
+  if (story?.source === 'seed_mountain_descriptions') {
+    return story.intro || story.summary || story.detail || '';
+  }
+
+  if (selectedMountain.value?.description_source === 'seed_mountain_descriptions') {
+    return selectedMountain.value.intro || selectedMountain.value.description || '';
+  }
+
+  return '';
 });
 const storyNeedsToggle = computed(() => storyText.value.length > 160);
 
@@ -564,12 +565,12 @@ async function enterCourseStep(mountain) {
   selectedDisasterZones.value = zonesData.status === 'fulfilled' ? (zonesData.value.zones || []) : [];
   const story = storyData.status === 'fulfilled' ? (storyData.value.items?.[0] ?? null) : null;
   mountainStory.value = story;
-  if (story) {
+  if (story?.source === 'seed_mountain_descriptions') {
     selectedMountain.value = {
       ...selectedMountain.value,
-      intro: story.intro || story.summary || selectedMountain.value?.intro || '',
-      description: story.summary || story.detail || selectedMountain.value?.description || '',
-      description_source: story.source || selectedMountain.value?.description_source || '',
+      intro: story.intro || story.summary || story.detail || '',
+      description: story.summary || story.detail || story.intro || '',
+      description_source: story.source,
     };
   }
   mountainSafetyReports.value = reportsData.status === 'fulfilled' ? (reportsData.value.posts || []) : [];

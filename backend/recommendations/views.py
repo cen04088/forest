@@ -7,7 +7,6 @@ from django.views.decorators.http import require_GET, require_POST
 from .landslide_api import fetch_landslide_prediction
 from .loaders import load_public_service_key, load_public_trail_courses, load_disaster_risk_zones
 from .mountain_coordinates import MOUNTAIN_COORDINATES
-from .mountain_story_api import fetch_mountain_story
 from .services import recommend_courses
 from .mountain_recommend import recommend_mountains
 from .mountain_data import MOUNTAINS
@@ -100,60 +99,41 @@ def local_road_trails(request):
 @require_GET
 def mountain_story(request):
     mountain_name = request.GET.get("mountain", "")
-    page_no = request.GET.get("page", 1)
-    num_of_rows = request.GET.get("size", 5)
 
-    db_story = _get_db_mountain_story(mountain_name)
-    if db_story:
+    intro = _get_seeded_mountain_intro(mountain_name)
+    if not intro:
         return JsonResponse(
-            {
-                "ok": True,
-                "items": [db_story],
-                "source": "database",
-            },
+            {"ok": True, "items": [], "source": "seed_mountain_descriptions"},
             json_dumps_params={"ensure_ascii": False},
         )
 
     return JsonResponse(
-        fetch_mountain_story(mountain_name, page_no, num_of_rows),
+        {
+            "ok": True,
+            "items": [
+                {
+                    "mountain_id": f"intro-{mountain_name}",
+                    "mountain": mountain_name,
+                    "summary": intro,
+                    "detail": intro,
+                    "intro": intro,
+                    "selection_reason": "",
+                    "source": "seed_mountain_descriptions",
+                }
+            ],
+            "source": "seed_mountain_descriptions",
+        },
         json_dumps_params={"ensure_ascii": False},
     )
 
 
-def _get_db_mountain_story(mountain_name):
+def _get_seeded_mountain_intro(mountain_name):
     name = (mountain_name or "").strip()
     if not name:
-        return None
+        return ""
 
-    from .models import MountainIntro, MountainKnowledge
-
-    intro = MountainIntro.objects.filter(mountain_name=name).first()
-    knowledge = (
-        MountainKnowledge.objects
-        .filter(mountain_name=name)
-        .order_by("source")
-        .first()
-    )
-
-    if not intro and not knowledge:
-        return None
-
-    intro_text = intro.intro.strip() if intro else ""
-    summary = intro_text or (knowledge.summary.strip() if knowledge and knowledge.summary else "")
-    detail = (knowledge.detail.strip() if knowledge and knowledge.detail else "") or summary
-
-    return {
-        "mountain_id": f"db-{name}",
-        "mountain": name,
-        "height_m": knowledge.height_m if knowledge else None,
-        "address": knowledge.region if knowledge else "",
-        "manager": "",
-        "summary": summary,
-        "detail": detail,
-        "intro": intro_text,
-        "selection_reason": knowledge.selection_reason if knowledge else "",
-        "source": "database",
-    }
+    from .management.commands.seed_mountain_descriptions import DESCRIPTIONS
+    return (DESCRIPTIONS.get(name) or "").strip()
 
 
 @require_GET
@@ -315,30 +295,18 @@ def _infer_highlights(name, summary):
 
 
 def _get_mountains():
-    from .models import MountainIntro, MountainKnowledge
+    from .management.commands.seed_mountain_descriptions import DESCRIPTIONS
+    from .models import MountainKnowledge
     from .mountain_data import MOUNTAINS as _STATIC
-
-    intros = {obj.mountain_name: obj.intro for obj in MountainIntro.objects.all()}
-    knowledge_by_name = {}
-    for obj in MountainKnowledge.objects.order_by("mountain_name", "source"):
-        knowledge_by_name.setdefault(obj.mountain_name, obj)
 
     static_mountains = []
     for mountain in _STATIC:
         item = dict(mountain)
         name = item["name"]
-        intro = (intros.get(name) or "").strip()
-        knowledge = knowledge_by_name.get(name)
-        db_description = intro
-        if not db_description and knowledge:
-            db_description = (knowledge.summary or knowledge.detail or "").strip()
-
-        if db_description:
-            item["description"] = db_description
-            item["intro"] = intro
-            item["description_source"] = "database"
-        else:
-            item["description_source"] = "static"
+        intro = (DESCRIPTIONS.get(name) or "").strip()
+        item["description"] = intro
+        item["intro"] = intro
+        item["description_source"] = "seed_mountain_descriptions" if intro else ""
 
         static_mountains.append(item)
 
@@ -376,10 +344,10 @@ def _get_mountains():
             "purpose_fit": _infer_purpose_fit(height, name),
             "crowding": _CROWDING_MAP.get(name, 0.35),
             "national_park": name in _NATIONAL_PARKS,
-            "highlights": _infer_highlights(name, mk.summary),
-            "description": (intros.get(name) or mk.summary or mk.detail or f"{name} — {mk.region}").strip(),
-            "intro": (intros.get(name) or "").strip(),
-            "description_source": "database",
+            "highlights": _infer_highlights(name, ""),
+            "description": (DESCRIPTIONS.get(name) or "").strip(),
+            "intro": (DESCRIPTIONS.get(name) or "").strip(),
+            "description_source": "seed_mountain_descriptions" if DESCRIPTIONS.get(name) else "",
         })
 
     return static_mountains + db_mountains
@@ -624,28 +592,17 @@ def safety_advice_view(request):
 @csrf_exempt
 @require_POST
 def mountain_intro_view(request):
-    """산 소개문 — DB 우선 반환, 없으면 AI 생성."""
+    """seed_mountain_descriptions로 저장한 산 소개문만 반환."""
     try:
         body = json.loads(request.body.decode("utf-8") or "{}")
     except (UnicodeDecodeError, json.JSONDecodeError):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
     name = (body.get("name") or "").strip()
-    summary = (body.get("summary") or "").strip()
-    reason = (body.get("selection_reason") or "").strip()
-
     if not name:
         return JsonResponse({"intro": ""})
 
-    from .models import MountainIntro
-    stored = MountainIntro.objects.filter(mountain_name=name).first()
-    if stored:
-        return JsonResponse({"intro": stored.intro}, json_dumps_params={"ensure_ascii": False})
-
-    # DB에 없는 경우 — AI 생성 시도 (summary가 있을 때만)
-    if not summary:
-        return JsonResponse({"intro": ""})
-
-    from .mountain_intro_ai import get_or_generate_intro
-    intro = get_or_generate_intro(name, summary, reason)
-    return JsonResponse({"intro": intro}, json_dumps_params={"ensure_ascii": False})
+    return JsonResponse(
+        {"intro": _get_seeded_mountain_intro(name)},
+        json_dumps_params={"ensure_ascii": False},
+    )
