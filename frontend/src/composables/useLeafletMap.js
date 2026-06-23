@@ -15,7 +15,6 @@ let _overviewMapEl = null;
 let _overviewMapInst = null;
 let _overviewRangeCircle = null;
 let _overviewStartMarker = null;
-let _overviewDisasterLayers = []; // 재난위험지구 레이어 추적
 
 // 출발지 지도 선택 모드
 let _pickClickHandler = null;
@@ -266,34 +265,6 @@ export function useLeafletMap() {
     _addDisasterZoneOverlays(map, zones, lat, lng);
   }
 
-  // ─── 개요 지도용 재난위험지구 마커 (레이어 참조 반환) ──────────────────────────
-  function _renderOverviewDisasterZones(map, zones, mountLat, mountLng) {
-    const OFFSETS = [
-      [0.004, 0.003], [-0.005, 0.006], [0.006, -0.004],
-      [-0.003, -0.007], [0.007, 0.005], [-0.006, -0.002],
-    ];
-    const layers = [];
-    zones.slice(0, 6).forEach((zone, i) => {
-      const [dlat, dlng] = OFFSETS[i % OFFSETS.length];
-      const pos = [mountLat + dlat, mountLng + dlng];
-      const circle = L.circle(pos, {
-        radius: 150, color: '#b91c1c', fillColor: '#ef4444', fillOpacity: 0.18,
-        weight: 2, dashArray: '6 4',
-      }).addTo(map);
-      const label = (zone.district || zone.location || '위험지구').slice(0, 12);
-      const tooltip = zone.risk_factor ? `${label} · ${zone.risk_factor.slice(0, 20)}` : label;
-      const marker = L.marker(pos, {
-        icon: L.divIcon({
-          html: `<div style="background:#b91c1c;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3);">⚠ ${label}</div>`,
-          className: '',
-          iconAnchor: [0, 0],
-        }),
-      }).addTo(map).bindTooltip(tooltip, { direction: 'top', offset: [0, -4] });
-      layers.push(circle, marker);
-    });
-    return layers;
-  }
-
   // ─── 코스 개요 지도: 전체 핀 보기 ─────────────────────────────────────────
   function _safetyPinColor(course) {
     if (course.safety_score != null) {
@@ -321,9 +292,13 @@ export function useLeafletMap() {
       filterVal = 'drop-shadow(0 2px 5px rgba(0,0,0,.35))';
     }
 
+    const badge = course.disaster_zone_count
+      ? `<div style="position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.4);">!</div>`
+      : '';
+
     return L.divIcon({
       className: '',
-      html: `<img src="${iconUrl}" width="${w}" height="${h}" style="opacity:${opacity};filter:${filterVal};display:block;transition:filter .15s;" />`,
+      html: `<div style="position:relative;display:inline-block;width:${w}px;height:${h}px;"><img src="${iconUrl}" width="${w}" height="${h}" style="opacity:${opacity};filter:${filterVal};display:block;transition:filter .15s;" />${badge}</div>`,
       iconSize: [w, h],
       iconAnchor: [w / 2, h],
       popupAnchor: [0, -(h + 4)],
@@ -364,12 +339,16 @@ export function useLeafletMap() {
     const title = isMountain
       ? (course.name || '이름없음')
       : `${course.mountain || ''} · ${course.name || ''}`;
+    const disasterHtml = course.disaster_zone_count
+      ? `<div style="margin-top:5px;font-size:11px;color:#b91c1c;font-weight:600">⚠ 재난위험지구 ${course.disaster_zone_count}개</div>`
+      : '';
     return `
       <div style="min-width:158px;font-family:inherit;line-height:1.4">
         <div style="font-weight:700;font-size:13px;margin-bottom:5px">${title}</div>
         <span style="background:${color}22;color:${color};font-size:11px;font-weight:600;padding:2px 7px;border-radius:8px">${diff}</span>
         ${statsHtml}
         ${safety}
+        ${disasterHtml}
       </div>`;
   }
 
@@ -434,19 +413,23 @@ export function useLeafletMap() {
       if (!ids.has(id)) { m.remove(); _overviewMarkers.delete(id); }
     }
 
+    const disasterCount = options.disasterZones?.length || 0;
+
     let isFirstLoad = false;
     validCourses.forEach((course) => {
       const isSelected = course.id === selectedId;
-      const icon = _makeCourseIcon(course, isSelected);
+      // 선택된 산에만 재난위험지구 수 주입 (팝업 + 배지용)
+      const c = isSelected && disasterCount > 0 ? { ...course, disaster_zone_count: disasterCount } : course;
+      const icon = _makeCourseIcon(c, isSelected);
 
       if (_overviewMarkers.has(course.id)) {
         const m = _overviewMarkers.get(course.id);
         m.setIcon(icon);
-        m.setPopupContent(_makeCoursePopup(course));
+        m.setPopupContent(_makeCoursePopup(c));
       } else {
         const m = L.marker([course.lat, course.lng], { icon })
           .addTo(_overviewMapInst)
-          .bindPopup(_makeCoursePopup(course));
+          .bindPopup(_makeCoursePopup(c));
         m.on('click', () => { m.openPopup(); onSelect?.(course); });
         _overviewMarkers.set(course.id, m);
         isFirstLoad = true;
@@ -460,16 +443,6 @@ export function useLeafletMap() {
     }
 
     _renderStartRangeOverlay(options.startLocation, options.radiusKm, !!options.selectedMountain);
-
-    // 재난위험지구 — 이전 레이어 제거 후 선택된 산의 인근에 재표시
-    _overviewDisasterLayers.forEach((l) => l.remove());
-    _overviewDisasterLayers = [];
-    const sm = options.selectedMountain;
-    if (sm?.lat && sm?.lng && options.disasterZones?.length) {
-      _overviewDisasterLayers = _renderOverviewDisasterZones(
-        _overviewMapInst, options.disasterZones, sm.lat, sm.lng,
-      );
-    }
   }
 
   function focusOverviewCourse(course) {
