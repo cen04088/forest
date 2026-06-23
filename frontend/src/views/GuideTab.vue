@@ -158,13 +158,15 @@
         </section>
 
         <!-- ── AI 추천 결과 ── -->
-        <section v-if="hasRecommendationResult && recommendedMountains.length" class="panel">
+        <section v-if="hasRecommendationResult" class="panel">
           <div class="section-title compact">
             <div><p class="eyebrow">AI Picks</p><h2>오늘의 추천 산</h2></div>
             <button class="clear-rec-btn" type="button" @click="handleRetryRecommendation">다시 추천</button>
           </div>
           <p v-if="agentSummary" class="rec-summary">{{ agentSummary }}</p>
-          <div class="mountain-card-list">
+
+          <!-- 추천 산 카드 -->
+          <div v-if="recommendedMountains.length" class="mountain-card-list">
             <MountainCard
               v-for="(mountain, idx) in recommendedMountains.slice(0, 3)"
               :key="mountain.id"
@@ -174,10 +176,18 @@
               @select="enterCourseStep"
             />
           </div>
+
+          <!-- 추천 산 없을 때 -->
+          <div v-else class="rec-empty">
+            <p class="rec-empty-msg">현재 조건에서 안전 추천 산이 없습니다.</p>
+            <p class="rec-empty-sub">아래 대안 산을 참고하거나 조건을 변경해보세요.</p>
+          </div>
+
+          <!-- 대안 산 (항상 표시) -->
           <div v-if="alternativeMountains.length" class="alternative-mountain-strip">
-            <p class="bfp-label">다른 선택지</p>
+            <p class="bfp-label">{{ recommendedMountains.length ? '다른 선택지' : '대안 산 목록' }}</p>
             <button
-              v-for="mountain in alternativeMountains.slice(0, 2)"
+              v-for="mountain in alternativeMountains.slice(0, recommendedMountains.length ? 2 : 5)"
               :key="mountain.id"
               class="alternative-mountain-btn"
               type="button"

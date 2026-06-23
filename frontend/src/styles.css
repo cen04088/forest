@@ -3014,6 +3014,25 @@ p {
 .chip.diff-hard.active  { background: #ef4444; border-color: #ef4444; }
 
 /* 추천 결과 */
+.rec-empty {
+  padding: 16px 12px;
+  background: #fff8f0;
+  border: 1.5px solid #fed7aa;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.rec-empty-msg {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c2410c;
+  margin: 0 0 4px;
+}
+.rec-empty-sub {
+  font-size: 12px;
+  color: #9a3412;
+  margin: 0;
+}
+
 .rec-summary {
   font-size: 12px;
   color: var(--muted);
