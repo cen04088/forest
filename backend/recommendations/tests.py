@@ -11,7 +11,7 @@ from .services import (
     select_alternatives,
     time_buffer_range,
 )
-from .loaders import clean_course_name
+from .loaders import clean_course_name, infer_mountain_name
 
 
 class RecommendationApiTests(TestCase):
@@ -29,6 +29,37 @@ class RecommendationApiTests(TestCase):
         self.assertIn("connected_sources", data)
         self.assertIsInstance(data.get("service_key_loaded"), bool)
         self.assertNotIn("73ce", str(data))
+
+    def test_homonymous_mountain_uses_verified_location(self):
+        from .views import _get_mountains
+
+        mountain = next(
+            item for item in _get_mountains()
+            if item["name"] == "\ubc15\ub2ec\uc0b0"
+        )
+
+        self.assertEqual(mountain["region"], "\ucda9\ubd81 \uad34\uc0b0\uad70")
+        self.assertAlmostEqual(mountain["lat"], 36.836526)
+        self.assertAlmostEqual(mountain["lng"], 127.920915)
+        self.assertIn("\uad34\uc0b0", mountain["description"])
+        self.assertNotIn("\uc591\ud3c9", mountain["description"])
+        self.assertNotIn("\uc81c\ucc9c", mountain["description"])
+        self.assertNotIn("\ub2e8\uc591", mountain["description"])
+
+    def test_mountain_story_rejects_seed_when_region_or_height_conflicts(self):
+        response = Client().get(
+            "/api/mountain-story/",
+            {
+                "mountain": "\ubc15\ub2ec\uc0b0",
+                "region": "\ucda9\ubd81 \uad34\uc0b0\uad70",
+                "elevation_m": 825,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data["items"]), 1)
+        self.assertIn("\uad34\uc0b0", data["items"][0]["summary"])
 
     def test_recommendations_returns_top_three_courses(self):
         payload = {
@@ -132,4 +163,15 @@ class RecommendationServiceTests(TestCase):
     def test_clean_course_name_removes_number_prefix(self):
         self.assertEqual(clean_course_name("27.U2기지초입부~서이말등대(거제)"), "U2기지초입부~서이말등대(거제)")
         self.assertEqual(clean_course_name("17. 영원사~삼불사~약수암"), "영원사~삼불사~약수암")
+
+    def test_infer_mountain_prefers_stronger_alias_match(self):
+        self.assertEqual(
+            infer_mountain_name(
+                "\ub178\uace0\ub2e8\uace0\uac1c~\uc0bc\ub3c4\ubd09",
+                "\ub178\uace0\ub2e8\uace0\uac1c",
+                "\uc784\uac78\ub839",
+                "\uc0bc\ub3c4\ubd09",
+            ),
+            "\uc9c0\ub9ac\uc0b0",
+        )
 

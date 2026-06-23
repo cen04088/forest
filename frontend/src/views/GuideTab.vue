@@ -195,17 +195,21 @@
         </section>
 
         <!-- ── AI 추천 결과 ── -->
-        <section v-if="hasRecommendationResult" class="panel">
+        <section v-if="hasRecommendationResult && (recommendedMountains.length || alternativeMountains.length)" class="panel">
           <div class="section-title compact">
-            <div><p class="eyebrow">AI Picks</p><h2>오늘의 추천 산</h2></div>
+            <div>
+              <p class="eyebrow">AI Picks</p>
+              <h2>{{ recommendedMountains.length ? '오늘의 추천 산' : '오늘의 대안 산' }}</h2>
+            </div>
             <button class="clear-rec-btn" type="button" @click="handleRetryRecommendation">다시 추천</button>
           </div>
           <p v-if="agentSummary" class="rec-summary">{{ agentSummary }}</p>
-
-          <!-- 추천 산 카드 -->
-          <div v-if="recommendedMountains.length" class="mountain-card-list">
+          <p v-if="!recommendedMountains.length && alternativeMountains.length" class="rec-summary">
+            현재 조건에서 바로 추천할 만큼 안전 점수가 높은 산은 없어서, 조건에 가장 가까운 대안을 먼저 보여드려요.
+          </p>
+          <div class="mountain-card-list">
             <MountainCard
-              v-for="(mountain, idx) in recommendedMountains.slice(0, 3)"
+              v-for="(mountain, idx) in (recommendedMountains.length ? recommendedMountains.slice(0, 3) : alternativeMountains.slice(0, 3))"
               :key="mountain.id"
               :mountain="mountain"
               :rank="idx + 1"
@@ -213,16 +217,8 @@
               @select="enterCourseStep"
             />
           </div>
-
-          <!-- 추천 산 없을 때 -->
-          <div v-else class="rec-empty">
-            <p class="rec-empty-msg">현재 조건에서 안전 추천 산이 없습니다.</p>
-            <p class="rec-empty-sub">아래 대안 산을 참고하거나 조건을 변경해보세요.</p>
-          </div>
-
-          <!-- 대안 산 (항상 표시) -->
-          <div v-if="alternativeMountains.length" class="alternative-mountain-strip">
-            <p class="bfp-label">{{ recommendedMountains.length ? '다른 선택지' : '대안 산 목록' }}</p>
+          <div v-if="recommendedMountains.length && alternativeMountains.length" class="alternative-mountain-strip">
+            <p class="bfp-label">다른 선택지</p>
             <button
               v-for="mountain in alternativeMountains.slice(0, recommendedMountains.length ? 2 : 5)"
               :key="mountain.id"
@@ -396,6 +392,50 @@
             </div>
           </div>
 
+          <div class="recommended-trails-panel">
+            <div class="rtp-header">
+              <div>
+                <p class="eyebrow">Recommended Trails</p>
+                <h3>{{ selectedMountain.name }} 추천 탐방로</h3>
+              </div>
+              <span class="mini-status">{{ selectedMountainCourseRecommendations.length }}개</span>
+            </div>
+
+            <p class="rtp-copy">
+              선택한 산 안에서 입력한 산행 시간과 난이도 조건에 가까운 탐방로를 먼저 정렬했어요.
+            </p>
+
+            <div v-if="selectedMountainCourseRecommendations.length" class="recommended-trail-list">
+              <button
+                v-for="(course, idx) in selectedMountainCourseRecommendations.slice(0, 5)"
+                :key="course.id"
+                type="button"
+                :class="['recommended-trail-card', selectedTrailCourse?.id === course.id ? 'selected' : '']"
+                @click="selectTrailCourse(course)"
+              >
+                <div class="rtc-top">
+                  <span :class="['rtc-rank', idx === 0 ? 'top' : '']">{{ idx + 1 }}</span>
+                  <span :class="['badge', course.difficulty]">{{ courseDifficultyLabel(course.difficulty) }}</span>
+                  <span class="rtc-source">{{ course.source?.includes('국립공원공단') ? '국립공원공단' : '탐방로 데이터' }}</span>
+                </div>
+                <strong class="rtc-name">{{ course.name }}</strong>
+                <div class="rtc-meta">
+                  <span>{{ course.distance_km }}km</span>
+                  <span>{{ durationLabel(course.duration_min) }}</span>
+                  <span>상승 {{ course.elevation_gain_m }}m</span>
+                </div>
+                <div v-if="course.highlights?.length" class="rtc-route">
+                  <span v-for="h in course.highlights.slice(0, 3)" :key="h">{{ h }}</span>
+                </div>
+                <p class="rtc-reason">{{ trailRecommendationReason(course) }}</p>
+              </button>
+            </div>
+
+            <div v-else class="trail-empty-state">
+              이 산과 바로 연결된 탐방로 데이터가 아직 없어요.
+            </div>
+          </div>
+
           <!-- 재난위험지구 -->
           <div v-if="selectedDisasterZones.length" class="disaster-zone-panel">
             <p class="disaster-zone-title">⚠️ 인근 재난위험지구 {{ selectedDisasterZones.length }}개</p>
@@ -448,7 +488,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import {
-  loadMountains, publicMountains, recommendedMountains, alternativeMountains,
+  loadCourses, loadMountains, publicCourses, publicMountains, recommendedMountains, alternativeMountains,
   selectedMountain, gpsStatus, gpsError, detectGPS, loadWeather, weatherData,
   submitMountainRecommendation, loading, profile, agentSummary,
   location, customStartLocation, guideStep,
@@ -456,6 +496,7 @@ import {
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
 import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
+import { durationLabel } from '../utils/courseHelpers.js';
 import MountainCard from '../components/MountainCard.vue';
 
 const router = useRouter();
@@ -591,6 +632,7 @@ const selectedDisasterZones = ref([]);
 const mountainStory = ref(null);
 const mountainSafetyReports = ref([]);
 const storyExpanded = ref(false);
+const selectedTrailCourse = ref(null);
 
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
 let _courseStepToken = 0;
@@ -601,13 +643,32 @@ const storyText = computed(() => {
     return story.intro || story.summary || story.detail || '';
   }
 
-  if (selectedMountain.value?.description_source === 'seed_mountain_descriptions') {
-    return selectedMountain.value.intro || selectedMountain.value.description || '';
-  }
-
-  return '';
+  return selectedMountain.value?.intro || selectedMountain.value?.description || '';
 });
 const storyNeedsToggle = computed(() => storyText.value.length > 160);
+
+const selectedMountainCourseRecommendations = computed(() => {
+  const mountain = selectedMountain.value;
+  if (!mountain) return [];
+
+  const target = normalizeText(mountain.name);
+  const desiredMinutes = Number(profile.desiredHikingMinutes || 120);
+  const maxMinutes = Number(profile.availableMinutes || desiredMinutes + 120);
+  const difficultyFilter = profile.difficultyFilter;
+
+  return publicCourses.value
+    .filter((course) => {
+      const mountainName = normalizeText(course.mountain);
+      const courseName = normalizeText(course.name);
+      return mountainName.includes(target) || courseName.includes(target);
+    })
+    .map((course) => ({
+      ...course,
+      _trailScore: scoreTrailForSelectedMountain(course, desiredMinutes, maxMinutes, difficultyFilter),
+    }))
+    .sort((a, b) => b._trailScore - a._trailScore)
+    .slice(0, 12);
+});
 
 // ── 브라우즈 단계: 필터된 산 목록 ────────────────────────────────────────────
 const filteredMountains = computed(() => {
@@ -650,6 +711,54 @@ function browseBadgeClass(mountain) {
   return { recommend: 'green', caution: 'yellow', not_recommended: 'red' }[mountain.safety_decision] || '';
 }
 
+function normalizeText(value) {
+  return String(value || '').replace(/\s/g, '').toLowerCase();
+}
+
+function scoreTrailForSelectedMountain(course, desiredMinutes, maxMinutes, difficultyFilter) {
+  let score = 100;
+  const duration = Number(course.duration_min || 0);
+  const distance = Number(course.distance_km || 0);
+  const difficulty = course.difficulty || 'medium';
+
+  score -= Math.min(Math.abs(duration - desiredMinutes) * 0.45, 42);
+  if (duration > maxMinutes) score -= Math.min((duration - maxMinutes) * 0.6, 35);
+
+  if (difficultyFilter && difficultyFilter !== 'all') {
+    const level = { easy: 1, medium: 2, hard: 3 };
+    score -= Math.abs((level[difficulty] || 2) - (level[difficultyFilter] || 2)) * 18;
+  }
+
+  if (course.has_entrance_start) score += 8;
+  if (distance >= 1 && distance <= 8) score += 6;
+  if (normalizeText(course.name) === normalizeText('주등산로')) score -= 16;
+
+  return score;
+}
+
+function courseDifficultyLabel(difficulty) {
+  return { easy: '초급', medium: '중급', hard: '고급' }[difficulty] || '보통';
+}
+
+function trailRecommendationReason(course) {
+  const reasons = [];
+  const desired = Number(profile.desiredHikingMinutes || 120);
+  const gap = Math.abs(Number(course.duration_min || 0) - desired);
+
+  if (gap <= 30) reasons.push('희망 산행 시간과 가까워요');
+  if (course.has_entrance_start) reasons.push('입구에서 출발하기 좋아요');
+  if (course.difficulty === 'easy') reasons.push('초보자도 부담이 적어요');
+  if (course.difficulty === profile.difficultyFilter) reasons.push('선택한 난이도와 맞아요');
+  if (!reasons.length) reasons.push('거리와 소요 시간이 무난한 코스예요');
+
+  return reasons.slice(0, 2).join(' · ');
+}
+
+function selectTrailCourse(course) {
+  selectedTrailCourse.value = course;
+  focusOverviewCourse(course);
+}
+
 // ── 지도 ─────────────────────────────────────────────────────────────────────
 const mapMountains = computed(() => {
   // 추천 실행 전: 모든 산을 그대로 (난이도 색상으로 표시)
@@ -687,6 +796,7 @@ async function enterCourseStep(mountain) {
 
   guideStep.value = 'courses';
   selectedMountain.value = mountain;
+  selectedTrailCourse.value = null;
   mountainStory.value = null;
   mountainSafetyReports.value = [];
   selectedDisasterZones.value = [];
@@ -700,7 +810,7 @@ async function enterCourseStep(mountain) {
   refreshOverviewMap();
   const [zonesData, storyData, reportsData] = await Promise.allSettled([
     fetchDisasterZones(mountain.name),
-    fetchMountainStory(mountain.name),
+    fetchMountainStory(mountain),
     fetchSafetyReports(mountain.name),
   ]);
   if (token !== _courseStepToken) return;
@@ -723,6 +833,7 @@ async function enterCourseStep(mountain) {
 function backToBrowse() {
   guideStep.value = 'browse';
   selectedMountain.value = null;
+  selectedTrailCourse.value = null;
   refreshOverviewMap();
 }
 
@@ -821,7 +932,7 @@ watch(selectedMountain, () => refreshOverviewMap());
 watch(() => [profile.maxDistanceKm, location.value, customStartLocation.value], () => refreshOverviewMap());
 
 onMounted(async () => {
-  await loadMountains();
+  await Promise.all([loadCourses(), loadMountains()]);
   loadWeather();
   await nextTick();
   refreshOverviewMap();

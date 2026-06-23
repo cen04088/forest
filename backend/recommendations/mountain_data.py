@@ -1606,9 +1606,9 @@ MOUNTAINS = [
     {
         "id": "m-박달산",
         "name": "박달산",
-        "region": "경기 양평군",
-        "lat": 37.28,
-        "lng": 127.619,
+        "region": "충북 괴산군",
+        "lat": 36.836526,
+        "lng": 127.920915,
         "elevation_m": 825,
         "difficulty": "medium",
         "walk_time_min": 150,
@@ -1619,7 +1619,7 @@ MOUNTAINS = [
         "crowding": 0.4,
         "national_park": False,
         "highlights": ["자연 경관 우수"],
-        "description": "박달산 — 경기 양평군 위치 명산.",
+        "description": "박달산은 충청북도 괴산군 장연면 일대에 있는 해발 약 825m의 산입니다. 조령산과 월악산 사이의 충북 내륙 산세를 조망하기 좋은 산행지로 알려져 있습니다.",
     },
     {
         "id": "m-상원산",

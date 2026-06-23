@@ -250,7 +250,8 @@ def _cached_weather(lat, lng):
     if cached is not None:
         return cached
     result = fetch_current_weather(lat, lng)
-    cache.set(cache_key, result, _WEATHER_CACHE_SECONDS)
+    if result.get("source") != "mock":
+        cache.set(cache_key, result, _WEATHER_CACHE_SECONDS)
     return result
 
 

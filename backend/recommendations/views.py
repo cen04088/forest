@@ -1,4 +1,5 @@
 import json
+import re
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -99,8 +100,10 @@ def local_road_trails(request):
 @require_GET
 def mountain_story(request):
     mountain_name = request.GET.get("mountain", "")
+    region = request.GET.get("region", "")
+    elevation_m = request.GET.get("elevation_m") or None
 
-    intro = _get_seeded_mountain_intro(mountain_name)
+    intro = _seeded_intro_for_mountain(mountain_name, region, elevation_m)
     if not intro:
         return JsonResponse(
             {"ok": True, "items": [], "source": "seed_mountain_descriptions"},
@@ -136,6 +139,74 @@ def _get_seeded_mountain_intro(mountain_name):
     return (DESCRIPTIONS.get(name) or "").strip()
 
 
+_REGION_GROUP_ALIASES = {
+    "seoul": ("서울", "서울특별시"),
+    "busan": ("부산", "부산광역시"),
+    "daegu": ("대구", "대구광역시"),
+    "incheon": ("인천", "인천광역시"),
+    "gwangju": ("광주", "광주광역시"),
+    "daejeon": ("대전", "대전광역시"),
+    "ulsan": ("울산", "울산광역시"),
+    "sejong": ("세종", "세종특별자치시"),
+    "gyeonggi": ("경기", "경기도"),
+    "gangwon": ("강원", "강원도", "강원특별자치도"),
+    "chungbuk": ("충북", "충청북도"),
+    "chungnam": ("충남", "충청남도"),
+    "jeonbuk": ("전북", "전라북도", "전북특별자치도"),
+    "jeonnam": ("전남", "전라남도"),
+    "gyeongbuk": ("경북", "경상북도"),
+    "gyeongnam": ("경남", "경상남도"),
+    "jeju": ("제주", "제주도", "제주특별자치도"),
+}
+
+
+def _seeded_intro_for_mountain(mountain_name, region="", elevation_m=None):
+    intro = _get_seeded_mountain_intro(mountain_name)
+    if not intro:
+        return ""
+    if not _seed_intro_matches_mountain(intro, region, elevation_m):
+        return ""
+    return intro
+
+
+def _seed_intro_matches_mountain(intro, region="", elevation_m=None):
+    intro_regions = _region_groups_in_text(intro)
+    mountain_region = _region_group_for_text(region)
+    if mountain_region and intro_regions and mountain_region not in intro_regions:
+        return False
+
+    intro_height = _extract_height_m(intro)
+    if intro_height and elevation_m:
+        try:
+            if abs(float(intro_height) - float(elevation_m)) > 120:
+                return False
+        except (TypeError, ValueError):
+            pass
+    return True
+
+
+def _extract_height_m(text):
+    match = re.search(r"(?:해발\s*)?(\d{2,4}(?:\.\d+)?)\s*(?:m|미터)", text or "", re.IGNORECASE)
+    return float(match.group(1)) if match else None
+
+
+def _region_group_for_text(text):
+    haystack = text or ""
+    for group, aliases in _REGION_GROUP_ALIASES.items():
+        if any(alias in haystack for alias in aliases):
+            return group
+    return ""
+
+
+def _region_groups_in_text(text):
+    haystack = text or ""
+    return {
+        group
+        for group, aliases in _REGION_GROUP_ALIASES.items()
+        if any(alias in haystack for alias in aliases)
+    }
+
+
 @require_GET
 def weather(request):
     from django.core.cache import cache
@@ -159,7 +230,8 @@ def weather(request):
             result["air_station"] = aq.get("station_name")
     except Exception:
         pass
-    cache.set(cache_key, result, 600)
+    if result.get("source") != "mock":
+        cache.set(cache_key, result, 600)
     return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
 
 
@@ -295,7 +367,6 @@ def _infer_highlights(name, summary):
 
 
 def _get_mountains():
-    from .management.commands.seed_mountain_descriptions import DESCRIPTIONS
     from .models import MountainKnowledge
     from .mountain_data import MOUNTAINS as _STATIC
 
@@ -303,10 +374,15 @@ def _get_mountains():
     for mountain in _STATIC:
         item = dict(mountain)
         name = item["name"]
-        intro = (DESCRIPTIONS.get(name) or "").strip()
+        seed_intro = _seeded_intro_for_mountain(name, item.get("region", ""), item.get("elevation_m"))
+        intro = seed_intro or (item.get("description") or "").strip()
         item["description"] = intro
         item["intro"] = intro
-        item["description_source"] = "seed_mountain_descriptions" if intro else ""
+        item["description_source"] = (
+            "seed_mountain_descriptions"
+            if seed_intro
+            else ("mountain_data" if intro else "")
+        )
 
         static_mountains.append(item)
 
@@ -329,6 +405,9 @@ def _get_mountains():
         height = mk.height_m or 0
         difficulty = _infer_difficulty(height, name)
         walk_min, walk_max = _infer_walk_time(height, difficulty)
+        seed_intro = _seeded_intro_for_mountain(name, mk.region or "", height)
+        db_intro = (mk.summary or mk.detail or "").strip()
+        intro = seed_intro or db_intro
         db_mountains.append({
             "id": f"m-{name}",
             "name": name,
@@ -345,9 +424,13 @@ def _get_mountains():
             "crowding": _CROWDING_MAP.get(name, 0.35),
             "national_park": name in _NATIONAL_PARKS,
             "highlights": _infer_highlights(name, ""),
-            "description": (DESCRIPTIONS.get(name) or "").strip(),
-            "intro": (DESCRIPTIONS.get(name) or "").strip(),
-            "description_source": "seed_mountain_descriptions" if DESCRIPTIONS.get(name) else "",
+            "description": intro,
+            "intro": intro,
+            "description_source": (
+                "seed_mountain_descriptions"
+                if seed_intro
+                else (mk.source if intro else "")
+            ),
         })
 
     return static_mountains + db_mountains
@@ -377,7 +460,12 @@ def recommend_mountains_view(request):
     from .models import MountainIntro
     intros = {obj.mountain_name: obj.intro for obj in MountainIntro.objects.all()}
     for m in result.get("mountains", []) + result.get("alternatives", []):
-        m["intro"] = intros.get(m["name"], "")
+        intro = intros.get(m["name"], "")
+        m["intro"] = intro if _seed_intro_matches_mountain(
+            intro,
+            m.get("region", ""),
+            m.get("elevation_m"),
+        ) else ""
 
     return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
 

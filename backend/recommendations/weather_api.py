@@ -3,7 +3,6 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
-from functools import lru_cache
 from math import cos, floor, log, pow, radians, sin, sqrt, tan
 from zoneinfo import ZoneInfo
 
@@ -50,7 +49,6 @@ def merge_mountain_weather(weather, mountain_name="", mountain_num=None, timeout
     return weather
 
 
-@lru_cache(maxsize=256)
 def _cached_fetch_current_weather(nx, ny, base_date, base_time, service_key, timeout):
     query = {
         "ServiceKey": service_key,

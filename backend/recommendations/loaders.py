@@ -89,7 +89,7 @@ def load_public_trail_courses():
         from .models import TrailCourse
         qs = TrailCourse.objects.filter(lat__isnull=False, lng__isnull=False)
         if qs.exists():
-            return [
+            courses = [
                 {
                     "id": tc.course_id,
                     "mountain": tc.mountain,
@@ -107,6 +107,7 @@ def load_public_trail_courses():
                 }
                 for tc in qs
             ]
+            return with_seed_courses(courses)
     except Exception:
         pass
 
@@ -115,11 +116,35 @@ def load_public_trail_courses():
 
     for encoding in ("utf-8-sig", "cp949", "euc-kr"):
         try:
-            return _read_trail_csv(TRAIL_CSV_PATH, encoding)
+            return with_seed_courses(_read_trail_csv(TRAIL_CSV_PATH, encoding))
         except UnicodeDecodeError:
             continue
 
     return COURSES
+
+
+def with_seed_courses(courses):
+    merged = list(courses or [])
+    seen = {
+        (
+            str(course.get("mountain", "")).replace(" ", ""),
+            str(course.get("name", "")).replace(" ", ""),
+        )
+        for course in merged
+    }
+    for seed in COURSES:
+        key = (
+            str(seed.get("mountain", "")).replace(" ", ""),
+            str(seed.get("name", "")).replace(" ", ""),
+        )
+        if key in seen:
+            continue
+        item = dict(seed)
+        item["id"] = f"sample-{item.get('id')}"
+        item.setdefault("source", "seed")
+        merged.append(item)
+        seen.add(key)
+    return merged or COURSES
 
 
 def _read_trail_csv(path, encoding):
@@ -462,9 +487,21 @@ def infer_mountain_name(*parts):
             return mountain
 
     # 2. MOUNTAIN_ALIASES 키워드 매칭
+    # 짧은 별칭이 다른 지명 안에 포함될 수 있어(예: "삼도봉" 안의 "도봉"),
+    # 먼저 걸린 산이 아니라 전체 별칭 매칭 점수가 가장 높은 산을 선택한다.
+    alias_scores = []
     for mountain, aliases in MOUNTAIN_ALIASES.items():
-        if any(alias in joined for alias in aliases):
-            return mountain
+        score = 0
+        for alias in aliases:
+            count = joined.count(alias)
+            if count:
+                score += count * len(alias)
+        if score:
+            alias_scores.append((score, mountain))
+
+    if alias_scores:
+        alias_scores.sort(reverse=True)
+        return alias_scores[0][1]
 
     return "국립공원"
 
