@@ -2850,36 +2850,56 @@ p {
   color: var(--forest);
 }
 
-/* ── 출발 시간 카드 ── */
-.bfp-time-card {
+/* ── 출발 시간 ── */
+.chip-now {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
+  font-weight: 800;
+}
+.chip-now:hover { background: #dcfce7; }
+
+.time-bar-wrap {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 10px 12px 14px;
   background: #f9fafb;
   border: 1.5px solid var(--border);
   border-radius: 12px;
-  cursor: pointer;
-  position: relative;
-  transition: border-color 0.18s, background 0.18s;
 }
-.bfp-time-card:focus-within { border-color: var(--forest); background: #fff; }
-.bfp-time-icon { color: var(--forest); flex-shrink: 0; }
-.bfp-time-label {
-  flex: 1;
+
+.time-bar-header { text-align: center; }
+.time-bar-val {
   font-size: 15px;
   font-weight: 800;
-  color: var(--ink);
+  color: var(--forest);
   letter-spacing: -0.3px;
 }
-.bfp-time-chevron { color: var(--muted); flex-shrink: 0; }
-.bfp-time-native {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
+
+.time-bar-input {
+  width: 100%;
+  accent-color: var(--forest);
+  cursor: pointer;
+  height: 4px;
+  margin: 2px 0;
 }
+
+.time-bar-ticks {
+  position: relative;
+  height: 16px;
+}
+
+.time-bar-tick {
+  position: absolute;
+  font-size: 10px;
+  color: var(--muted);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.time-bar-tick.tick-first { transform: translateX(0); }
+.time-bar-tick.tick-last  { transform: translateX(-100%); }
 
 .bfp-search-row {
   display: flex;

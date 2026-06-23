@@ -79,11 +79,33 @@
           <!-- 출발 시간 -->
           <div class="bfp-field">
             <span class="bfp-label">출발 시간</span>
-            <div class="bfp-time-card" @click="openTimePicker">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="bfp-time-icon" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <span class="bfp-time-label">{{ profile.departureTime || '시간 선택' }}</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bfp-time-chevron" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
-              <input ref="timeInputRef" v-model="profile.departureTime" type="time" class="bfp-time-native" />
+            <!-- 구간 버튼 -->
+            <div class="chips">
+              <button type="button" class="chip chip-now" @click="setTimeNow">지금</button>
+              <button v-for="seg in TIME_SEGMENTS" :key="seg.key" type="button"
+                :class="['chip', activeTimeSegment === seg.key ? 'active' : '']"
+                @click="selectTimeSegment(seg.key)">{{ seg.label }}</button>
+            </div>
+            <!-- 타임바 -->
+            <div class="time-bar-wrap">
+              <div class="time-bar-header">
+                <span class="time-bar-val">{{ profile.departureTime || '--:--' }} 출발</span>
+              </div>
+              <input
+                type="range"
+                class="time-bar-input"
+                :min="TIME_MIN"
+                :max="TIME_MAX"
+                step="30"
+                :value="departureMinutes"
+                @input="onTimeBarInput"
+              />
+              <div class="time-bar-ticks">
+                <span v-for="(tick, i) in TIME_TICKS" :key="tick.h"
+                  class="time-bar-tick"
+                  :class="{ 'tick-first': i === 0, 'tick-last': i === TIME_TICKS.length - 1 }"
+                  :style="{ left: timeTickPct(tick.h) + '%' }">{{ tick.label }}</span>
+              </div>
             </div>
           </div>
 
@@ -438,12 +460,56 @@ import MountainCard from '../components/MountainCard.vue';
 
 const router = useRouter();
 const overviewMapEl = ref(null);
-const timeInputRef = ref(null);
 
-function openTimePicker() {
-  const el = timeInputRef.value;
-  if (!el) return;
-  try { el.showPicker(); } catch { el.focus(); }
+// ── 출발 시간 ─────────────────────────────────────────────────────────────────
+const TIME_SEGMENTS = [
+  { key: 'dawn',      label: '새벽', jumpHour: 5,  hours: [4, 5, 6] },
+  { key: 'morning',   label: '아침', jumpHour: 8,  hours: [7, 8, 9] },
+  { key: 'forenoon',  label: '오전', jumpHour: 10, hours: [10, 11, 12] },
+  { key: 'afternoon', label: '오후', jumpHour: 14, hours: [13, 14, 15, 16, 17] },
+];
+const TIME_MIN = 4 * 60;   // 04:00
+const TIME_MAX = 18 * 60;  // 18:00
+const TIME_TICKS = [
+  { h: 4,  label: '04:00' },
+  { h: 7,  label: '07:00' },
+  { h: 10, label: '10:00' },
+  { h: 13, label: '13:00' },
+  { h: 18, label: '18:00' },
+];
+
+// departureTime에서 자동 계산 — 별도 ref 없이 항상 동기화
+const activeTimeSegment = computed(() => {
+  if (!profile.departureTime) return null;
+  const h = parseInt(profile.departureTime.split(':')[0], 10);
+  return TIME_SEGMENTS.find((s) => s.hours.includes(h))?.key ?? null;
+});
+
+const departureMinutes = computed(() => {
+  if (!profile.departureTime) return 8 * 60;
+  const [h, m] = profile.departureTime.split(':').map(Number);
+  return Math.max(TIME_MIN, Math.min(TIME_MAX, h * 60 + m));
+});
+
+function onTimeBarInput(e) {
+  const mins = parseInt(e.target.value, 10);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  profile.departureTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function timeTickPct(h) {
+  return ((h * 60 - TIME_MIN) / (TIME_MAX - TIME_MIN)) * 100;
+}
+
+function selectTimeSegment(key) {
+  const seg = TIME_SEGMENTS.find((s) => s.key === key);
+  if (seg) profile.departureTime = `${String(seg.jumpHour).padStart(2, '0')}:00`;
+}
+
+function setTimeNow() {
+  const now = new Date();
+  profile.departureTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 }
 const { renderOverviewMap, focusOverviewCourse, enableLocationPick, disableLocationPick, clearLocationPickMarker } = useLeafletMap();
 
