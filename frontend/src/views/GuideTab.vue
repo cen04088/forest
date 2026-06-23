@@ -375,7 +375,7 @@ import {
   location, customStartLocation,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchSafetyAdvice, fetchMountainStory, fetchSafetyReports, fetchMountainIntro } from '../api.js';
+import { fetchDisasterZones, fetchSafetyAdvice, fetchMountainStory, fetchSafetyReports } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import MountainCard from '../components/MountainCard.vue';
 
@@ -461,10 +461,12 @@ const safetyAdviceLoading = ref(false);
 const mountainStory = ref(null);
 const mountainSafetyReports = ref([]);
 const storyExpanded = ref(false);
-const aiIntro = ref(''); // AI가 변환한 친근한 소개문
+
+// 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
+let _courseStepToken = 0;
 
 const storyText = computed(() =>
-  aiIntro.value || mountainStory.value?.summary || selectedMountain.value?.description || ''
+  selectedMountain.value?.intro || selectedMountain.value?.description || ''
 );
 const storyNeedsToggle = computed(() => storyText.value.length > 160);
 
@@ -542,6 +544,8 @@ function refreshOverviewMap() {
 
 // ── 단계 전환 ─────────────────────────────────────────────────────────────────
 async function enterCourseStep(mountain) {
+  const token = ++_courseStepToken;
+
   guideStep.value = 'courses';
   selectedMountain.value = mountain;
   safetyAdviceText.value = '';
@@ -549,10 +553,11 @@ async function enterCourseStep(mountain) {
   mountainSafetyReports.value = [];
   selectedDisasterZones.value = [];
   storyExpanded.value = false;
-  aiIntro.value = '';
 
   if (mountain?.lat && mountain?.lng) loadWeather(mountain.lat, mountain.lng, mountain.name);
   await nextTick();
+  if (token !== _courseStepToken) return;
+
   focusOverviewCourse(mountain);
   refreshOverviewMap();
   const [zonesData, storyData, reportsData] = await Promise.allSettled([
@@ -560,23 +565,14 @@ async function enterCourseStep(mountain) {
     fetchMountainStory(mountain.name),
     fetchSafetyReports(mountain.name),
   ]);
+  if (token !== _courseStepToken) return;
+
   selectedDisasterZones.value = zonesData.status === 'fulfilled' ? (zonesData.value.zones || []) : [];
   const story = storyData.status === 'fulfilled' ? (storyData.value.items?.[0] ?? null) : null;
   mountainStory.value = story;
   mountainSafetyReports.value = reportsData.status === 'fulfilled' ? (reportsData.value.posts || []) : [];
 
-  // DB 설명 조회 (없으면 산림청 원문으로 AI 생성)
-  fetchMountainIntro({
-    name: mountain.name,
-    summary: story?.summary || mountain.description || '',
-    selectionReason: story?.selection_reason || '',
-  }).then((res) => {
-    if (res?.intro && selectedMountain.value?.name === mountain.name) {
-      aiIntro.value = res.intro;
-    }
-  }).catch(() => {});
-
-  loadSafetyAdvice(mountain);
+  loadSafetyAdvice(mountain, token);
 }
 
 function backToBrowse() {
@@ -649,7 +645,7 @@ const selectedMountainSunsetNote = computed(() => {
 });
 
 // ── AI 안전 조언 ──────────────────────────────────────────────────────────────
-async function loadSafetyAdvice(mountain) {
+async function loadSafetyAdvice(mountain, token) {
   safetyAdviceLoading.value = true;
   try {
     const data = await fetchSafetyAdvice({
@@ -658,11 +654,13 @@ async function loadSafetyAdvice(mountain) {
       profile: {},
       sunTimes: null,
     });
+    if (token !== _courseStepToken) return;
     safetyAdviceText.value = data.advice || '';
   } catch {
+    if (token !== _courseStepToken) return;
     safetyAdviceText.value = '';
   } finally {
-    safetyAdviceLoading.value = false;
+    if (token === _courseStepToken) safetyAdviceLoading.value = false;
   }
 }
 

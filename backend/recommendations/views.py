@@ -329,7 +329,15 @@ def recommend_mountains_view(request):
     except Exception:
         pass
 
-    return JsonResponse(recommend_mountains(payload), json_dumps_params={"ensure_ascii": False})
+    result = recommend_mountains(payload)
+
+    # MountainIntro DB에서 설명을 일괄 조회해 각 산에 주입
+    from .models import MountainIntro
+    intros = {obj.mountain_name: obj.intro for obj in MountainIntro.objects.all()}
+    for m in result.get("mountains", []) + result.get("alternatives", []):
+        m["intro"] = intros.get(m["name"], "")
+
+    return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
 
 
 @csrf_exempt

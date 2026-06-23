@@ -2,7 +2,8 @@ import os
 
 
 def generate_safety_advice(mountain: dict, weather: dict, profile: dict, sun_times: dict = None) -> str | None:
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    gms_key = os.environ.get("GMS_KEY", "").strip()
+    api_key = gms_key or os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
         return None
 
@@ -36,7 +37,13 @@ def generate_safety_advice(mountain: dict, weather: dict, profile: dict, sun_tim
             "- 일몰 시간과 출발·소요 시간을 비교해 귀가 가능 여부 반드시 포함\n"
         )
 
-        client = genai.Client(api_key=api_key)
+        if gms_key:
+            client = genai.Client(
+                api_key=api_key,
+                http_options={"base_url": "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/"},
+            )
+        else:
+            client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
             model="gemini-2.5-flash-lite",
             contents=prompt,
