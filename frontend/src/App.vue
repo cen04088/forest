@@ -25,7 +25,7 @@
         <p class="hero-desc">날씨 · 코스 · 재난 데이터를 종합해<br>출발 전 안전 등급을 진단합니다</p>
         <div class="hero-stats">
           <div class="hero-stat">
-            <span class="hero-stat-num">77<span class="hero-stat-unit">개</span></span>
+            <span class="hero-stat-num">138<span class="hero-stat-unit">개</span></span>
             <span class="hero-stat-label">올라 추천 산</span>
           </div>
           <div class="hero-stat">
