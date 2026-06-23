@@ -165,6 +165,29 @@
         <strong>🚨 119 신고</strong>
         <span>산악 사고 발생 시 즉시 119에 신고하세요.</span>
       </a>
+
+      <div class="sos-divider">긴급 연락처</div>
+
+      <div v-if="!authUser" class="map-action sos-unset">
+        <strong>📞 로그인 후 이용 가능</strong>
+        <span>로그인하면 긴급 연락처를 등록할 수 있습니다.</span>
+      </div>
+      <div v-else-if="emergencyContacts.length === 0" class="map-action sos-unset">
+        <strong>📞 긴급 연락처 미등록</strong>
+        <span>내 정보 탭에서 연락처를 추가하세요.</span>
+      </div>
+      <template v-else>
+        <a
+          v-for="contact in emergencyContacts.slice(0, 2)"
+          :key="contact.id"
+          class="map-action sos-contact"
+          :href="`tel:${contact.phone}`"
+          @click.prevent="callWithLocation(contact)"
+        >
+          <strong>📞 {{ contact.name }}<span v-if="contact.relation" class="sos-relation"> · {{ contact.relation }}</span></strong>
+          <span>{{ contact.phone }}<template v-if="safeLinkActive && currentLat"> · 전화 전 GPS 위치 자동 복사</template></span>
+        </a>
+      </template>
     </section>
     </div>
   </section>
@@ -174,7 +197,8 @@
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { selectedMountain, weatherData } from '../composables/useGuide.js';
-import { saveHikingRecord } from '../composables/useUserData.js';
+import { emergencyContacts, loadMyPageData, saveHikingRecord } from '../composables/useUserData.js';
+import { authUser } from '../composables/useAuth.js';
 import { useSafeLink } from '../composables/useSafeLink.js';
 import { getSafeLinkByCode } from '../api.js';
 
@@ -188,7 +212,10 @@ const guardianLoading = ref(false);
 const guardianError = ref('');
 const guardianResolved = ref(false);
 
-onMounted(() => nextTick(() => hiddenInput.value?.focus()));
+onMounted(() => {
+  nextTick(() => hiddenInput.value?.focus());
+  if (authUser.value && emergencyContacts.value.length === 0) loadMyPageData();
+});
 
 function focusGuardianInput() {
   hiddenInput.value?.focus();
@@ -357,6 +384,18 @@ async function copyMessage() {
   } catch {
     shareStatus.value = '문구를 직접 선택해 복사해 주세요.';
   }
+}
+
+async function callWithLocation(contact) {
+  if (safeLinkActive.value && currentLat.value && currentLng.value) {
+    try {
+      await navigator.clipboard.writeText(
+        `현재 위치: https://maps.google.com/?q=${currentLat.value},${currentLng.value}`
+      );
+      shareStatus.value = '위치를 클립보드에 복사했습니다. 통화 중 알려주세요.';
+    } catch {}
+  }
+  window.location.href = `tel:${contact.phone}`;
 }
 
 async function shareMessage() {
