@@ -12,6 +12,27 @@ def _build_system(context: dict, rag_context: str = "") -> str:
     mountain = context.get("mountain") or {}
     weather = context.get("weather") or {}
 
+    # 현재 시각
+    if context.get("now"):
+        system += f"\n\n[현재 시각]\n{context['now']}"
+
+    # 사용자 프로필
+    profile = context.get("userProfile") or {}
+    if profile:
+        exp_map = {"beginner": "초보", "intermediate": "중급", "expert": "숙련"}
+        comp_map = {"solo": "혼자", "family": "가족", "vulnerable": "어린이·노약자 동반"}
+        int_map = {"light": "가볍게", "moderate": "보통", "hard": "강하게"}
+        system += (
+            f"\n\n[사용자 프로필]\n"
+            f"경험: {exp_map.get(profile.get('experience', ''), profile.get('experience', '-'))}  "
+            f"동반자: {comp_map.get(profile.get('companion', ''), profile.get('companion', '-'))}  "
+            f"산행 강도: {int_map.get(profile.get('intensity', ''), '-')}\n"
+            f"가능 시간: {profile.get('availableMinutes', '-')}분  "
+            f"희망 등산 시간: {profile.get('desiredHikingMinutes', '-')}분  "
+            f"최대 거리: {profile.get('maxDistanceKm', '-')}km\n"
+            f"출발 예정: {profile.get('departureDate', '')} {profile.get('departureTime', '')}"
+        )
+
     if mountain.get("name"):
         diff = {"easy": "초급", "medium": "중급", "hard": "고급"}.get(mountain.get("difficulty", ""), "")
         system += (
@@ -20,13 +41,17 @@ def _build_system(context: dict, rag_context: str = "") -> str:
             f"해발: {mountain.get('elevation_m', '-')}m  난이도: {diff}\n"
             f"소요: {mountain.get('walk_time_min', '-')}~{mountain.get('walk_time_max', '-')}분"
         )
+
     if weather.get("temperature_c") is not None:
+        sun = context.get("sunTimes") or {}
         system += (
             f"\n\n[현재 날씨]\n"
             f"기온 {weather.get('temperature_c')}°C  "
             f"강수 {weather.get('rainfall_mm', 0)}mm  "
             f"풍속 {weather.get('wind_speed_ms', 0)}m/s"
         )
+        if sun.get("sunrise") or sun.get("sunset"):
+            system += f"  일출 {sun.get('sunrise', '-')}  일몰 {sun.get('sunset', '-')}"
 
     courses = context.get("recommendedCourses") or []
     if courses:
@@ -39,6 +64,18 @@ def _build_system(context: dict, rag_context: str = "") -> str:
                 f"{c.get('duration_min', '')}분, {c.get('safety_label', '')})"
             )
         system += "\n\n[추천된 코스]\n" + "\n".join(lines)
+
+    # 재난위험지구
+    disaster_zones = context.get("disasterZones") or []
+    if disaster_zones:
+        lines = []
+        for z in disaster_zones:
+            loc = z.get("location") or z.get("district") or ""
+            risk = z.get("risk_factor") or ""
+            if loc:
+                lines.append(f"- {loc}" + (f" ({risk})" if risk else ""))
+        if lines:
+            system += "\n\n[인근 재난위험지구]\n" + "\n".join(lines)
 
     # 실시간 안전 현황 (wildfire, landslide, NIFOS)
     safety_lines = _build_realtime_safety(context)
