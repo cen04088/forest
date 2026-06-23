@@ -68,7 +68,8 @@
         <div><p class="eyebrow">My Profile</p><h2>나의 등산 프로필</h2></div>
         <span v-if="profileSavedMsg" class="mini-status hpf-saved-ok">저장됨 ✓</span>
       </div>
-      <div class="hiking-profile-form">
+      <div v-if="!authUser" class="mypage-login-needed">로그인 후 이용 가능합니다.</div>
+      <div v-else class="hiking-profile-form">
         <label class="hpf-row">
           <span class="hpf-label">경험</span>
           <select v-model="editProfile.experience" class="hpf-select">
