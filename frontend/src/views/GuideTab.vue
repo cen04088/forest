@@ -188,9 +188,6 @@
             <button class="primary-btn wide-field" type="button" :disabled="loading" @click="handleMountainRecommend">
               {{ loading ? '분석 중…' : '오늘의 산 추천받기' }}
             </button>
-            <button class="text-link-btn" type="button" @click="directBrowseOpen = !directBrowseOpen">
-              {{ directBrowseOpen ? '직접 찾기 닫기' : '산 이름을 알고 있어요' }}
-            </button>
           </div>
         </section>
 
@@ -235,70 +232,6 @@
 
         </section>
 
-        <!-- ── 직접 찾기 ── -->
-        <section v-if="directBrowseOpen || mountainSearch" class="panel mountain-list-panel">
-          <div class="section-title compact">
-            <div>
-              <p class="eyebrow">Manual Search</p>
-              <h2>직접 산 찾기<span class="mini-status" style="margin-left:6px">{{ filteredMountains.length }}</span></h2>
-            </div>
-            <button v-if="selectedTags.length" class="clear-rec-btn" type="button" @click="selectedTags = []">태그 초기화</button>
-          </div>
-
-          <!-- 태그 필터 -->
-          <div class="tag-filter-wrap">
-            <button
-              v-for="tag in ALL_TAGS"
-              :key="tag"
-              :class="['tag-filter-chip', selectedTags.includes(tag) ? 'active' : '']"
-              type="button"
-              @click="toggleTag(tag)"
-            >
-              <span class="tfc-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}
-            </button>
-          </div>
-
-          <div class="bfp-search-row">
-            <svg class="bfp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-              v-model="mountainSearch"
-              class="bfp-search-input"
-              type="text"
-              placeholder="산 이름 또는 지역 검색…"
-              autocomplete="off"
-            />
-          </div>
-
-          <div v-if="loading && !filteredMountains.length" class="community-loading">분석 중…</div>
-          <p v-else-if="!filteredMountains.length && (selectedTags.length || mountainSearch)" class="tag-filter-empty">
-            조건에 맞는 산이 없어요. 태그나 검색어를 줄여보세요.
-          </p>
-
-          <div class="mountain-browse-list">
-            <button
-              v-for="mountain in filteredMountains"
-              :key="mountain.mountain_key || mountain.id"
-              class="mountain-browse-row"
-              type="button"
-              @click="enterCourseStep(mountain)"
-            >
-              <i class="mbr-diff-dot" :style="{ background: diffDotColor(mountain.difficulty) }"></i>
-              <div class="mbr-body">
-                <strong class="mbr-name">{{ mountain.name }}</strong>
-                <span class="mbr-meta">{{ mountain.region }}&nbsp;·&nbsp;{{ mountain.elevation_m }}m</span>
-                <div v-if="(mountain.tags || []).length" class="mbr-tags">
-                  <span
-                    v-for="tag in (mountain.tags || []).slice(0, 4)"
-                    :key="tag"
-                    :class="['mbr-tag', selectedTags.includes(tag) ? 'active' : '']"
-                  >{{ TAG_ICONS[tag] }} {{ tag }}</span>
-                </div>
-              </div>
-              <svg class="mbr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </div>
-        </section>
-
       </template>
 
       <!-- ════════════════════════════════
@@ -341,13 +274,27 @@
             </div>
           </div>
 
-          <!-- 오늘 산행 안전 등급 -->
-          <div class="mountain-safety-rating" v-if="mountainSafetyDecision">
-            <span :class="['safety-badge', mountainSafetyDecision.class]">
-              {{ mountainSafetyDecision.label }}
-            </span>
-            <p class="msr-sub">오늘 {{ selectedMountain.name }} 산행 안전 평가</p>
-          </div>
+          <!-- 산 소개 -->
+          <Transition name="card-reveal" mode="out-in">
+            <div v-if="storyText" key="story-real" class="mountain-story-card">
+              <div class="msc-summary-wrap" :class="{ collapsed: storyNeedsToggle && !storyExpanded }">
+                <p class="mountain-story-summary">{{ storyText }}</p>
+                <div v-if="storyNeedsToggle && !storyExpanded" class="msc-fade"></div>
+              </div>
+              <button v-if="storyNeedsToggle" class="msc-toggle" type="button" @click="storyExpanded = !storyExpanded">
+                {{ storyExpanded ? '접기 ▲' : '더 보기 ▼' }}
+              </button>
+              <div v-if="mountainStory?.selection_reason" class="msc-selection">
+                <span class="msc-selection-label">🏆 100대 명산 선정 이유</span>
+                <p class="msc-selection-text">{{ mountainStory.selection_reason }}</p>
+              </div>
+            </div>
+            <div v-else key="story-skel" class="card-skeleton card-skeleton-plain">
+              <div class="sk-line sk-w90"></div>
+              <div class="sk-line sk-w75 sk-mt8"></div>
+              <div class="sk-line sk-w60 sk-mt8"></div>
+            </div>
+          </Transition>
 
           <!-- 통계 -->
           <div class="mountain-detail-stats">
@@ -448,70 +395,6 @@
             </div>
           </Transition>
 
-          <!-- ML 사고 위험 분석 -->
-          <Transition name="card-reveal" mode="out-in">
-            <div v-if="mlRiskInfo" key="ml-real" class="ml-risk-card">
-              <div class="ml-risk-header">
-                <span class="ml-risk-title">📊 소방청 사고 데이터 분석</span>
-                <span
-                  :class="['ml-risk-badge',
-                    mlRiskInfo.risk_index >= 0.70 ? 'mlr-high' :
-                    mlRiskInfo.risk_index >= 0.45 ? 'mlr-medium' :
-                    mlRiskInfo.risk_index >= 0.20 ? 'mlr-low' : 'mlr-safe']"
-                >
-                  {{ mlRiskInfo.risk_index >= 0.70 ? '1인당 사고율 높음' :
-                     mlRiskInfo.risk_index >= 0.45 ? '주의 구간' :
-                     mlRiskInfo.risk_index >= 0.20 ? '보통' : '상대적 안전' }}
-                </span>
-              </div>
-              <p class="ml-risk-warn">{{ mlRiskInfo.warning }}</p>
-              <div class="ml-risk-types">
-                <span
-                  v-for="(prob, type) in mlRiskInfo.type_proba"
-                  :key="type"
-                  class="ml-type-chip"
-                  :class="type === mlRiskInfo.top_type ? 'ml-type-top' : ''"
-                >
-                  {{ { '부상사고':'실족·추락', '조난수색':'길잃음·조난', '질환':'탈진·질환', '기타':'기타' }[type] }}
-                  {{ Math.round(prob * 100) }}%
-                </span>
-              </div>
-              <p class="ml-risk-note">* {{ mlTrainingNote }} 기반 1인당 사고율 분석</p>
-            </div>
-            <div v-else key="ml-skel" class="card-skeleton">
-              <div class="sk-header">
-                <div class="sk-line sk-w50"></div>
-                <div class="sk-line sk-w20 sk-small"></div>
-              </div>
-              <div class="sk-line sk-w80 sk-mt8"></div>
-              <div class="sk-pills sk-mt8">
-                <div class="sk-pill" v-for="n in 4" :key="n"></div>
-              </div>
-            </div>
-          </Transition>
-
-          <!-- 산 소개 -->
-          <Transition name="card-reveal" mode="out-in">
-            <div v-if="storyText" key="story-real" class="mountain-story-card">
-              <div class="msc-summary-wrap" :class="{ collapsed: storyNeedsToggle && !storyExpanded }">
-                <p class="mountain-story-summary">{{ storyText }}</p>
-                <div v-if="storyNeedsToggle && !storyExpanded" class="msc-fade"></div>
-              </div>
-              <button v-if="storyNeedsToggle" class="msc-toggle" type="button" @click="storyExpanded = !storyExpanded">
-                {{ storyExpanded ? '접기 ▲' : '더 보기 ▼' }}
-              </button>
-              <div v-if="mountainStory?.selection_reason" class="msc-selection">
-                <span class="msc-selection-label">🏆 100대 명산 선정 이유</span>
-                <p class="msc-selection-text">{{ mountainStory.selection_reason }}</p>
-              </div>
-            </div>
-            <div v-else key="story-skel" class="card-skeleton card-skeleton-plain">
-              <div class="sk-line sk-w90"></div>
-              <div class="sk-line sk-w75 sk-mt8"></div>
-              <div class="sk-line sk-w60 sk-mt8"></div>
-            </div>
-          </Transition>
-
           <!-- 산사태 예보 경고 -->
           <div v-if="landslideRisk !== 'low'" :class="['landslide-alert', landslideRisk === 'danger' ? 'ls-danger' : 'ls-caution']">
             <div class="ls-icon">{{ landslideRisk === 'danger' ? '⛰' : '⚠️' }}</div>
@@ -523,11 +406,7 @@
 
           <div v-if="selectedMountainCourseRecommendations.length" class="recommended-trails-panel">
             <div class="rtp-header">
-              <div>
-                <p class="eyebrow">Recommended Trails</p>
-                <h3>{{ selectedMountain.name }} 추천 탐방로</h3>
-              </div>
-              <span v-if="selectedMountainCourseRecommendations.length" class="mini-status">{{ selectedMountainCourseRecommendations.length }}개</span>
+              <h3>{{ selectedMountain.name }} 추천 탐방로</h3>
             </div>
 
             <p class="rtp-copy">
@@ -545,7 +424,6 @@
                 <div class="rtc-top">
                   <span :class="['rtc-rank', idx === 0 ? 'top' : '']">{{ idx + 1 }}</span>
                   <span :class="['badge', course.difficulty]">{{ courseDifficultyLabel(course.difficulty) }}</span>
-                  <span class="rtc-source">{{ course.source?.includes('국립공원공단') ? '국립공원공단' : '탐방로 데이터' }}</span>
                 </div>
                 <strong class="rtc-name">{{ course.name }}</strong>
                 <div class="rtc-meta">
@@ -608,9 +486,12 @@ import {
   selectedMountain, gpsStatus, gpsError, detectGPS, loadWeather, weatherData,
   submitMountainRecommendation, loading, profile, agentSummary,
   location, customStartLocation, guideStep,
+  TAG_ICONS,
+  loadLocalMlRiskIfNeeded,
+  resetLocalMlRisk,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux, fetchMlRisk } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 import MountainCard from '../components/MountainCard.vue';
@@ -672,27 +553,7 @@ function setTimeNow() {
 const { renderOverviewMap, focusOverviewCourse, enableLocationPick, disableLocationPick, clearLocationPickMarker } = useLeafletMap();
 
 // ── 브라우즈 상태 ─────────────────────────────────────────────────────────────
-const mountainSearch = ref('');
 const hasRecommendationResult = ref(false);
-const directBrowseOpen = ref(false);
-
-// ── 태그 필터 ─────────────────────────────────────────────────────────────────
-const ALL_TAGS = [
-  '조망', '계곡', '단풍', '야생화', '역사문화', '암릉', '숲치유',
-  '일출·일몰', '설경', '호수·강뷰', '억새', '철쭉', '야경', '능선종주', '100대명산',
-];
-const TAG_ICONS = {
-  '조망': '🗻', '계곡': '💧', '단풍': '🍂', '야생화': '🌸',
-  '역사문화': '🏯', '암릉': '🪨', '숲치유': '🌲', '일출·일몰': '🌅',
-  '설경': '❄️', '호수·강뷰': '🌊', '억새': '🌾', '철쭉': '🌺',
-  '야경': '🌃', '능선종주': '🏔', '100대명산': '🏆',
-};
-const selectedTags = ref([]);
-function toggleTag(tag) {
-  const idx = selectedTags.value.indexOf(tag);
-  if (idx === -1) selectedTags.value.push(tag);
-  else selectedTags.value.splice(idx, 1);
-}
 
 // ── 출발지 선택 ───────────────────────────────────────────────────────────────
 const pickingLocation = ref(false);
@@ -733,26 +594,17 @@ const difficultyLabel = computed(() => ({
   all: '전체 난이도', easy: '초급', medium: '중급', hard: '고급',
 }[profile.difficultyFilter] || '전체 난이도'));
 
-function diffDotColor(difficulty) {
-  if (difficulty === 'easy') return '#22c55e';
-  if (difficulty === 'medium') return '#f97316';
-  if (difficulty === 'hard') return '#ef4444';
-  return '#9ca3af';
-}
-
 function setDifficulty(level) {
   profile.difficultyFilter = level;
   const expMap = { easy: 'beginner', medium: 'intermediate', hard: 'advanced' };
   if (expMap[level]) {
     profile.experience = expMap[level];
-    directBrowseOpen.value = true;
   }
 }
 
 async function handleMountainRecommend() {
   await submitMountainRecommendation();
   hasRecommendationResult.value = true;
-  directBrowseOpen.value = false;
   await nextTick();
   refreshOverviewMap();
 }
@@ -784,7 +636,6 @@ const dustData = computed(() => {
     station: w.air_station || '',
   };
 });
-const localMlRisk = ref(null);
 
 // ── 추천 분석 로딩 메시지 ────────────────────────────────────────────────────
 const _recLoadingSteps = [
@@ -863,69 +714,6 @@ const selectedMountainCourseRecommendations = computed(() => {
 
   return matchedCourses.length ? matchedCourses : [buildRepresentativeCourse(mountain)];
 });
-
-// ── 브라우즈 단계: 필터된 산 목록 ────────────────────────────────────────────
-const filteredMountains = computed(() => {
-  const search = mountainSearch.value.trim().toLowerCase();
-  const normalizedSearch = search.replace(/\s/g, '');
-  const diff = profile.difficultyFilter;
-  const safetyMap = new Map(
-    [...recommendedMountains.value, ...alternativeMountains.value].map((m) => [m.id, m])
-  );
-
-  let base = publicMountains.value.map((m) => {
-    const scored = safetyMap.get(m.id);
-    return scored ? { ...m, ...scored } : m;
-  });
-
-  if (diff && diff !== 'all' && !search) {
-    base = base.filter((m) => m.difficulty === diff);
-  }
-
-  if (search) {
-    base = base.filter(
-      (m) =>
-        m.name.toLowerCase().replace(/\s/g, '').includes(normalizedSearch) ||
-        (m.region || '').toLowerCase().replace(/\s/g, '').includes(normalizedSearch),
-    );
-  }
-
-  if (selectedTags.value.length > 0) {
-    base = base.filter((m) =>
-      selectedTags.value.every((tag) => (m.tags || []).includes(tag)),
-    );
-  }
-
-  return base.sort((a, b) => {
-    if (search) {
-      const aRank = searchRank(a, normalizedSearch);
-      const bRank = searchRank(b, normalizedSearch);
-      if (aRank !== bRank) return aRank - bRank;
-    }
-    const aRanked = !!a.safety_decision;
-    const bRanked = !!b.safety_decision;
-    if (aRanked !== bRanked) return aRanked ? -1 : 1;
-    if (aRanked && bRanked) {
-      const order = { recommend: 0, caution: 1, not_recommended: 2 };
-      return (order[a.safety_decision] ?? 3) - (order[b.safety_decision] ?? 3);
-    }
-    return (b.crowding || 0) - (a.crowding || 0);
-  });
-});
-
-function searchRank(mountain, normalizedSearch) {
-  const name = (mountain.name || '').toLowerCase().replace(/\s/g, '');
-  const region = (mountain.region || '').toLowerCase().replace(/\s/g, '');
-  if (name === normalizedSearch) return 0;
-  if (name.startsWith(normalizedSearch)) return 1;
-  if (name.includes(normalizedSearch)) return 2;
-  if (region.includes(normalizedSearch)) return 3;
-  return 4;
-}
-
-function browseBadgeClass(mountain) {
-  return { recommend: 'green', caution: 'yellow', not_recommended: 'red' }[mountain.safety_decision] || '';
-}
 
 function normalizeText(value) {
   return String(value || '').replace(/\s/g, '').toLowerCase();
@@ -1062,17 +850,10 @@ async function enterCourseStep(mountain) {
   weatherData.value = null;
   fluxData.value = null;
   fluxLoading.value = false;
-  localMlRisk.value = null;
+  resetLocalMlRisk();
 
   // 추천 결과에 포함되지 않은 산을 직접 클릭했을 때 ML 위험도 별도 조회
-  const alreadyScored = [...recommendedMountains.value, ...alternativeMountains.value].find(
-    (r) => r.id === mountain?.id,
-  );
-  if (!alreadyScored) {
-    fetchMlRisk()
-      .then(d => { localMlRisk.value = d; })
-      .catch(() => {});
-  }
+  loadLocalMlRiskIfNeeded(mountain);
 
   if (mountain?.lat && mountain?.lng) {
     loadWeather(mountain.lat, mountain.lng, mountain.name);
@@ -1131,48 +912,6 @@ function backToBrowse() {
   selectedTrailCourse.value = null;
   refreshOverviewMap();
 }
-
-// ── 산행 안전 등급 (추천 결과 or 날씨 기반) ──────────────────────────────────
-const mountainSafetyDecision = computed(() => {
-  const m = selectedMountain.value;
-  if (!m) return null;
-
-  const scored = [...recommendedMountains.value, ...alternativeMountains.value].find(
-    (r) => r.id === m.id,
-  );
-  if (scored?.safety_decision) {
-    return {
-      class: { recommend: 'green', caution: 'yellow', not_recommended: 'red' }[scored.safety_decision] || '',
-      label: scored.safety_label || scored.safety_decision,
-    };
-  }
-
-  const w = weatherData.value;
-  if (!w) return null;
-  const rain = w.rainfall_mm ?? 0;
-  const wind = w.wind_speed_ms ?? 0;
-  if (rain >= 20 || wind >= 10) return { class: 'red', label: '비추천' };
-  if (rain > 0 || wind >= 5) return { class: 'yellow', label: '주의' };
-  return { class: 'green', label: '추천' };
-});
-
-// ── ML 위험 정보 ──────────────────────────────────────────────────────────────
-const mlRiskInfo = computed(() => {
-  const m = selectedMountain.value;
-  if (!m) return null;
-  const scored = [...recommendedMountains.value, ...alternativeMountains.value].find((r) => r.id === m.id);
-  return scored?.ml_risk_info || localMlRisk.value || null;
-});
-
-const mlTrainingNote = computed(() => {
-  const training = mlRiskInfo.value?.training;
-  const rows = training?.rows;
-  const years = training?.year_range;
-  if (rows && Array.isArray(years) && years.length === 2) {
-    return `${years[0]}-${years[1]}년 소방청 산악사고 ${Number(rows).toLocaleString()}건`;
-  }
-  return '2010-2024년 소방청 산악사고 112,902건';
-});
 
 // ── 일몰 경고 ────────────────────────────────────────────────────────────────
 const sunsetWarning = computed(() => {

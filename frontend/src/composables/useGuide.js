@@ -1,5 +1,5 @@
 import { computed, reactive, ref } from 'vue';
-import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations, fetchVWorldTrails, fetchOSMTrails, fetchMountains, fetchMountainRecommendations } from '../api.js';
+import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations, fetchVWorldTrails, fetchOSMTrails, fetchMountains, fetchMountainRecommendations, fetchMlRisk } from '../api.js';
 import { fallbackCourses } from '../data/fallbackCourses.js';
 import { fallbackMountainDescriptions } from '../data/fallbackMountainDescriptions.js';
 import { fallbackMountains } from '../data/fallbackMountains.js';
@@ -80,6 +80,7 @@ export const alternatives = ref([]);
 export const selectedCourse = ref(null);
 export const weatherData = ref(null);
 export const disasterZones = ref([]);
+export const localMlRisk = ref(null);
 export const resultState = ref('idle');
 export const agentSummary = ref('산과 출발 조건을 선택하면 실제 탐방로, 날씨, 일몰, 위험 데이터를 종합해 안전 등급을 계산합니다.');
 export const alternativeActions = ref([]);
@@ -130,6 +131,105 @@ export const { location, gpsStatus, gpsError, detectGPS } = useLocation();
 
 // 사용자가 직접 지정한 출발지 (null이면 GPS 위치 사용)
 export const customStartLocation = ref(null); // { lat, lng, name }
+
+export const TAG_ICONS = {
+  '조망': '🗻', '계곡': '💧', '단풍': '🍂', '야생화': '🌸',
+  '역사문화': '🏯', '암릉': '🪨', '숲치유': '🌲', '일출·일몰': '🌅',
+  '설경': '❄️', '호수·강뷰': '🌊', '억새': '🌾', '철쭉': '🌺',
+  '야경': '🌃', '능선종주': '🏔', '100대명산': '🏆',
+};
+
+export const mountainSearch = ref('');
+
+export function diffDotColor(difficulty) {
+  if (difficulty === 'easy') return '#22c55e';
+  if (difficulty === 'medium') return '#f97316';
+  if (difficulty === 'hard') return '#ef4444';
+  return '#9ca3af';
+}
+
+export const filteredMountains = computed(() => {
+  const search = mountainSearch.value.trim().toLowerCase();
+  const normalizedSearch = search.replace(/\s/g, '');
+  const diff = profile.difficultyFilter;
+  const safetyMap = new Map(
+    [...recommendedMountains.value, ...alternativeMountains.value].map((m) => [m.id, m])
+  );
+
+  let base = publicMountains.value.map((m) => {
+    const scored = safetyMap.get(m.id);
+    return scored ? { ...m, ...scored } : m;
+  });
+
+  if (diff && diff !== 'all' && !search) {
+    base = base.filter((m) => m.difficulty === diff);
+  }
+
+  if (search) {
+    base = base.filter(
+      (m) =>
+        m.name.toLowerCase().replace(/\s/g, '').includes(normalizedSearch) ||
+        (m.region || '').toLowerCase().replace(/\s/g, '').includes(normalizedSearch),
+    );
+  }
+
+  return base.sort((a, b) => {
+    if (search) {
+      const aRank = searchRank(a, normalizedSearch);
+      const bRank = searchRank(b, normalizedSearch);
+      if (aRank !== bRank) return aRank - bRank;
+    }
+    const aRanked = !!a.safety_decision;
+    const bRanked = !!b.safety_decision;
+    if (aRanked !== bRanked) return aRanked ? -1 : 1;
+    if (aRanked && bRanked) {
+      const order = { recommend: 0, caution: 1, not_recommended: 2 };
+      return (order[a.safety_decision] ?? 3) - (order[b.safety_decision] ?? 3);
+    }
+    return (b.crowding || 0) - (a.crowding || 0);
+  });
+});
+
+export const mlRiskInfo = computed(() => {
+  const m = selectedMountain.value;
+  if (!m) return null;
+  const scored = [...recommendedMountains.value, ...alternativeMountains.value].find((r) => r.id === m.id);
+  return scored?.ml_risk_info || localMlRisk.value || null;
+});
+
+export const mlTrainingNote = computed(() => {
+  const training = mlRiskInfo.value?.training;
+  const rows = training?.rows;
+  const years = training?.year_range;
+  if (rows && Array.isArray(years) && years.length === 2) {
+    return `${years[0]}-${years[1]}년 소방청 산악사고 ${Number(rows).toLocaleString()}건`;
+  }
+  return '2010-2024년 소방청 산악사고 112,902건';
+});
+
+export function resetLocalMlRisk() {
+  localMlRisk.value = null;
+}
+
+export function loadLocalMlRiskIfNeeded(mountain) {
+  const alreadyScored = [...recommendedMountains.value, ...alternativeMountains.value].find(
+    (r) => r.id === mountain?.id,
+  );
+  if (alreadyScored) return;
+  fetchMlRisk()
+    .then((d) => { localMlRisk.value = d; })
+    .catch(() => {});
+}
+
+function searchRank(mountain, normalizedSearch) {
+  const name = (mountain.name || '').toLowerCase().replace(/\s/g, '');
+  const region = (mountain.region || '').toLowerCase().replace(/\s/g, '');
+  if (name === normalizedSearch) return 0;
+  if (name.startsWith(normalizedSearch)) return 1;
+  if (name.includes(normalizedSearch)) return 2;
+  if (region.includes(normalizedSearch)) return 3;
+  return 4;
+}
 
 export const mountainOptions = computed(() => {
   const buckets = new Map();

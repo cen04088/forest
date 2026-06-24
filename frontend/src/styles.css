@@ -471,6 +471,10 @@ p {
   transform: translateY(-2px) scale(1.1);
 }
 
+.sidebar-search-panel {
+  display: none;
+}
+
 .screen-stack {
   display: grid;
   gap: 12px;
@@ -4258,6 +4262,9 @@ p {
     box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 4px 0 24px rgba(0,0,0,0.04);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #d4e8d8 transparent;
   }
 
   .tabbar button,
@@ -4301,6 +4308,99 @@ p {
   }
 
   /* ── 안전코스 탭: 지도 2 : 패널 1 ── */
+  .sidebar-search-panel {
+    display: grid;
+    gap: 9px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .sidebar-search-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 2px;
+  }
+
+  .sidebar-search-head h2 {
+    font-size: 15px;
+    line-height: 1.25;
+    font-weight: 900;
+    color: var(--ink);
+  }
+
+  .sidebar-search-row {
+    border-radius: 11px;
+    padding: 0 10px;
+  }
+
+  .sidebar-search-row .bfp-search-input {
+    min-width: 0;
+    padding: 9px 0;
+    font-size: 12px;
+  }
+
+  .sidebar-mountain-list {
+    max-height: 326px;
+    overflow-y: auto;
+    padding-right: 2px;
+    margin-top: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #d4e8d8 transparent;
+  }
+
+  .sidebar-mountain-row {
+    padding: 9px 10px;
+    gap: 8px;
+    border-radius: 10px;
+  }
+
+  .sidebar-mountain-row .mbr-name {
+    font-size: 12px;
+  }
+
+  .sidebar-mountain-row .mbr-meta {
+    font-size: 10px;
+  }
+
+  .sidebar-mountain-row .mbr-arrow {
+    width: 14px;
+    height: 14px;
+  }
+
+  .sidebar-search-empty,
+  .sidebar-search-loading {
+    padding: 10px 4px;
+    font-size: 12px;
+  }
+
+  .sidebar-ml-risk-card {
+    margin-top: 4px;
+    padding: 11px 10px;
+  }
+
+  .sidebar-ml-risk-card .ml-risk-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .sidebar-ml-risk-card .ml-risk-title {
+    font-size: 11px;
+  }
+
+  .sidebar-ml-risk-card .ml-risk-badge,
+  .sidebar-ml-risk-card .ml-type-chip {
+    font-size: 10px;
+  }
+
+  .sidebar-ml-risk-card .ml-risk-warn {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
   .guide-layout {
     display: grid !important;
     grid-template-columns: 2fr 1fr;
@@ -5676,12 +5776,6 @@ p {
 .rtc-rank.top {
   background: var(--green-soft);
   color: var(--green-deep);
-}
-
-.rtc-source {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
 }
 
 .rtc-name {
