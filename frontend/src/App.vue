@@ -1,28 +1,12 @@
 <template>
   <main class="app-shell">
     <!-- ─── 히어로 헤더 ──────────────────────────────────────────────────── -->
-    <header class="app-hero">
+    <header v-if="showSafetyHero" class="app-hero">
       <LiveSafetyHero
         :safety-items="liveSafetyItems"
         :slides="heroThemeSlides"
         @select-theme="handleThemeSelect"
       />
-
-      <div class="hero-nav">
-        <div class="hero-nav-actions">
-          <button v-if="authUser" class="hero-auth-btn" type="button" @click="showAuthModal = true">
-            <span class="auth-avatar">{{ authUser.nickname[0] }}</span>
-            <span class="auth-nickname">{{ authUser.nickname }}</span>
-          </button>
-          <button v-else class="hero-login-btn" type="button" @click="showAuthModal = true">로그인</button>
-          <button class="hero-refresh-btn" type="button" title="새로고침" @click="reload">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 3v4h-4M6 21v-4h4" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
     </header>
 
     <!-- ─── 에러 배너 ──────────────────────────────────────────────────── -->
@@ -52,9 +36,24 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         <span>커뮤니티</span>
       </router-link>
-      <router-link to="/my-page" class="tabbar-item" active-class="active">
+      <router-link
+        v-if="authUser"
+        to="/my-page"
+        class="tabbar-item"
+        active-class="active"
+      >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-        <span>내정보</span>
+        <span>마이페이지</span>
+      </router-link>
+      <router-link
+        v-else
+        to="/login"
+        class="tabbar-item"
+        active-class="active"
+        @click="openLogin"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span>로그인</span>
       </router-link>
 
       <!-- ─── 실시간 산행 환경 미니 카드 ── -->
@@ -126,9 +125,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { authUser, loadMe, showAuthModal } from './composables/useAuth.js';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { authMode, authUser, loadMe, showAuthModal } from './composables/useAuth.js';
 import { loadMyPageData } from './composables/useUserData.js';
 import {
   guideError,
@@ -145,6 +144,7 @@ import { heroThemeSlides, liveSafetyItems } from './data/heroCuration.js';
 
 const showOnboarding = ref(!localStorage.getItem('ollaOnboarded'));
 const router = useRouter();
+const route = useRoute();
 
 function goHome() {
   guideStep.value = 'browse';
@@ -154,6 +154,22 @@ function goHome() {
 
 function handleThemeSelect(slide) {
   router.push({ path: '/guide', query: { theme: slide.id } });
+}
+
+const showSafetyHero = computed(() => route.path === '/guide');
+
+function openLogin() {
+  authMode.value = 'login';
+  showAuthModal.value = true;
+}
+
+function syncLoginRoute() {
+  if (route.path !== '/login') return;
+  if (authUser.value) {
+    router.replace('/my-page');
+    return;
+  }
+  openLogin();
 }
 
 const swWeatherIcon = computed(() => {
@@ -197,13 +213,13 @@ const globalError = computed({
   set: (v) => { guideError.value = v; communityError.value = v; },
 });
 
-function reload() {
-  window.location.reload();
-}
-
 onMounted(async () => {
   await loadMe();
   if (authUser.value) loadMyPageData();
   loadWeather();
+  syncLoginRoute();
 });
+
+watch(() => route.path, syncLoginRoute);
+watch(authUser, syncLoginRoute);
 </script>

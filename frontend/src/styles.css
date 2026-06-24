@@ -98,75 +98,6 @@ p {
   content: none;
 }
 
-.hero-nav {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 14px 12px;
-  position: absolute;
-  top: 50px;
-  right: 0;
-  z-index: 3;
-}
-.hero-logo-pill {
-  background: rgba(255,255,255,0.95);
-  border-radius: 10px;
-  padding: 4px 10px;
-  display: inline-flex;
-  align-items: center;
-}
-.hero-logo-img {
-  height: 34px;
-  width: auto;
-}
-.hero-nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.hero-login-btn {
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1.5px solid rgba(22, 163, 74, 0.28);
-  background: rgba(255,255,255,0.86);
-  color: var(--green-deep);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-  backdrop-filter: blur(8px);
-}
-.hero-login-btn:hover { background: var(--green-soft); }
-.hero-auth-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  border: 1.5px solid rgba(22, 163, 74, 0.28);
-  background: rgba(255,255,255,0.86);
-  color: var(--green-deep);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-}
-.hero-refresh-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(22, 163, 74, 0.24);
-  background: rgba(255,255,255,0.86);
-  color: var(--green-deep);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.hero-refresh-btn:hover { background: var(--green-soft); color: var(--green-deep); }
-.hero-refresh-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
-
 .live-safety-hero {
   display: grid;
   background: var(--paper);
@@ -372,19 +303,6 @@ p {
 }
 
 @media (max-width: 520px) {
-  .hero-nav {
-    top: 46px;
-    padding-right: 10px;
-  }
-  .hero-login-btn,
-  .hero-auth-btn {
-    padding: 5px 10px;
-    font-size: 12px;
-  }
-  .hero-refresh-btn {
-    width: 30px;
-    height: 30px;
-  }
   .live-safety-strip {
     grid-template-columns: 1fr;
     gap: 7px;
@@ -4076,7 +3994,6 @@ p {
 
   /* 히어로 데스크톱 */
   .app-hero { margin-bottom: 16px; border-radius: 20px; }
-  .hero-nav { top: 48px; padding-right: 18px; }
   .live-safety-strip { padding-inline: 18px; }
   .theme-carousel { grid-template-columns: 38px minmax(0, 1fr) 38px; padding: 14px 18px 8px; }
   .theme-slide { min-height: 128px; padding: 16px 120px 16px 18px; }
@@ -4973,27 +4890,6 @@ p {
   color: var(--muted);
 }
 
-/* ── 헤더 인증 버튼 ─────────────────────────────────────────────────────── */
-.header-actions { display: flex; align-items: center; gap: 8px; }
-.login-btn {
-  padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--green);
-  background: transparent; color: var(--green); font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: background .15s;
-}
-.login-btn:hover { background: var(--green-soft); }
-.auth-user-btn {
-  display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px;
-  border-radius: 20px; border: 1.5px solid #e2e8f0; background: #f8fafc;
-  cursor: pointer; font-size: 13px; color: #334155;
-}
-.auth-user-btn:hover { border-color: var(--green); }
-.auth-avatar {
-  width: 26px; height: 26px; border-radius: 50%; background: var(--green);
-  color: #fff; font-size: 13px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-}
-.auth-nickname { font-weight: 600; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
 /* ── 인증 모달 ──────────────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.45);
@@ -5140,6 +5036,53 @@ p {
   align-items: center;
   gap: 12px;
   color: var(--muted);
+}
+.mypage-account-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.mypage-account-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.mypage-account-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+.mypage-account-main h2 {
+  margin: 2px 0 0;
+  font-size: 20px;
+  color: var(--text);
+}
+.mypage-account-id {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.mypage-logout-btn {
+  flex: 0 0 auto;
+}
+@media (max-width: 640px) {
+  .mypage-account-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .mypage-logout-btn {
+    width: 100%;
+  }
 }
 .mypage-login-needed {
   display: flex;
