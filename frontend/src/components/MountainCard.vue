@@ -50,9 +50,16 @@
       🌇 {{ mountain.sunset_note }}
     </p>
 
-    <!-- 하이라이트 태그 -->
+    <!-- 매력 태그 (있으면 우선) / 없으면 하이라이트 -->
     <div class="mc-highlights">
-      <span v-for="h in mountain.highlights.slice(0, 3)" :key="h" class="mc-tag">{{ h }}</span>
+      <template v-if="(mountain.tags || []).length">
+        <span v-for="tag in mountain.tags.slice(0, 4)" :key="tag" class="mc-tag mc-tag-appeal">
+          {{ TAG_ICONS[tag] || '' }} {{ tag }}
+        </span>
+      </template>
+      <template v-else>
+        <span v-for="h in (mountain.highlights || []).slice(0, 3)" :key="h" class="mc-tag">{{ h }}</span>
+      </template>
     </div>
   </article>
 </template>
@@ -71,6 +78,13 @@ defineEmits(['select', 'toggleFavorite']);
 
 const DIFF_LABEL = { easy: '초급', medium: '중급', hard: '고급' };
 const DIFF_CLASS = { easy: 'easy', medium: 'medium', hard: 'hard' };
+
+const TAG_ICONS = {
+  '조망': '🗻', '계곡': '💧', '단풍': '🍂', '야생화': '🌸',
+  '역사문화': '🏯', '암릉': '🪨', '숲치유': '🌲', '일출·일몰': '🌅',
+  '설경': '❄️', '호수·강뷰': '🌊', '억새': '🌾', '철쭉': '🌺',
+  '야경': '🌃', '능선종주': '🏔', '100대명산': '🏆',
+};
 
 const diffLabel = computed(() => DIFF_LABEL[props.mountain.difficulty] || '');
 const diffClass = computed(() => DIFF_CLASS[props.mountain.difficulty] || '');

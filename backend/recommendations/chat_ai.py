@@ -4,8 +4,9 @@ _SYSTEM = """당신은 올라(Olla) 앱의 산행 안전 AI 어시스턴트 '올
 등산을 좋아하는 친한 선배처럼, 실제 도움이 되는 구체적인 조언을 자연스럽고 편안하게 말해주세요.
 
 [말투 원칙]
+- 모든 답변은 반드시 존댓말(~입니다, ~해요, ~드려요)로 통일하세요. 반말은 절대 사용하지 마세요.
+- 사용자를 어떤 호칭으로도 부르지 마세요. "선배님", "후배님", "님", "여러분" 등 모든 호칭 금지. 바로 본문으로 시작하세요.
 - 딱딱한 나열식 설명 대신, 대화하듯 자연스럽게 써주세요.
-- "~하세요" 체를 기본으로 하되, 너무 격식을 차리지 마세요.
 - "주의하세요", "확인하세요" 같은 막연한 표현 대신 구체적인 행동을 알려주세요.
 - 안전이 중요한 상황에선 단호하고 명확하게, 일반 질문엔 편안하게 답해주세요.
 
@@ -146,27 +147,35 @@ def _build_realtime_safety(context: dict) -> str:
 
     flux = context.get("forest_flux") or {}
     if flux.get("ok"):
-        fl = []
-        fl.append(f"산림생태플럭스 ({flux.get('station_name', '관측소')})")
-        if flux.get("nee_umol") is not None:
-            fl.append(f"탄소상태: {flux['carbon_status']} (NEE {flux['nee_umol']} μmol/m²/s)")
-        if flux.get("temp_c") is not None:
-            fl.append(f"산림기온: {flux['temp_c']}°C")
-        if flux.get("soil_temp_c") is not None:
-            fl.append(f"토양온도: {flux['soil_temp_c']}°C ({flux.get('soil_status', '')})")
-        if flux.get("rg_wm2") is not None:
-            fl.append(f"태양복사: {flux['rg_wm2']} W/m² → 자외선 {flux.get('uv_risk', '')} (UV {flux.get('uv_index', '')})")
+        fl = [f"산행환경지수 ({flux.get('station_name', '관측소')})"]
         if flux.get("discomfort_index") is not None:
-            fl.append(f"불쾌지수: {flux['discomfort_index']} ({flux.get('discomfort_label', '')}), 추정습도 {flux.get('rh_estimate_pct', '-')}%")
-        if flux.get("humidity_level"):
-            fl.append(f"산림습윤도: {flux['humidity_level']}")
-        if flux.get("carbon_footprint_msg"):
-            fl.append(f"탄소발자국: {flux['carbon_footprint_msg']}")
-        if flux.get("uv_advice"):
-            fl.append(f"자외선 조언: {flux['uv_advice']}")
+            fl.append(
+                f"불쾌지수: {flux['discomfort_index']} ({flux.get('discomfort_label', '')})"
+                + (f", 기온 {flux.get('temp_c')}°C 습도 {flux.get('humidity_pct')}%" if flux.get("temp_c") else "")
+            )
+        if flux.get("uv_index") is not None:
+            fl.append(f"자외선: UV {flux['uv_index']} ({flux.get('uv_risk', '')})")
+        if flux.get("wildfire_risk"):
+            fl.append(f"산불위험: {flux.get('wildfire_label', flux['wildfire_risk'])}")
+        if flux.get("pm25_ugm3") is not None:
+            fl.append(
+                f"대기질 PM2.5 {flux['pm25_ugm3']}㎍/m³ ({flux.get('grade_pm25', '')})"
+                + (f", PM10 {flux['pm10_ugm3']}㎍/m³" if flux.get("pm10_ugm3") is not None else "")
+            )
+        if flux.get("carbon_status"):
+            fl.append(f"탄소상태: {flux['carbon_status']} (계절 추정)")
         parts.append("\n  ".join(fl))
 
     return "\n".join(parts)
+
+
+def _strip_markdown(text: str) -> str:
+    """마크다운 볼드(**text**), 이탤릭(*text*), 헤더(#) 제거."""
+    import re
+    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)   # **bold** → bold
+    text = re.sub(r'\*(.+?)\*', r'\1', text)        # *italic* → italic
+    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)  # # 헤더 → 텍스트
+    return text
 
 
 def _extract_response_text(response) -> str:
@@ -234,30 +243,28 @@ def get_chat_response(messages: list, context: dict) -> str:
 
         system_prompt = _build_system(context, rag_context)
 
-        # gemini-2.5-pro는 thinking 모델 — thinking_budget 제한으로 응답 토큰 확보
         try:
             gen_config = types.GenerateContentConfig(
                 system_instruction=system_prompt,
                 max_output_tokens=8192,
-                thinking_config=types.ThinkingConfig(thinking_budget=1024),
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             )
         except Exception:
-            # 구버전 SDK는 thinking_config 미지원 → 일반 설정으로 폴백
             gen_config = types.GenerateContentConfig(
                 system_instruction=system_prompt,
                 max_output_tokens=8192,
             )
 
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model="gemini-3.5-flash",
             contents=contents,
             config=gen_config,
         )
 
-        # thinking 파트를 제외한 실제 응답 텍스트만 추출
+        # thinking 파트를 제외한 실제 응답 텍스트만 추출 후 마크다운 볼드 제거
         text = _extract_response_text(response)
         if text:
-            return text
+            return _strip_markdown(text)
 
         return "응답을 생성하지 못했습니다. 다시 질문해 주세요."
 

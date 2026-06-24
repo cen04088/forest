@@ -194,6 +194,18 @@
           </div>
         </section>
 
+        <!-- ── 분석 중 로딩 카드 ── -->
+        <section v-if="loading" class="panel rec-loading-panel">
+          <div class="rec-loading-inner">
+            <div class="rec-loading-icon">🔍</div>
+            <p class="rec-loading-msg">{{ recLoadingMsg }}</p>
+            <div class="rec-loading-bar-wrap">
+              <div class="rec-loading-bar" :style="{ width: recLoadingPct + '%' }"></div>
+            </div>
+            <p class="rec-loading-sub">AI가 수십 가지 안전·환경 지표를 분석하고 있어요</p>
+          </div>
+        </section>
+
         <!-- ── AI 추천 결과 ── -->
         <section v-if="hasRecommendationResult && (recommendedMountains.length || alternativeMountains.length)" class="panel">
           <div class="section-title compact">
@@ -221,19 +233,6 @@
             />
           </div>
 
-          <div v-if="recommendedMountains.length && alternativeMountains.length" class="alternative-mountain-strip">
-            <p class="bfp-label">다른 선택지</p>
-            <button
-              v-for="mountain in alternativeMountains.slice(0, 2)"
-              :key="mountain.mountain_key || mountain.id"
-              class="alternative-mountain-btn"
-              type="button"
-              @click="enterCourseStep(mountain)"
-            >
-              <strong>{{ mountain.name }}</strong>
-              <span>{{ mountain.safety_label || '대안 코스' }}</span>
-            </button>
-          </div>
         </section>
 
         <!-- ── 직접 찾기 ── -->
@@ -243,6 +242,20 @@
               <p class="eyebrow">Manual Search</p>
               <h2>직접 산 찾기<span class="mini-status" style="margin-left:6px">{{ filteredMountains.length }}</span></h2>
             </div>
+            <button v-if="selectedTags.length" class="clear-rec-btn" type="button" @click="selectedTags = []">태그 초기화</button>
+          </div>
+
+          <!-- 태그 필터 -->
+          <div class="tag-filter-wrap">
+            <button
+              v-for="tag in ALL_TAGS"
+              :key="tag"
+              :class="['tag-filter-chip', selectedTags.includes(tag) ? 'active' : '']"
+              type="button"
+              @click="toggleTag(tag)"
+            >
+              <span class="tfc-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}
+            </button>
           </div>
 
           <div class="bfp-search-row">
@@ -257,6 +270,9 @@
           </div>
 
           <div v-if="loading && !filteredMountains.length" class="community-loading">분석 중…</div>
+          <p v-else-if="!filteredMountains.length && (selectedTags.length || mountainSearch)" class="tag-filter-empty">
+            조건에 맞는 산이 없어요. 태그나 검색어를 줄여보세요.
+          </p>
 
           <div class="mountain-browse-list">
             <button
@@ -270,8 +286,14 @@
               <div class="mbr-body">
                 <strong class="mbr-name">{{ mountain.name }}</strong>
                 <span class="mbr-meta">{{ mountain.region }}&nbsp;·&nbsp;{{ mountain.elevation_m }}m</span>
+                <div v-if="(mountain.tags || []).length" class="mbr-tags">
+                  <span
+                    v-for="tag in (mountain.tags || []).slice(0, 4)"
+                    :key="tag"
+                    :class="['mbr-tag', selectedTags.includes(tag) ? 'active' : '']"
+                  >{{ TAG_ICONS[tag] }} {{ tag }}</span>
+                </div>
               </div>
-              <span v-if="mountain.national_park" class="mc-np-badge" style="flex-shrink:0">국립공원</span>
               <svg class="mbr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           </div>
@@ -312,6 +334,11 @@
               <h2 class="csh-mountain-name">{{ selectedMountain.name }}</h2>
               <span v-if="selectedMountain.national_park" class="mc-np-badge">국립공원</span>
             </div>
+            <div v-if="(selectedMountain.tags || []).length" class="csh-tags">
+              <span v-for="tag in selectedMountain.tags" :key="tag" class="csh-tag">
+                {{ TAG_ICONS[tag] }} {{ tag }}
+              </span>
+            </div>
           </div>
 
           <!-- 오늘 산행 안전 등급 -->
@@ -331,112 +358,159 @@
           </div>
 
           <!-- 날씨 카드 -->
-          <div v-if="weatherData" class="mountain-weather-card">
-            <div class="mwc-header">
-              <span class="mwc-label">📡 {{ selectedMountain.name }} 날씨</span>
-              <span class="mwc-source">{{ weatherData.source === 'mock' ? '추정값' : '기상청 실황' }}</span>
+          <Transition name="card-reveal" mode="out-in">
+            <div v-if="weatherData" key="weather-real" class="mountain-weather-card">
+              <div class="mwc-header">
+                <span class="mwc-label">📡 {{ selectedMountain.name }} 날씨</span>
+                <span class="mwc-source">{{ weatherData.source === 'mock' ? '추정값' : '기상청 실황' }}</span>
+              </div>
+              <div class="mwc-row">
+                <span class="mwc-item">
+                  <span class="mwc-icon">🌡</span>
+                  <span>{{ weatherData.temperature_c }}°C</span>
+                </span>
+                <span class="mwc-item" :class="weatherData.rainfall_mm > 0 ? 'mwc-warn' : ''">
+                  <span class="mwc-icon">💧</span>
+                  <span>강수 {{ weatherData.rainfall_mm ?? 0 }}mm</span>
+                </span>
+                <span class="mwc-item" :class="weatherData.wind_speed_ms >= 5 ? 'mwc-warn' : ''">
+                  <span class="mwc-icon">💨</span>
+                  <span>풍속 {{ weatherData.wind_speed_ms }}m/s</span>
+                </span>
+                <span class="mwc-item">
+                  <span class="mwc-icon">🌄</span>
+                  <span>일출 {{ weatherData.sunrise || '-' }}</span>
+                </span>
+                <span class="mwc-item" :class="sunsetWarning ? 'mwc-warn' : ''">
+                  <span class="mwc-icon">🌅</span>
+                  <span>일몰 {{ weatherData.sunset || '-' }}</span>
+                </span>
+              </div>
+              <p v-if="selectedMountainSunsetNote" class="mwc-sunset-note">{{ selectedMountainSunsetNote }}</p>
+              <div v-if="dustData" class="mwc-dust-row">
+                <span class="mwc-dust-label">🍃 산림 미세먼지</span>
+                <span :class="['mwc-dust-badge', dustData.grade_pm10 === '좋음' ? 'dust-good' : dustData.grade_pm10 === '보통' ? 'dust-normal' : dustData.grade_pm10 === '나쁨' ? 'dust-bad' : 'dust-verybad']">
+                  PM10 {{ dustData.pm10_ugm3 ?? '-' }}㎍/㎥ {{ dustData.grade_pm10 }}
+                </span>
+                <span :class="['mwc-dust-badge', dustData.grade_pm25 === '좋음' ? 'dust-good' : dustData.grade_pm25 === '보통' ? 'dust-normal' : dustData.grade_pm25 === '나쁨' ? 'dust-bad' : 'dust-verybad']">
+                  PM2.5 {{ dustData.pm25_ugm3 ?? '-' }}㎍/㎥ {{ dustData.grade_pm25 }}
+                </span>
+              </div>
             </div>
-            <div class="mwc-row">
-              <span class="mwc-item">
-                <span class="mwc-icon">🌡</span>
-                <span>{{ weatherData.temperature_c }}°C</span>
-              </span>
-              <span class="mwc-item" :class="weatherData.rainfall_mm > 0 ? 'mwc-warn' : ''">
-                <span class="mwc-icon">💧</span>
-                <span>강수 {{ weatherData.rainfall_mm ?? 0 }}mm</span>
-              </span>
-              <span class="mwc-item" :class="weatherData.wind_speed_ms >= 5 ? 'mwc-warn' : ''">
-                <span class="mwc-icon">💨</span>
-                <span>풍속 {{ weatherData.wind_speed_ms }}m/s</span>
-              </span>
-              <span class="mwc-item">
-                <span class="mwc-icon">🌄</span>
-                <span>일출 {{ weatherData.sunrise || '-' }}</span>
-              </span>
-              <span class="mwc-item" :class="sunsetWarning ? 'mwc-warn' : ''">
-                <span class="mwc-icon">🌅</span>
-                <span>일몰 {{ weatherData.sunset || '-' }}</span>
-              </span>
+            <div v-else key="weather-skel" class="card-skeleton">
+              <div class="sk-header">
+                <div class="sk-line sk-w40"></div>
+                <div class="sk-line sk-w20 sk-small"></div>
+              </div>
+              <div class="sk-pills">
+                <div class="sk-pill" v-for="n in 5" :key="n"></div>
+              </div>
             </div>
-            <p v-if="selectedMountainSunsetNote" class="mwc-sunset-note">{{ selectedMountainSunsetNote }}</p>
-          </div>
+          </Transition>
 
-          <!-- 산림 생태 현황 카드 -->
-          <div v-if="fluxData && fluxData.ok" class="forest-flux-card">
-            <div class="ffc-header">
-              <span class="ffc-title">🌳 산림 생태 현황</span>
-              <span class="ffc-station">{{ fluxData.station_name }} 관측소</span>
+          <!-- 산행 환경 지수 카드 -->
+          <Transition name="card-reveal" mode="out-in">
+            <div v-if="fluxData && fluxData.ok" key="flux-real" class="forest-flux-card">
+              <div class="ffc-header">
+                <span class="ffc-title">🏔 산행 환경 지수</span>
+                <span class="ffc-station">실시간</span>
+              </div>
+              <div class="ffc-badges">
+                <span v-if="fluxData.discomfort_label" :class="['ffc-badge', fluxData.discomfort_index >= 80 ? 'ffc-red' : fluxData.discomfort_index >= 75 ? 'ffc-orange' : fluxData.discomfort_index >= 68 ? 'ffc-yellow' : 'ffc-green']">
+                  🌡 불쾌지수 {{ fluxData.discomfort_index }} ({{ fluxData.discomfort_label }})
+                </span>
+                <span v-if="fluxData.uv_risk" :class="['ffc-badge', fluxData.uv_index >= 8 ? 'ffc-red' : fluxData.uv_index >= 6 ? 'ffc-orange' : fluxData.uv_index >= 3 ? 'ffc-yellow' : 'ffc-gray']">
+                  ☀️ 자외선 {{ fluxData.uv_risk }} (UV {{ fluxData.uv_index }})
+                </span>
+                <span v-if="fluxData.pm25_ugm3 != null" :class="['ffc-badge', fluxData.grade_pm25 === '나쁨' || fluxData.grade_pm25 === '매우나쁨' ? 'ffc-red' : fluxData.grade_pm25 === '보통' ? 'ffc-yellow' : 'ffc-green']">
+                  💨 PM2.5 {{ fluxData.pm25_ugm3 }}㎍ ({{ fluxData.grade_pm25 }})
+                </span>
+                <span v-if="fluxData.wildfire_risk" :class="['ffc-badge', fluxData.wildfire_risk === 'very_high' || fluxData.wildfire_risk === 'high' ? 'ffc-red' : fluxData.wildfire_risk === 'medium' ? 'ffc-orange' : 'ffc-green']">
+                  🔥 산불 {{ fluxData.wildfire_label }}
+                </span>
+                <span :class="['ffc-badge', 'ffc-carbon', fluxData.carbon_status?.includes('흡수') ? 'ffc-green' : 'ffc-gray']">
+                  {{ fluxData.carbon_status?.includes('강한') ? '💚 강한 탄소흡수' : fluxData.carbon_status?.includes('흡수') ? '🌿 탄소흡수' : '⚖️ 탄소균형' }}
+                  <span class="ffc-sub">계절추정</span>
+                </span>
+              </div>
+              <p v-if="fluxData.uv_index >= 6 && fluxData.uv_advice" class="ffc-uv-advice">
+                {{ fluxData.uv_advice }}
+              </p>
             </div>
-            <div class="ffc-badges">
-              <span :class="['ffc-badge', 'ffc-carbon', fluxData.carbon_status === '강한탄소흡수' || fluxData.carbon_status === '탄소흡수' ? 'ffc-green' : fluxData.carbon_status === '탄소방출' ? 'ffc-red' : 'ffc-gray']">
-                {{ fluxData.carbon_status === '강한탄소흡수' ? '💚 강한 탄소흡수' : fluxData.carbon_status === '탄소흡수' ? '🌿 탄소흡수 중' : fluxData.carbon_status === '탄소방출' ? '⚠️ 탄소방출 중' : '⚖️ 탄소균형' }}
-              </span>
-              <span v-if="fluxData.uv_risk" :class="['ffc-badge', fluxData.uv_index >= 8 ? 'ffc-red' : fluxData.uv_index >= 6 ? 'ffc-orange' : fluxData.uv_index >= 3 ? 'ffc-yellow' : 'ffc-gray']">
-                ☀️ 자외선 {{ fluxData.uv_risk }} (UV {{ fluxData.uv_index }})
-              </span>
-              <span v-if="fluxData.discomfort_label" :class="['ffc-badge', fluxData.discomfort_index >= 80 ? 'ffc-red' : fluxData.discomfort_index >= 75 ? 'ffc-orange' : fluxData.discomfort_index >= 68 ? 'ffc-yellow' : 'ffc-green']">
-                🌡 불쾌지수 {{ fluxData.discomfort_index }} ({{ fluxData.discomfort_label }})
-              </span>
-              <span v-if="fluxData.humidity_level" class="ffc-badge ffc-blue">
-                💧 {{ fluxData.humidity_level }}
-              </span>
-              <span v-if="fluxData.soil_status" class="ffc-badge ffc-gray">
-                🪨 토양 {{ fluxData.soil_status }}
-              </span>
+            <div v-else key="flux-skel" class="card-skeleton card-skeleton-green">
+              <div class="sk-header">
+                <div class="sk-line sk-w35"></div>
+                <div class="sk-line sk-w15 sk-small"></div>
+              </div>
+              <div class="sk-pills">
+                <div class="sk-pill" v-for="n in 4" :key="n"></div>
+              </div>
             </div>
-            <p v-if="fluxData.carbon_footprint_msg" class="ffc-footprint">
-              {{ fluxData.carbon_footprint_msg }}
-            </p>
-            <p v-if="fluxData.uv_index >= 6 && fluxData.uv_advice" class="ffc-uv-advice">
-              {{ fluxData.uv_advice }}
-            </p>
-          </div>
+          </Transition>
 
           <!-- ML 사고 위험 분석 -->
-          <div v-if="mlRiskInfo" class="ml-risk-card">
-            <div class="ml-risk-header">
-              <span class="ml-risk-title">📊 소방청 사고 데이터 분석</span>
-              <span
-                :class="['ml-risk-badge',
-                  mlRiskInfo.risk_index >= 0.70 ? 'mlr-high' :
-                  mlRiskInfo.risk_index >= 0.45 ? 'mlr-medium' :
-                  mlRiskInfo.risk_index >= 0.20 ? 'mlr-low' : 'mlr-safe']"
-              >
-                {{ mlRiskInfo.risk_index >= 0.70 ? '1인당 사고율 높음' :
-                   mlRiskInfo.risk_index >= 0.45 ? '주의 구간' :
-                   mlRiskInfo.risk_index >= 0.20 ? '보통' : '상대적 안전' }}
-              </span>
+          <Transition name="card-reveal" mode="out-in">
+            <div v-if="mlRiskInfo" key="ml-real" class="ml-risk-card">
+              <div class="ml-risk-header">
+                <span class="ml-risk-title">📊 소방청 사고 데이터 분석</span>
+                <span
+                  :class="['ml-risk-badge',
+                    mlRiskInfo.risk_index >= 0.70 ? 'mlr-high' :
+                    mlRiskInfo.risk_index >= 0.45 ? 'mlr-medium' :
+                    mlRiskInfo.risk_index >= 0.20 ? 'mlr-low' : 'mlr-safe']"
+                >
+                  {{ mlRiskInfo.risk_index >= 0.70 ? '1인당 사고율 높음' :
+                     mlRiskInfo.risk_index >= 0.45 ? '주의 구간' :
+                     mlRiskInfo.risk_index >= 0.20 ? '보통' : '상대적 안전' }}
+                </span>
+              </div>
+              <p class="ml-risk-warn">{{ mlRiskInfo.warning }}</p>
+              <div class="ml-risk-types">
+                <span
+                  v-for="(prob, type) in mlRiskInfo.type_proba"
+                  :key="type"
+                  class="ml-type-chip"
+                  :class="type === mlRiskInfo.top_type ? 'ml-type-top' : ''"
+                >
+                  {{ { '부상사고':'실족·추락', '조난수색':'길잃음·조난', '질환':'탈진·질환', '기타':'기타' }[type] }}
+                  {{ Math.round(prob * 100) }}%
+                </span>
+              </div>
+              <p class="ml-risk-note">* {{ mlTrainingNote }} 기반 1인당 사고율 분석</p>
             </div>
-            <p class="ml-risk-warn">{{ mlRiskInfo.warning }}</p>
-            <div class="ml-risk-types">
-              <span
-                v-for="(prob, type) in mlRiskInfo.type_proba"
-                :key="type"
-                class="ml-type-chip"
-                :class="type === mlRiskInfo.top_type ? 'ml-type-top' : ''"
-              >
-                {{ { '부상사고':'실족·추락', '조난수색':'길잃음·조난', '질환':'탈진·질환', '기타':'기타' }[type] }}
-                {{ Math.round(prob * 100) }}%
-              </span>
+            <div v-else key="ml-skel" class="card-skeleton">
+              <div class="sk-header">
+                <div class="sk-line sk-w50"></div>
+                <div class="sk-line sk-w20 sk-small"></div>
+              </div>
+              <div class="sk-line sk-w80 sk-mt8"></div>
+              <div class="sk-pills sk-mt8">
+                <div class="sk-pill" v-for="n in 4" :key="n"></div>
+              </div>
             </div>
-            <p class="ml-risk-note">* {{ mlTrainingNote }} 기반 1인당 사고율 분석</p>
-          </div>
+          </Transition>
 
           <!-- 산 소개 -->
-          <div v-if="storyText" class="mountain-story-card">
-            <div class="msc-summary-wrap" :class="{ collapsed: storyNeedsToggle && !storyExpanded }">
-              <p class="mountain-story-summary">{{ storyText }}</p>
-              <div v-if="storyNeedsToggle && !storyExpanded" class="msc-fade"></div>
+          <Transition name="card-reveal" mode="out-in">
+            <div v-if="storyText" key="story-real" class="mountain-story-card">
+              <div class="msc-summary-wrap" :class="{ collapsed: storyNeedsToggle && !storyExpanded }">
+                <p class="mountain-story-summary">{{ storyText }}</p>
+                <div v-if="storyNeedsToggle && !storyExpanded" class="msc-fade"></div>
+              </div>
+              <button v-if="storyNeedsToggle" class="msc-toggle" type="button" @click="storyExpanded = !storyExpanded">
+                {{ storyExpanded ? '접기 ▲' : '더 보기 ▼' }}
+              </button>
+              <div v-if="mountainStory?.selection_reason" class="msc-selection">
+                <span class="msc-selection-label">🏆 100대 명산 선정 이유</span>
+                <p class="msc-selection-text">{{ mountainStory.selection_reason }}</p>
+              </div>
             </div>
-            <button v-if="storyNeedsToggle" class="msc-toggle" type="button" @click="storyExpanded = !storyExpanded">
-              {{ storyExpanded ? '접기 ▲' : '더 보기 ▼' }}
-            </button>
-
-            <div v-if="mountainStory?.selection_reason" class="msc-selection">
-              <span class="msc-selection-label">🏆 100대 명산 선정 이유</span>
-              <p class="msc-selection-text">{{ mountainStory.selection_reason }}</p>
+            <div v-else key="story-skel" class="card-skeleton card-skeleton-plain">
+              <div class="sk-line sk-w90"></div>
+              <div class="sk-line sk-w75 sk-mt8"></div>
+              <div class="sk-line sk-w60 sk-mt8"></div>
             </div>
-          </div>
+          </Transition>
 
           <!-- 산사태 예보 경고 -->
           <div v-if="landslideRisk !== 'low'" :class="['landslide-alert', landslideRisk === 'danger' ? 'ls-danger' : 'ls-caution']">
@@ -447,13 +521,13 @@
             </div>
           </div>
 
-          <div class="recommended-trails-panel">
+          <div v-if="selectedMountainCourseRecommendations.length" class="recommended-trails-panel">
             <div class="rtp-header">
               <div>
                 <p class="eyebrow">Recommended Trails</p>
                 <h3>{{ selectedMountain.name }} 추천 탐방로</h3>
               </div>
-              <span class="mini-status">{{ selectedMountainCourseRecommendations.length }}개</span>
+              <span v-if="selectedMountainCourseRecommendations.length" class="mini-status">{{ selectedMountainCourseRecommendations.length }}개</span>
             </div>
 
             <p class="rtp-copy">
@@ -486,9 +560,6 @@
               </button>
             </div>
 
-            <div v-else class="trail-empty-state">
-              이 산과 바로 연결된 탐방로 데이터가 아직 없어요.
-            </div>
           </div>
 
           <!-- 재난위험지구 -->
@@ -515,16 +586,6 @@
         </section>
 
 
-        <!-- 하이라이트 -->
-        <section v-if="selectedMountain.highlights?.length" class="panel">
-          <div class="section-title compact">
-            <div><p class="eyebrow">Highlights</p><h2>이 산의 매력</h2></div>
-          </div>
-          <ul class="highlight-list">
-            <li v-for="h in selectedMountain.highlights" :key="h">{{ h }}</li>
-          </ul>
-        </section>
-
         <!-- AI 도우미 CTA -->
         <div class="chat-cta-panel">
           <p class="chat-cta-text">{{ selectedMountain.name }} 산행, AI에게 더 물어보세요</p>
@@ -549,7 +610,7 @@ import {
   location, customStartLocation, guideStep,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux, fetchMlRisk } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 import MountainCard from '../components/MountainCard.vue';
@@ -614,6 +675,24 @@ const { renderOverviewMap, focusOverviewCourse, enableLocationPick, disableLocat
 const mountainSearch = ref('');
 const hasRecommendationResult = ref(false);
 const directBrowseOpen = ref(false);
+
+// ── 태그 필터 ─────────────────────────────────────────────────────────────────
+const ALL_TAGS = [
+  '조망', '계곡', '단풍', '야생화', '역사문화', '암릉', '숲치유',
+  '일출·일몰', '설경', '호수·강뷰', '억새', '철쭉', '야경', '능선종주', '100대명산',
+];
+const TAG_ICONS = {
+  '조망': '🗻', '계곡': '💧', '단풍': '🍂', '야생화': '🌸',
+  '역사문화': '🏯', '암릉': '🪨', '숲치유': '🌲', '일출·일몰': '🌅',
+  '설경': '❄️', '호수·강뷰': '🌊', '억새': '🌾', '철쭉': '🌺',
+  '야경': '🌃', '능선종주': '🏔', '100대명산': '🏆',
+};
+const selectedTags = ref([]);
+function toggleTag(tag) {
+  const idx = selectedTags.value.indexOf(tag);
+  if (idx === -1) selectedTags.value.push(tag);
+  else selectedTags.value.splice(idx, 1);
+}
 
 // ── 출발지 선택 ───────────────────────────────────────────────────────────────
 const pickingLocation = ref(false);
@@ -691,6 +770,55 @@ const storyExpanded = ref(false);
 const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
 const selectedTrailCourse = ref(null);
 const fluxData = ref(null);
+const fluxLoading = ref(false);
+
+// 미세먼지: weatherData에 에어코리아 실시간값이 포함돼 있음
+const dustData = computed(() => {
+  const w = weatherData.value;
+  if (!w || w.pm25_ugm3 == null) return null;
+  return {
+    pm10_ugm3: w.pm10_ugm3,
+    pm25_ugm3: w.pm25_ugm3,
+    grade_pm10: w.grade_pm10 || '알수없음',
+    grade_pm25: w.grade_pm25 || '알수없음',
+    station: w.air_station || '',
+  };
+});
+const localMlRisk = ref(null);
+
+// ── 추천 분석 로딩 메시지 ────────────────────────────────────────────────────
+const _recLoadingSteps = [
+  { icon: '📡', text: '실시간 기상 데이터를 불러오고 있어요' },
+  { icon: '🔥', text: '전국 산불 위험도를 확인하는 중이에요' },
+  { icon: '🌊', text: '산사태 예측 모델을 돌리고 있어요' },
+  { icon: '💨', text: '산림 미세먼지 농도를 체크하는 중이에요' },
+  { icon: '🌿', text: '산행 환경 지수(불쾌지수·UV·대기질)를 계산하는 중이에요' },
+  { icon: '🗻', text: '3,000개 등산로 빅데이터를 조회하는 중이에요' },
+  { icon: '📏', text: '거리·난이도·체력 조건을 맞춰보는 중이에요' },
+  { icon: '🤖', text: 'AI가 최적의 산을 최종 선별하는 중이에요' },
+];
+const recLoadingIdx = ref(0);
+const recLoadingPct = ref(0);
+let _recLoadingTimer = null;
+
+watch(loading, (isLoading) => {
+  if (isLoading) {
+    recLoadingIdx.value = 0;
+    recLoadingPct.value = 5;
+    _recLoadingTimer = setInterval(() => {
+      recLoadingIdx.value = (recLoadingIdx.value + 1) % _recLoadingSteps.length;
+      recLoadingPct.value = Math.min(92, recLoadingPct.value + Math.random() * 10 + 5);
+    }, 1800);
+  } else {
+    clearInterval(_recLoadingTimer);
+    recLoadingPct.value = 100;
+  }
+});
+
+const recLoadingMsg = computed(() => {
+  const step = _recLoadingSteps[recLoadingIdx.value];
+  return `${step.icon}  ${step.text}`;
+});
 
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
 let _courseStepToken = 0;
@@ -759,6 +887,12 @@ const filteredMountains = computed(() => {
       (m) =>
         m.name.toLowerCase().replace(/\s/g, '').includes(normalizedSearch) ||
         (m.region || '').toLowerCase().replace(/\s/g, '').includes(normalizedSearch),
+    );
+  }
+
+  if (selectedTags.value.length > 0) {
+    base = base.filter((m) =>
+      selectedTags.value.every((tag) => (m.tags || []).includes(tag)),
     );
   }
 
@@ -925,13 +1059,28 @@ async function enterCourseStep(mountain) {
   selectedDisasterZones.value = [];
   landslideRisk.value = 'low';
   storyExpanded.value = false;
+  weatherData.value = null;
   fluxData.value = null;
+  fluxLoading.value = false;
+  localMlRisk.value = null;
+
+  // 추천 결과에 포함되지 않은 산을 직접 클릭했을 때 ML 위험도 별도 조회
+  const alreadyScored = [...recommendedMountains.value, ...alternativeMountains.value].find(
+    (r) => r.id === mountain?.id,
+  );
+  if (!alreadyScored) {
+    fetchMlRisk()
+      .then(d => { localMlRisk.value = d; })
+      .catch(() => {});
+  }
 
   if (mountain?.lat && mountain?.lng) {
     loadWeather(mountain.lat, mountain.lng, mountain.name);
+    fluxLoading.value = true;
     fetchForestFlux({ mountain: mountain.name, lat: mountain.lat, lng: mountain.lng })
       .then(d => { fluxData.value = d; })
-      .catch(() => {});
+      .catch(() => { fluxData.value = { ok: false, error: '데이터 조회 실패' }; })
+      .finally(() => { fluxLoading.value = false; });
   }
   await nextTick();
   if (token !== _courseStepToken) return;
@@ -1012,7 +1161,7 @@ const mlRiskInfo = computed(() => {
   const m = selectedMountain.value;
   if (!m) return null;
   const scored = [...recommendedMountains.value, ...alternativeMountains.value].find((r) => r.id === m.id);
-  return scored?.ml_risk_info || null;
+  return scored?.ml_risk_info || localMlRisk.value || null;
 });
 
 const mlTrainingNote = computed(() => {
@@ -1072,16 +1221,21 @@ async function handleGPS() {
   loadWeather();
 }
 
-// ── 반응성 ────────────────────────────────────────────────────────────────────
-watch(mapMountains, () => refreshOverviewMap());
+// ── 반응성 ── 맵 리렌더 3개 워처를 디바운스 통합 (슬라이더 조작 시 jank 방지) ─
+let _mapRefreshTimer = null;
+function _debouncedMapRefresh() {
+  if (_mapRefreshTimer) clearTimeout(_mapRefreshTimer);
+  _mapRefreshTimer = setTimeout(refreshOverviewMap, 250);
+}
+watch(mapMountains, _debouncedMapRefresh);
 watch(selectedMountain, (mountain) => {
   if (guideStep.value === 'courses' && mountain && mountainIdentity(mountain) !== loadedMountainDetailKey.value) {
     enterCourseStep(mountain);
     return;
   }
-  refreshOverviewMap();
+  _debouncedMapRefresh();
 });
-watch(() => [profile.maxDistanceKm, location.value, customStartLocation.value], () => refreshOverviewMap());
+watch(() => [profile.maxDistanceKm, location.value, customStartLocation.value], _debouncedMapRefresh);
 
 onMounted(async () => {
   await Promise.all([loadCourses(), loadMountains()]);

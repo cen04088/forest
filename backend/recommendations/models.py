@@ -220,3 +220,13 @@ class MountainIntro(models.Model):
 
     class Meta:
         db_table = "recommendations_mountainintro"
+
+
+class MountainTags(models.Model):
+    """산 매력 태그 (조망·계곡·단풍 등 15종)."""
+    mountain_name = models.CharField(max_length=100, unique=True, db_index=True)
+    tags = models.JSONField(default=list)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "recommendations_mountaintags"

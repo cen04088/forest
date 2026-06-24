@@ -14,11 +14,9 @@ from .loaders import load_public_service_key
 # 공공데이터 포털 등록 엔드포인트 (산림청 국립산림과학원_산악기상정보)
 NIFOS_MOUNTAIN_WEATHER_URL = "http://apis.data.go.kr/1400377/mtweather/mountListSearch"
 
-NIFOS_FINE_DUST_URL = "http://aican.nifos.go.kr/openapi/dust/current"
-
-
-def _load_nifos_key() -> str:
-    return os.environ.get("NIFOS_API_KEY", "").strip()
+# data.go.kr 등록 엔드포인트 (산림청 국립산림과학원_청정넷_측정데이터, ID: 15078005)
+# 신청 주소: https://www.data.go.kr/data/15078005/openapi.do
+NIFOS_FINE_DUST_URL = "http://apis.data.go.kr/1400377/AicanDustData/dustData"
 
 
 # ── 산악기상 (공공데이터 포털) ─────────────────────────────────────────────────
@@ -115,28 +113,24 @@ def _normalize_weather_item(item: dict) -> dict:
 # ── 산림 미세먼지 ─────────────────────────────────────────────────────────────
 
 def fetch_nifos_fine_dust(station_code: str = "", timeout: int = 8) -> dict:
-    """NIFOS 산림 미세먼지 관측시스템에서 PM10·PM2.5 데이터 조회.
+    """NIFOS 청정넷 산림 미세먼지 PM10·PM2.5 데이터 조회.
 
-    Args:
-        station_code: 관측소 코드 (미입력 시 전체 조회)
-        timeout: HTTP 타임아웃(초)
-
-    Returns:
-        ok=True 시 pm10_ugm3, pm25_ugm3, grade_pm10, grade_pm25 포함.
+    공공데이터포털 등록 서비스 (data.go.kr/data/15078005).
+    PUBLIC_SERVICE_KEY 사용 — data.go.kr에서 해당 API 신청 후 활성화.
     """
-    api_key = _load_nifos_key()
-    if not api_key:
-        return {"ok": False, "source": "nifos_fine_dust", "error": "NIFOS_API_KEY 미설정", "items": []}
-    return _cached_fetch_nifos_dust(station_code, api_key, timeout)
+    service_key = load_public_service_key()
+    if not service_key:
+        return {"ok": False, "source": "nifos_fine_dust", "error": "PUBLIC_SERVICE_KEY 미설정", "items": []}
+    return _cached_fetch_nifos_dust(station_code, service_key, timeout)
 
 
 @lru_cache(maxsize=64)
-def _cached_fetch_nifos_dust(station_code: str, api_key: str, timeout: int) -> dict:
-    query: dict = {"authKey": api_key, "_type": "json"}
+def _cached_fetch_nifos_dust(station_code: str, service_key: str, timeout: int) -> dict:
+    query: dict = {"serviceKey": service_key, "numOfRows": "10", "pageNo": "1", "_type": "json"}
     if station_code:
         query["stnId"] = station_code
 
-    url = f"{NIFOS_FINE_DUST_URL}?{urllib.parse.urlencode(query)}"
+    url = f"{NIFOS_FINE_DUST_URL}?{urllib.parse.urlencode(query, safe='%')}"
     try:
         with urllib.request.urlopen(url, timeout=timeout) as resp:
             body = resp.read()

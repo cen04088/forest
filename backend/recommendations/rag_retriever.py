@@ -603,8 +603,7 @@ def _cached_tokenize(text: str) -> frozenset:
     return frozenset(_tokenize(text))
 
 
-# ── IDF 사전 (지식베이스 전체 문서 기준, 첫 검색 시 1회 계산) ──────────────────
-_IDF: dict = {}
+# ── IDF 사전 (모듈 임포트 시 1회 사전계산 → 요청마다 재계산 없음) ─────────────
 
 def _build_idf() -> dict:
     N = len(KNOWLEDGE_BASE)
@@ -615,11 +614,10 @@ def _build_idf() -> dict:
             df[token] = df.get(token, 0) + 1
     return {token: _math.log((N + 1) / (cnt + 1)) + 1 for token, cnt in df.items()}
 
+_IDF: dict = _build_idf()  # 모듈 로드 시 1회만 실행
+
 
 def _get_idf(token: str) -> float:
-    global _IDF
-    if not _IDF:
-        _IDF = _build_idf()
     return _IDF.get(token, 1.0)
 
 
