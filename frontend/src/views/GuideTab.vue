@@ -363,6 +363,37 @@
             <p v-if="selectedMountainSunsetNote" class="mwc-sunset-note">{{ selectedMountainSunsetNote }}</p>
           </div>
 
+          <!-- 산림 생태 현황 카드 -->
+          <div v-if="fluxData && fluxData.ok" class="forest-flux-card">
+            <div class="ffc-header">
+              <span class="ffc-title">🌳 산림 생태 현황</span>
+              <span class="ffc-station">{{ fluxData.station_name }} 관측소</span>
+            </div>
+            <div class="ffc-badges">
+              <span :class="['ffc-badge', 'ffc-carbon', fluxData.carbon_status === '강한탄소흡수' || fluxData.carbon_status === '탄소흡수' ? 'ffc-green' : fluxData.carbon_status === '탄소방출' ? 'ffc-red' : 'ffc-gray']">
+                {{ fluxData.carbon_status === '강한탄소흡수' ? '💚 강한 탄소흡수' : fluxData.carbon_status === '탄소흡수' ? '🌿 탄소흡수 중' : fluxData.carbon_status === '탄소방출' ? '⚠️ 탄소방출 중' : '⚖️ 탄소균형' }}
+              </span>
+              <span v-if="fluxData.uv_risk" :class="['ffc-badge', fluxData.uv_index >= 8 ? 'ffc-red' : fluxData.uv_index >= 6 ? 'ffc-orange' : fluxData.uv_index >= 3 ? 'ffc-yellow' : 'ffc-gray']">
+                ☀️ 자외선 {{ fluxData.uv_risk }} (UV {{ fluxData.uv_index }})
+              </span>
+              <span v-if="fluxData.discomfort_label" :class="['ffc-badge', fluxData.discomfort_index >= 80 ? 'ffc-red' : fluxData.discomfort_index >= 75 ? 'ffc-orange' : fluxData.discomfort_index >= 68 ? 'ffc-yellow' : 'ffc-green']">
+                🌡 불쾌지수 {{ fluxData.discomfort_index }} ({{ fluxData.discomfort_label }})
+              </span>
+              <span v-if="fluxData.humidity_level" class="ffc-badge ffc-blue">
+                💧 {{ fluxData.humidity_level }}
+              </span>
+              <span v-if="fluxData.soil_status" class="ffc-badge ffc-gray">
+                🪨 토양 {{ fluxData.soil_status }}
+              </span>
+            </div>
+            <p v-if="fluxData.carbon_footprint_msg" class="ffc-footprint">
+              {{ fluxData.carbon_footprint_msg }}
+            </p>
+            <p v-if="fluxData.uv_index >= 6 && fluxData.uv_advice" class="ffc-uv-advice">
+              {{ fluxData.uv_advice }}
+            </p>
+          </div>
+
           <!-- ML 사고 위험 분석 -->
           <div v-if="mlRiskInfo" class="ml-risk-card">
             <div class="ml-risk-header">
@@ -476,7 +507,7 @@ import {
   location, customStartLocation, guideStep,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import MountainCard from '../components/MountainCard.vue';
 import { isMountainFavorite, toggleMountainFavorite } from '../composables/useUserData.js';
@@ -615,6 +646,7 @@ const mountainStory = ref(null);
 const mountainSafetyReports = ref([]);
 const storyExpanded = ref(false);
 const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
+const fluxData = ref(null);
 
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
 let _courseStepToken = 0;
@@ -717,8 +749,14 @@ async function enterCourseStep(mountain) {
   selectedDisasterZones.value = [];
   landslideRisk.value = 'low';
   storyExpanded.value = false;
+  fluxData.value = null;
 
-  if (mountain?.lat && mountain?.lng) loadWeather(mountain.lat, mountain.lng, mountain.name);
+  if (mountain?.lat && mountain?.lng) {
+    loadWeather(mountain.lat, mountain.lng, mountain.name);
+    fetchForestFlux({ mountain: mountain.name, lat: mountain.lat, lng: mountain.lng })
+      .then(d => { fluxData.value = d; })
+      .catch(() => {});
+  }
   await nextTick();
   if (token !== _courseStepToken) return;
 

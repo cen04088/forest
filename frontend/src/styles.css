@@ -3442,6 +3442,59 @@ p {
   padding: 3px 8px;
 }
 
+/* ── 산림 생태 현황 카드 ──────────────────────────────────────── */
+.forest-flux-card {
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+.ffc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ffc-title { font-size: 13px; font-weight: 700; color: #15803d; }
+.ffc-station { font-size: 10px; color: #6b7280; }
+.ffc-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+.ffc-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ffc-green  { background: #dcfce7; color: #15803d; }
+.ffc-red    { background: #fee2e2; color: #b91c1c; }
+.ffc-orange { background: #ffedd5; color: #c2410c; }
+.ffc-yellow { background: #fef9c3; color: #854d0e; }
+.ffc-blue   { background: #dbeafe; color: #1d4ed8; }
+.ffc-gray   { background: #f3f4f6; color: #374151; }
+.ffc-footprint {
+  font-size: 11px;
+  color: #166534;
+  background: #dcfce7;
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+.ffc-uv-advice {
+  font-size: 11px;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin: 4px 0 0;
+}
+
 .course-step-form { padding-bottom: 4px; }
 
 .course-form { display: grid; gap: 14px; }

@@ -603,6 +603,19 @@ def safety_advice_view(request):
     return JsonResponse({"advice": advice or ""})
 
 
+@require_GET
+def forest_flux_view(request):
+    """산림생태플럭스 관측 데이터 + 도출 지표 반환."""
+    mountain_name = request.GET.get("mountain", "")
+    lat_str = request.GET.get("lat", "")
+    lng_str = request.GET.get("lng", "")
+    lat = float(lat_str) if lat_str else None
+    lng = float(lng_str) if lng_str else None
+    from .forest_flux_api import fetch_forest_flux
+    data = fetch_forest_flux(mountain_name=mountain_name, lat=lat, lng=lng)
+    return JsonResponse(data, json_dumps_params={"ensure_ascii": False})
+
+
 @csrf_exempt
 @require_POST
 def mountain_intro_view(request):
