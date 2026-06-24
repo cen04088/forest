@@ -589,22 +589,6 @@
         </section>
 
 
-        <!-- 이 산의 매력 태그 -->
-        <section v-if="(selectedMountain.tags || []).length" class="panel">
-          <div class="section-title compact">
-            <div><p class="eyebrow">Highlights</p><h2>이 산의 매력</h2></div>
-          </div>
-          <div class="mountain-appeal-tags">
-            <span
-              v-for="tag in selectedMountain.tags"
-              :key="tag"
-              class="appeal-tag"
-            >
-              <span class="appeal-tag-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}
-            </span>
-          </div>
-        </section>
-
         <!-- AI 도우미 CTA -->
         <div class="chat-cta-panel">
           <p class="chat-cta-text">{{ selectedMountain.name }} 산행, AI에게 더 물어보세요</p>
