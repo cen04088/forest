@@ -130,6 +130,10 @@ export async function fetchForestFlux({ mountain = "", lat, lng } = {}) {
   return request(`/forest-flux/?${params.toString()}`);
 }
 
+export async function fetchNifosFineDust() {
+  return request(`/nifos-fine-dust/`);
+}
+
 export async function fetchRecommendations(payload) {
   return request("/recommendations/", {
     method: "POST",

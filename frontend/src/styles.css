@@ -3522,6 +3522,27 @@ p {
   margin-left: 4px;
   vertical-align: middle;
 }
+.mwc-dust-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+.mwc-dust-label { color: #374151; font-weight: 500; }
+.mwc-dust-badge {
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.dust-good    { background: #d1fae5; color: #065f46; }
+.dust-normal  { background: #fef9c3; color: #713f12; }
+.dust-bad     { background: #fed7aa; color: #9a3412; }
+.dust-verybad { background: #fee2e2; color: #991b1b; }
 
 .course-step-form { padding-bottom: 4px; }
 

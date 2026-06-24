@@ -359,6 +359,16 @@
               </span>
             </div>
             <p v-if="selectedMountainSunsetNote" class="mwc-sunset-note">{{ selectedMountainSunsetNote }}</p>
+            <!-- 산림 미세먼지 (NIFOS 청정넷, 데이터 있을 때만) -->
+            <div v-if="dustData" class="mwc-dust-row">
+              <span class="mwc-dust-label">🍃 산림 미세먼지</span>
+              <span :class="['mwc-dust-badge', dustData.grade_pm10 === '좋음' ? 'dust-good' : dustData.grade_pm10 === '보통' ? 'dust-normal' : dustData.grade_pm10 === '나쁨' ? 'dust-bad' : 'dust-verybad']">
+                PM10 {{ dustData.pm10_ugm3 ?? '-' }}㎍/㎥ {{ dustData.grade_pm10 }}
+              </span>
+              <span :class="['mwc-dust-badge', dustData.grade_pm25 === '좋음' ? 'dust-good' : dustData.grade_pm25 === '보통' ? 'dust-normal' : dustData.grade_pm25 === '나쁨' ? 'dust-bad' : 'dust-verybad']">
+                PM2.5 {{ dustData.pm25_ugm3 ?? '-' }}㎍/㎥ {{ dustData.grade_pm25 }}
+              </span>
+            </div>
           </div>
 
           <!-- 산림 생태 현황 카드 (날씨 카드 아래, 데이터 있을 때만 표시) -->
@@ -552,7 +562,7 @@ import {
   location, customStartLocation, guideStep,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux, fetchNifosFineDust } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 import MountainCard from '../components/MountainCard.vue';
@@ -695,6 +705,7 @@ const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
 const selectedTrailCourse = ref(null);
 const fluxData = ref(null);
 const fluxLoading = ref(false);
+const dustData = ref(null);
 
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
 let _courseStepToken = 0;
@@ -898,6 +909,7 @@ async function enterCourseStep(mountain) {
   storyExpanded.value = false;
   fluxData.value = null;
   fluxLoading.value = false;
+  dustData.value = null;
 
   if (mountain?.lat && mountain?.lng) {
     loadWeather(mountain.lat, mountain.lng, mountain.name);
@@ -906,6 +918,9 @@ async function enterCourseStep(mountain) {
       .then(d => { fluxData.value = d; })
       .catch(() => { fluxData.value = { ok: false, error: '데이터 조회 실패' }; })
       .finally(() => { fluxLoading.value = false; });
+    fetchNifosFineDust()
+      .then(d => { if (d?.ok) dustData.value = d; })
+      .catch(() => {});
   }
   await nextTick();
   if (token !== _courseStepToken) return;
