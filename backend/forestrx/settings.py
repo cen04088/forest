@@ -115,23 +115,28 @@ TIME_ZONE = "Asia/Seoul"
 USE_I18N = True
 USE_TZ = True
 
-# 정적 파일: STATIC_ROOT와 STATICFILES_DIRS가 겨치면 안 됨
+# 정적 파일 설정
+# STATIC_URL: Django admin 등 내부 정적 파일 경로
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# frontend/dist/assets 만 정적 파일로 등록 (겹치기 방지)
+# frontend/dist/assets 만 Django staticfiles에 등록
+# (WHITENOISE_ROOT가 /assets/*.js를 직접 처리하므로 중복 불필요)
 _FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"
 STATICFILES_DIRS = [_FRONTEND_ASSETS_DIR] if _FRONTEND_ASSETS_DIR.exists() else []
 
 if HAS_WHITENOISE:
     STORAGES = {
         "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+            # CompressedStaticFilesStorage: 파일명 유지 + gzip/brotli 압축만
+            # (ManifestStaticFilesStorage는 파일명에 해시를 추가해 index.html과 불일치 발생)
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
         },
     }
-    # whitenoise가 SPA index.html을 fallback으로 서빙하도록 설정
-    WHITENOISE_INDEX_FILE = True
+    # whitenoise가 frontend/dist/ 전체를 루트로 직접 서빙
+    # → /assets/GuideTab-xxx.js, /assets/index-xxx.css 등 모든 Vite 빌드 파일 처리
     WHITENOISE_ROOT = str(FRONTEND_DIST_DIR)
+    WHITENOISE_INDEX_FILE = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
