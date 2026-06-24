@@ -74,3 +74,23 @@ export async function removeFav(courseId) {
   await removeFavorite(courseId, authToken.value).catch(() => {});
   favorites.value = favorites.value.filter((f) => f.course_id !== courseId);
 }
+
+// ── 산 즐겨찾기 ─────────────────────────────────────────────────────────────
+const _mKey = (id) => `mountain_${id}`;
+
+export function isMountainFavorite(mountainId) {
+  return favorites.value.some((f) => f.course_id === _mKey(mountainId));
+}
+
+export async function toggleMountainFavorite(mountain) {
+  if (!authUser.value) { showAuthModal.value = true; return; }
+  const key = _mKey(mountain.id);
+  if (favorites.value.some((f) => f.course_id === key)) {
+    await removeFavorite(key, authToken.value).catch(() => {});
+    favorites.value = favorites.value.filter((f) => f.course_id !== key);
+  } else {
+    const entry = { course_id: key, course_name: mountain.name, mountain: mountain.name, distance_km: null, duration_min: null, difficulty: mountain.difficulty };
+    await addFavorite(entry, authToken.value);
+    favorites.value.unshift(entry);
+  }
+}

@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { fetchChatResponse } from '../api.js';
-import { selectedMountain, weatherData, recommendations } from './useGuide.js';
+import { selectedMountain, weatherData, recommendations, profile, disasterZones, profileIsExplicitlySet } from './useGuide.js';
 
 export const chatMessages = ref([]); // { role: 'user'|'assistant', content: string }
 export const chatLoading = ref(false);
@@ -26,10 +26,34 @@ export async function sendMessage(text) {
     content: m.content,
   }));
 
+  const now = new Date();
+  const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+  const p = profile;
+
   const context = {
     mountain: selectedMountain.value || null,
     weather: weatherData.value || null,
     recommendedCourses: recommendations.value?.slice(0, 3) || [],
+    now: `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${DAYS[now.getDay()]}) ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    userProfile: {
+      experience: p.experience,
+      companion: p.companion,
+      availableMinutes: p.availableMinutes,
+      desiredHikingMinutes: p.desiredHikingMinutes,
+      departureTime: p.departureTime,
+      departureDate: p.departureDate,
+      maxDistanceKm: p.maxDistanceKm,
+      intensity: p.intensity,
+      isDefault: !profileIsExplicitlySet.value,
+    },
+    disasterZones: (disasterZones.value || []).slice(0, 5).map((z) => ({
+      district: z.district,
+      location: z.location,
+      risk_factor: z.risk_factor,
+    })),
+    sunTimes: weatherData.value
+      ? { sunrise: weatherData.value.sunrise, sunset: weatherData.value.sunset }
+      : null,
   };
 
   try {

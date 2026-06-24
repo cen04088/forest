@@ -536,8 +536,8 @@ def retrieve_mountain_knowledge(query: str, mountain_name: str = "", top_k: int 
     scored.sort(key=lambda x: x[0], reverse=True)
     passages = []
     for _, obj in scored[:top_k]:
-        body = obj.summary[:300] or obj.detail[:300]
-        reason = f"  선정이유: {obj.selection_reason[:100]}" if obj.selection_reason else ""
+        body = obj.summary[:500] or obj.detail[:500]
+        reason = f"  선정이유: {obj.selection_reason[:150]}" if obj.selection_reason else ""
         height = f" ({obj.height_m}m)" if obj.height_m else ""
         passages.append(
             f"[산 정보] {obj.mountain_name}{height} / {obj.region}: {body}{reason}"
@@ -555,7 +555,7 @@ def build_rag_context(query: str, mountain_name: str = "") -> str:
     kb_docs = retrieve_from_knowledge_base(query, top_k=3)
     if kb_docs:
         kb_lines = "\n".join(
-            f"• [{doc['title']}] {doc['content'][:220]}" for doc in kb_docs
+            f"• [{doc['title']}] {doc['content'][:400]}" for doc in kb_docs
         )
         sections.append(f"[산림 안전 지식 - 출처: NIFOS/국립공원공단]\n{kb_lines}")
 

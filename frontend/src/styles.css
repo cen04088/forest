@@ -713,8 +713,16 @@ p {
 .mc-top-reason { font-size: 11px; color: rgba(255,255,255,.85); }
 .mc-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
 .mc-meta-left { display: flex; align-items: center; gap: 5px; }
+.mc-meta-right { display: flex; align-items: center; gap: 6px; }
 .mc-np-badge { font-size: 10px; background: #eff6ff; color: #1d4ed8; border-radius: 6px; padding: 2px 6px; font-weight: 600; }
 .mc-dist { font-size: 11px; color: #6b7280; }
+.mc-fav-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 18px; color: #d1d5db; line-height: 1; padding: 2px 4px;
+  transition: color .15s, transform .1s;
+}
+.mc-fav-btn:hover { color: #f87171; transform: scale(1.15); }
+.mc-fav-btn.favorited { color: #ef4444; }
 .mc-name { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
 .mc-region { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
 .mc-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
@@ -2348,15 +2356,30 @@ p {
 }
 .guardian-entry-title { font-size: 20px; font-weight: 900; color: var(--ink); margin: 0 0 8px; text-align: center; }
 .guardian-entry-desc { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; margin: 0 0 24px; }
-.code-input-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
+.code-input-wrap {
+  position: relative;
+  cursor: text;
+  margin-bottom: 20px;
+  border-radius: 16px;
+  padding: 12px 8px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+.code-input-wrap.focused {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
 .code-hidden-input {
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   opacity: 0;
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
+  z-index: 1;
+  cursor: text;
+  font-size: 16px; /* iOS 줌 방지 */
 }
-.code-input-row { cursor: text; }
+.code-input-row { display: flex; justify-content: center; gap: 8px; pointer-events: none; }
 .code-digit-input {
   width: 44px; height: 54px;
   border: 2px solid var(--border); border-radius: 12px;
@@ -2367,7 +2390,16 @@ p {
   background: #fafafa;
   user-select: none;
 }
-.code-digit-input.active { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.15); background: #fff; }
+.code-digit-input.active {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+  background: #fff;
+  animation: digit-pulse 1s ease-in-out infinite;
+}
+@keyframes digit-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(34,197,94,0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(34,197,94,0.1); }
+}
 .code-digit-input.filled { border-color: #16a34a; background: #f0fdf4; color: #166534; }
 .guardian-entry-btn { width: 100%; margin-bottom: 16px; }
 .guardian-entry-error { font-size: 13px; color: var(--red); text-align: center; margin: 0 0 14px; }
@@ -2952,6 +2984,46 @@ p {
 
 .bfp-field { display: flex; flex-direction: column; gap: 8px; }
 
+/* ── 산사태 경고 카드 ─────────────────────────────────────────────────────── */
+.landslide-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin: 4px 0 8px;
+  border: 2px solid transparent;
+}
+.landslide-alert.ls-danger {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+.landslide-alert.ls-caution {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+.ls-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+.ls-body { flex: 1; }
+.ls-title {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: #991b1b;
+}
+.ls-caution .ls-title { color: #92400e; }
+.ls-desc {
+  font-size: 12px;
+  color: #7f1d1d;
+  margin: 0;
+  line-height: 1.5;
+}
+.ls-caution .ls-desc { color: #78350f; }
+
 .bfp-label {
   font-size: 11px;
   font-weight: 700;
@@ -3254,6 +3326,24 @@ p {
 }
 .back-to-browse-btn svg { width: 16px; height: 16px; }
 .back-to-browse-btn:hover { background: #dcfce7; }
+
+.csh-fav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.csh-fav-btn:hover { background: #fff1f2; border-color: #fca5a5; color: #ef4444; }
+.csh-fav-btn.active { background: #fff1f2; border-color: #f87171; color: #ef4444; }
+.csh-fav-btn.active svg { fill: #ef4444; stroke: #ef4444; }
 
 .course-step-header { display: flex; flex-direction: column; gap: 10px; padding-bottom: 4px; }
 
@@ -3760,6 +3850,10 @@ p {
     grid-column: 1 / -1;
   }
 
+  /* 즐겨찾기·기록 리스트 최대 높이 (패널 균형) */
+  .fav-list { max-height: 280px; overflow-y: auto; }
+  .hiking-record-list { max-height: 200px; overflow-y: auto; }
+
   /* 긴급 연락처 전체 너비일 때 내부 2열 */
   .emergency-inner {
     display: grid;
@@ -3770,6 +3864,16 @@ p {
   .emergency-inner .contact-add-form,
   .emergency-inner .auth-error {
     grid-column: 1 / -1;
+  }
+
+  /* 연락처 추가 폼: 풀 너비에서 한 줄 4컬럼 */
+  .emergency-inner .contact-add-form {
+    grid-template-columns: 1fr 1.5fr 1fr auto;
+    align-items: end;
+  }
+  .emergency-inner .contact-add-form button {
+    grid-column: unset;
+    white-space: nowrap;
   }
 
   /* 내가 쓴 글: 포스트를 2열로 */
@@ -4419,14 +4523,20 @@ p {
   z-index: 1000; padding: 16px;
 }
 .auth-modal {
-  background: #fff; border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 360px;
-  position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.18);
+  background: #fff; border-radius: 16px; padding: 0 24px 28px; width: 100%; max-width: 360px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+}
+.auth-modal-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0 8px;
 }
 .modal-close {
-  position: absolute; top: 14px; right: 14px; background: none; border: none;
-  font-size: 18px; color: #94a3b8; cursor: pointer; line-height: 1; padding: 4px;
+  background: none; border: none;
+  font-size: 18px; color: #94a3b8; cursor: pointer; line-height: 1; padding: 6px;
+  border-radius: 6px;
 }
-.modal-close:hover { color: #334155; }
+.modal-close:hover { color: #334155; background: #f1f5f9; }
 .auth-tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1.5px solid #e2e8f0; }
 .auth-tabs button {
   flex: 1; padding: 9px; background: #f8fafc; border: none; font-size: 14px;
@@ -4544,50 +4654,113 @@ p {
 }
 
 /* ── 내정보 탭 — 전반 ────────────────────────────────────────────────────── */
-.mypage-login-prompt { text-align: center; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; color: #64748b; }
-.mypage-login-needed { font-size: 13px; color: #94a3b8; padding: 12px 0; }
+.mypage-login-prompt {
+  text-align: center;
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+}
+.mypage-login-needed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 16px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+.mypage-login-needed::before {
+  content: '🔒';
+  font-size: 20px;
+  opacity: 0.55;
+  line-height: 1;
+}
 
 /* 즐겨찾기 목록 */
-.fav-list { display: flex; flex-direction: column; gap: 4px; }
-.fav-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border-radius: 8px; }
-.fav-info { display: flex; flex-direction: column; gap: 2px; }
-.fav-info strong { font-size: 14px; color: #1e293b; }
-.fav-info small { font-size: 12px; color: #94a3b8; }
-.fav-remove-btn { background: none; border: none; font-size: 13px; color: #94a3b8; cursor: pointer; padding: 4px 6px; }
-.fav-remove-btn:hover { color: var(--red); }
+.fav-list { display: flex; flex-direction: column; gap: 6px; }
+.fav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  transition: border-color .15s;
+}
+.fav-item:hover { border-color: var(--green); }
+.fav-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fav-info strong { font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 5px; }
+.fav-info small { font-size: 11px; color: var(--muted); }
+.fav-type-badge { font-size: 10px; font-weight: 700; background: var(--green-soft); color: var(--green-deep); border-radius: 4px; padding: 1px 5px; flex-shrink: 0; }
+.fav-remove-btn { background: none; border: none; font-size: 13px; color: var(--muted); cursor: pointer; padding: 4px 6px; flex-shrink: 0; opacity: .5; }
+.fav-remove-btn:hover { color: var(--red); opacity: 1; }
 
 /* 산행 기록 */
-.hiking-record-list { display: flex; flex-direction: column; gap: 4px; }
-.hiking-record-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f0fdf4; border-radius: 8px; }
-.record-info { display: flex; flex-direction: column; gap: 3px; }
-.record-info strong { font-size: 14px; color: #1e293b; }
-.record-info small { font-size: 12px; color: #94a3b8; }
+.hiking-record-list { display: flex; flex-direction: column; gap: 6px; }
+.hiking-record-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  transition: border-color .15s;
+}
+.hiking-record-item:hover { border-color: var(--green); }
+.record-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.record-info strong { font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.record-info small { font-size: 11px; color: var(--muted); }
 
 /* 내가 쓴 글 */
-.mypost-item { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; flex-direction: column; gap: 3px; }
-.mypost-item:last-child { border-bottom: none; }
-.mypost-item:hover { background: #f8fafc; border-radius: 8px; }
-.mypost-item strong { font-size: 14px; color: #1e293b; }
-.mypost-item small { font-size: 12px; color: #94a3b8; }
+.mypost-item {
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-bottom-color: var(--line);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: background .12s, border-color .12s;
+}
+.mypost-item:last-child { border-bottom-color: transparent; }
+.mypost-item:hover { background: var(--wash); border-color: var(--line); border-radius: 8px; }
+.mypost-item strong { font-size: 13px; color: var(--ink); }
+.mypost-item small { font-size: 11px; color: var(--muted); }
 
 /* 긴급 연락처 */
-.contact-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #fef2f2; border-radius: 8px; margin-bottom: 6px; }
+.contact-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  background: #fff5f5;
+}
 .contact-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.contact-info strong { font-size: 14px; color: #1e293b; }
-.contact-relation { font-size: 12px; color: #94a3b8; background: #f1f5f9; padding: 1px 6px; border-radius: 10px; }
-.contact-phone { font-size: 13px; color: var(--green); text-decoration: none; font-weight: 600; }
-.contact-add-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-.contact-add-form input { padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; }
+.contact-info strong { font-size: 14px; color: var(--ink); }
+.contact-relation { font-size: 11px; color: var(--muted); background: var(--wash); padding: 2px 7px; border-radius: 10px; border: 1px solid var(--line); }
+.contact-phone { font-size: 13px; color: var(--green-deep); text-decoration: none; font-weight: 600; }
+.contact-add-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.contact-add-form input { padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 8px; font-size: 13px; font-family: inherit; }
 .contact-add-form input:focus { outline: none; border-color: var(--green); }
 .contact-add-form button { grid-column: 1 / -1; }
 
-/* 체크리스트 개선 */
-.checklist-del-btn { margin-left: auto; background: none; border: none; font-size: 12px; color: #cbd5e1; cursor: pointer; padding: 2px 4px; }
-.checklist-del-btn:hover { color: var(--red); }
-.custom-check-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
-.checklist-add-row { display: flex; gap: 8px; margin-top: 12px; }
-.checklist-add-row input { flex: 1; padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; }
-.checklist-add-row input:focus { outline: none; border-color: var(--green); }
 
 /* ── 날씨 mock 배지 ──────────────────────────────────────────────────────── */
 .mock-badge { background: #64748b !important; }
@@ -5276,4 +5449,178 @@ p {
 @keyframes cwSlideUp {
   from { opacity: 0; transform: translateY(16px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── 산행 기록 통계 ─────────────────────────────────────────────────────────── */
+.hiking-stats {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--wash);
+  border-radius: 10px;
+}
+.hstat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+.hstat-wide { flex: 1.5; }
+.hstat-n {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--green-deep);
+  line-height: 1;
+}
+.hstat-mountain {
+  font-size: 13px;
+  font-weight: 800;
+}
+.hstat-l {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── 나의 등산 프로필 폼 ─────────────────────────────────────────────────────── */
+.hiking-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hpf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: default;
+}
+.hpf-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  flex-shrink: 0;
+  width: 68px;
+}
+.hpf-select {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+.hpf-select:focus { outline: none; border-color: var(--green); }
+.hpf-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.hpf-number {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  text-align: right;
+}
+.hpf-number:focus { outline: none; border-color: var(--green); }
+.hpf-unit {
+  font-size: 13px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.hpf-save-btn {
+  margin-top: 4px;
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+}
+.hpf-hint {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  margin: 0;
+}
+.hpf-saved-ok {
+  color: var(--green-deep) !important;
+  font-weight: 700;
+}
+
+/* ── 내 활동 탭 ──────────────────────────────────────────────────────────────── */
+.activity-tabs {
+  display: flex;
+  gap: 4px;
+}
+.act-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.act-tab:hover { border-color: var(--green); color: var(--green-deep); }
+.act-tab.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.act-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9px;
+  background: rgba(255,255,255,.25);
+  color: inherit;
+}
+.act-tab:not(.active) .act-count {
+  background: var(--line);
+  color: var(--muted);
+}
+
+/* ── 안전공유 SOS 긴급 연락처 ────────────────────────────────────────────── */
+.sos-divider {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 0 4px;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+.sos-unset {
+  opacity: .6;
+  cursor: default;
+  pointer-events: none;
+}
+.sos-contact {
+  border-color: #fca5a5 !important;
+  background: #fff5f5;
+}
+.sos-contact:hover {
+  background: #fee2e2;
+  border-color: var(--red) !important;
+}
+.sos-contact strong { color: var(--red); }
+.sos-relation {
+  font-weight: 500;
+  color: var(--muted);
 }

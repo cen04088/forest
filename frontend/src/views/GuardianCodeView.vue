@@ -11,29 +11,29 @@
         산행자가 알려준 6자리 코드를 입력하면<br>현재 위치를 실시간으로 확인할 수 있습니다.
       </p>
 
-      <!-- 숨겨진 단일 input (실제 입력 받음) -->
-      <input
-        ref="hiddenInput"
-        class="code-hidden-input"
-        type="text"
-        inputmode="text"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-        @input="onInput"
-        @keydown="onKeydown"
-        @keydown.enter="lookupCode"
-        @paste="onPaste"
-      />
-
-      <!-- 시각적 6칸 표시 (클릭하면 hidden input에 포커스) -->
-      <div class="code-input-row" @click="focusInput">
-        <div
-          v-for="i in 6" :key="i"
-          class="code-digit-input"
-          :class="{ filled: rawCode.length >= i, active: rawCode.length === i - 1 }"
-        >{{ rawCode[i - 1] || '' }}</div>
+      <div class="code-input-wrap" @click="focusInput">
+        <input
+          ref="hiddenInput"
+          class="code-hidden-input"
+          type="text"
+          inputmode="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          maxlength="6"
+          @input="onInput"
+          @keydown="onKeydown"
+          @keydown.enter="lookupCode"
+          @paste="onPaste"
+        />
+        <div class="code-input-row">
+          <div
+            v-for="i in 6" :key="i"
+            class="code-digit-input"
+            :class="{ filled: rawCode.length >= i, active: rawCode.length === i - 1 }"
+          >{{ rawCode[i - 1] || '' }}</div>
+        </div>
       </div>
 
       <p v-if="error" class="guardian-entry-error">{{ error }}</p>

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="screen-stack guide-layout">
 
     <!-- ── 지도 (왼쪽, 양 단계 공통) ── -->
@@ -207,6 +207,7 @@
           <p v-if="!recommendedMountains.length && alternativeMountains.length" class="rec-summary">
             현재 조건에서 바로 추천할 만큼 안전 점수가 높은 산은 없어서, 조건에 가장 가까운 대안을 먼저 보여드려요.
           </p>
+
           <div class="mountain-card-list">
             <MountainCard
               v-for="(mountain, idx) in (recommendedMountains.length ? recommendedMountains.slice(0, 3) : alternativeMountains.slice(0, 3))"
@@ -214,13 +215,16 @@
               :mountain="mountain"
               :rank="idx + 1"
               :is-selected="false"
+              :is-favorite="isMountainFavorite(mountain.id)"
               @select="enterCourseStep"
+              @toggle-favorite="toggleMountainFavorite"
             />
           </div>
+
           <div v-if="recommendedMountains.length && alternativeMountains.length" class="alternative-mountain-strip">
             <p class="bfp-label">다른 선택지</p>
             <button
-              v-for="mountain in alternativeMountains.slice(0, recommendedMountains.length ? 2 : 5)"
+              v-for="mountain in alternativeMountains.slice(0, 2)"
               :key="mountain.mountain_key || mountain.id"
               class="alternative-mountain-btn"
               type="button"
@@ -282,11 +286,22 @@
 
         <!-- 산 헤더 -->
         <section class="panel course-step-header">
-          <!-- 상단 내비 행: 뒤로가기 -->
+          <!-- 상단 내비 행: 뒤로가기 + 즐겨찾기 -->
           <div class="csh-nav">
             <button class="back-to-browse-btn" type="button" @click="backToBrowse">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
               산 목록
+            </button>
+            <button
+              class="csh-fav-btn"
+              type="button"
+              :class="{ active: isMountainFavorite(selectedMountain.id) }"
+              @click="toggleMountainFavorite(selectedMountain)"
+              :title="isMountainFavorite(selectedMountain.id) ? '즐겨찾기 해제' : '즐겨찾기 추가'"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
             </button>
           </div>
 
@@ -392,6 +407,15 @@
             </div>
           </div>
 
+          <!-- 산사태 예보 경고 -->
+          <div v-if="landslideRisk !== 'low'" :class="['landslide-alert', landslideRisk === 'danger' ? 'ls-danger' : 'ls-caution']">
+            <div class="ls-icon">{{ landslideRisk === 'danger' ? '⛰' : '⚠️' }}</div>
+            <div class="ls-body">
+              <p class="ls-title">{{ landslideRisk === 'danger' ? '산사태 경보 발령 지역' : '산사태 주의보 발령 지역' }}</p>
+              <p class="ls-desc">{{ landslideRisk === 'danger' ? '현재 이 지역에 산사태 경보가 발령되었습니다. 산행을 삼가세요.' : '현재 이 지역에 산사태 주의보가 발령되었습니다. 산행 시 주의가 필요합니다.' }}</p>
+            </div>
+          </div>
+
           <div class="recommended-trails-panel">
             <div class="rtp-header">
               <div>
@@ -494,10 +518,11 @@ import {
   location, customStartLocation, guideStep,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 import MountainCard from '../components/MountainCard.vue';
+import { isMountainFavorite, toggleMountainFavorite } from '../composables/useUserData.js';
 
 const router = useRouter();
 const overviewMapEl = ref(null);
@@ -632,6 +657,7 @@ const selectedDisasterZones = ref([]);
 const mountainStory = ref(null);
 const mountainSafetyReports = ref([]);
 const storyExpanded = ref(false);
+const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
 const selectedTrailCourse = ref(null);
 
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
@@ -678,6 +704,7 @@ const selectedMountainCourseRecommendations = computed(() => {
 // ── 브라우즈 단계: 필터된 산 목록 ────────────────────────────────────────────
 const filteredMountains = computed(() => {
   const search = mountainSearch.value.trim().toLowerCase();
+  const normalizedSearch = search.replace(/\s/g, '');
   const diff = profile.difficultyFilter;
   const safetyMap = new Map(
     [...recommendedMountains.value, ...alternativeMountains.value].map((m) => [m.id, m])
@@ -688,19 +715,24 @@ const filteredMountains = computed(() => {
     return scored ? { ...m, ...scored } : m;
   });
 
-  if (diff && diff !== 'all') {
+  if (diff && diff !== 'all' && !search) {
     base = base.filter((m) => m.difficulty === diff);
   }
 
   if (search) {
     base = base.filter(
       (m) =>
-        m.name.toLowerCase().includes(search) ||
-        (m.region || '').toLowerCase().includes(search),
+        m.name.toLowerCase().replace(/\s/g, '').includes(normalizedSearch) ||
+        (m.region || '').toLowerCase().replace(/\s/g, '').includes(normalizedSearch),
     );
   }
 
   return base.sort((a, b) => {
+    if (search) {
+      const aRank = searchRank(a, normalizedSearch);
+      const bRank = searchRank(b, normalizedSearch);
+      if (aRank !== bRank) return aRank - bRank;
+    }
     const aRanked = !!a.safety_decision;
     const bRanked = !!b.safety_decision;
     if (aRanked !== bRanked) return aRanked ? -1 : 1;
@@ -711,6 +743,16 @@ const filteredMountains = computed(() => {
     return (b.crowding || 0) - (a.crowding || 0);
   });
 });
+
+function searchRank(mountain, normalizedSearch) {
+  const name = (mountain.name || '').toLowerCase().replace(/\s/g, '');
+  const region = (mountain.region || '').toLowerCase().replace(/\s/g, '');
+  if (name === normalizedSearch) return 0;
+  if (name.startsWith(normalizedSearch)) return 1;
+  if (name.includes(normalizedSearch)) return 2;
+  if (region.includes(normalizedSearch)) return 3;
+  return 4;
+}
 
 function browseBadgeClass(mountain) {
   return { recommend: 'green', caution: 'yellow', not_recommended: 'red' }[mountain.safety_decision] || '';
@@ -801,6 +843,7 @@ function refreshOverviewMap() {
       startLocation: customStartLocation.value || location.value,
       radiusKm: profile.maxDistanceKm,
       selectedMountain: guideStep.value === 'courses' ? selectedMountain.value : null,
+      disasterZones: guideStep.value === 'courses' ? selectedDisasterZones.value : [],
     },
   );
 }
@@ -815,6 +858,7 @@ async function enterCourseStep(mountain) {
   mountainStory.value = null;
   mountainSafetyReports.value = [];
   selectedDisasterZones.value = [];
+  landslideRisk.value = 'low';
   storyExpanded.value = false;
 
   if (mountain?.lat && mountain?.lng) loadWeather(mountain.lat, mountain.lng, mountain.name);
@@ -823,14 +867,29 @@ async function enterCourseStep(mountain) {
 
   focusOverviewCourse(mountain);
   refreshOverviewMap();
-  const [zonesData, storyData, reportsData] = await Promise.allSettled([
+  const [zonesData, storyData, reportsData, landslideData] = await Promise.allSettled([
     fetchDisasterZones(mountain.name),
     fetchMountainStory(mountain),
     fetchSafetyReports(mountain.name),
+    fetchLandslide(mountain.region || ''),
   ]);
   if (token !== _courseStepToken) return;
 
   selectedDisasterZones.value = zonesData.status === 'fulfilled' ? (zonesData.value.zones || []) : [];
+
+  // 산사태 예보: 이 지역에 경보/주의가 있으면 표시
+  if (landslideData.status === 'fulfilled') {
+    const items = landslideData.value?.items || [];
+    const worstRisk = items.reduce((acc, item) => {
+      if (item.risk === 'danger') return 'danger';
+      if (item.risk === 'caution' && acc !== 'danger') return 'caution';
+      return acc;
+    }, 'low');
+    landslideRisk.value = worstRisk;
+  }
+
+  // 재난위험지구 로딩 후 지도 갱신
+  refreshOverviewMap();
   const story = storyData.status === 'fulfilled' ? (storyData.value.items?.[0] ?? null) : null;
   mountainStory.value = story;
   if (story?.source === 'seed_mountain_descriptions') {

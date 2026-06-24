@@ -296,9 +296,13 @@ export function useLeafletMap() {
       filterVal = 'drop-shadow(0 2px 5px rgba(0,0,0,.35))';
     }
 
+    const badge = course.disaster_zone_count
+      ? `<div style="position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.4);">!</div>`
+      : '';
+
     return L.divIcon({
       className: '',
-      html: `<img src="${iconUrl}" width="${w}" height="${h}" style="opacity:${opacity};filter:${filterVal};display:block;transition:filter .15s;" />`,
+      html: `<div style="position:relative;display:inline-block;width:${w}px;height:${h}px;"><img src="${iconUrl}" width="${w}" height="${h}" style="opacity:${opacity};filter:${filterVal};display:block;transition:filter .15s;" />${badge}</div>`,
       iconSize: [w, h],
       iconAnchor: [w / 2, h],
       popupAnchor: [0, -(h + 4)],
@@ -339,12 +343,16 @@ export function useLeafletMap() {
     const title = isMountain
       ? (course.name || '이름없음')
       : `${course.mountain || ''} · ${course.name || ''}`;
+    const disasterHtml = course.disaster_zone_count
+      ? `<div style="margin-top:5px;font-size:11px;color:#b91c1c;font-weight:600">⚠ 재난위험지구 ${course.disaster_zone_count}개</div>`
+      : '';
     return `
       <div style="min-width:158px;font-family:inherit;line-height:1.4">
         <div style="font-weight:700;font-size:13px;margin-bottom:5px">${title}</div>
         <span style="background:${color}22;color:${color};font-size:11px;font-weight:600;padding:2px 7px;border-radius:8px">${diff}</span>
         ${statsHtml}
         ${safety}
+        ${disasterHtml}
       </div>`;
   }
 
@@ -409,20 +417,23 @@ export function useLeafletMap() {
       if (!ids.has(id)) { m.remove(); _overviewMarkers.delete(id); }
     }
 
+    const disasterCount = options.disasterZones?.length || 0;
+
     let isFirstLoad = false;
     validCourses.forEach((course) => {
       const key = _mapItemKey(course);
       const isSelected = key === selectedId || course.id === selectedId;
-      const icon = _makeCourseIcon(course, isSelected);
+      const c = isSelected && disasterCount > 0 ? { ...course, disaster_zone_count: disasterCount } : course;
+      const icon = _makeCourseIcon(c, isSelected);
 
       if (_overviewMarkers.has(key)) {
         const m = _overviewMarkers.get(key);
         m.setIcon(icon);
-        m.setPopupContent(_makeCoursePopup(course));
+        m.setPopupContent(_makeCoursePopup(c));
       } else {
         const m = L.marker([course.lat, course.lng], { icon })
           .addTo(_overviewMapInst)
-          .bindPopup(_makeCoursePopup(course));
+          .bindPopup(_makeCoursePopup(c));
         m.on('click', () => { m.openPopup(); onSelect?.(course); });
         _overviewMarkers.set(key, m);
         isFirstLoad = true;
@@ -493,7 +504,6 @@ export function useLeafletMap() {
   // ─── 산행자 실시간 지도 (SafeLinkTab 산행 중) ─────────────────────────────
   async function renderLiveHikingMap(el, lat, lng, trail) {
     if (!el || lat == null || lng == null) return;
-    await _loadLeaflet();
     const center = [lat, lng];
     const map = _getOrCreateMap(el, center, 16);
 

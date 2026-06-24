@@ -160,13 +160,8 @@ export async function fetchSafetyReports(mountainName) {
   return request(`/safety-reports/?${params.toString()}`);
 }
 
-export async function fetchMountainStory(mountain) {
-  const mountainName = typeof mountain === "string" ? mountain : mountain?.name;
+export async function fetchMountainStory(mountainName) {
   const params = new URLSearchParams({ mountain: mountainName || "" });
-  if (typeof mountain === "object" && mountain) {
-    if (mountain.region) params.set("region", mountain.region);
-    if (mountain.elevation_m) params.set("elevation_m", mountain.elevation_m);
-  }
   return request(`/mountain-story/?${params.toString()}`);
 }
 
@@ -293,4 +288,9 @@ export async function fetchMountainIntro({ name, summary, selectionReason }) {
     method: "POST",
     body: JSON.stringify({ name, summary, selection_reason: selectionReason }),
   });
+}
+
+export async function fetchLandslide(region) {
+  const params = new URLSearchParams({ sgg: region || "" });
+  return request(`/landslide-prediction/?${params.toString()}`);
 }
