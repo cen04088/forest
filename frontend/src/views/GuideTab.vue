@@ -233,19 +233,6 @@
             />
           </div>
 
-          <div v-if="recommendedMountains.length && alternativeMountains.length" class="alternative-mountain-strip">
-            <p class="bfp-label">다른 선택지</p>
-            <button
-              v-for="mountain in alternativeMountains.slice(0, 2)"
-              :key="mountain.mountain_key || mountain.id"
-              class="alternative-mountain-btn"
-              type="button"
-              @click="enterCourseStep(mountain)"
-            >
-              <strong>{{ mountain.name }}</strong>
-              <span>{{ mountain.safety_label || '대안 코스' }}</span>
-            </button>
-          </div>
         </section>
 
         <!-- ── 직접 찾기 ── -->
@@ -478,7 +465,7 @@
                 <p class="eyebrow">Recommended Trails</p>
                 <h3>{{ selectedMountain.name }} 추천 탐방로</h3>
               </div>
-              <span class="mini-status">{{ selectedMountainCourseRecommendations.length }}개</span>
+              <span v-if="selectedMountainCourseRecommendations.length" class="mini-status">{{ selectedMountainCourseRecommendations.length }}개</span>
             </div>
 
             <p class="rtp-copy">
