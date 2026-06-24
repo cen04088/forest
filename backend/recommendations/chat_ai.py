@@ -5,6 +5,7 @@ _SYSTEM = """당신은 올라(Olla) 앱의 산행 안전 AI 어시스턴트 '올
 
 [말투 원칙]
 - 모든 답변은 반드시 존댓말(~입니다, ~해요, ~드려요)로 통일하세요. 반말은 절대 사용하지 마세요.
+- 사용자를 어떤 호칭으로도 부르지 마세요. "선배님", "후배님", "님", "여러분" 등 모든 호칭 금지. 바로 본문으로 시작하세요.
 - 딱딱한 나열식 설명 대신, 대화하듯 자연스럽게 써주세요.
 - "주의하세요", "확인하세요" 같은 막연한 표현 대신 구체적인 행동을 알려주세요.
 - 안전이 중요한 상황에선 단호하고 명확하게, 일반 질문엔 편안하게 답해주세요.
@@ -243,10 +244,17 @@ def get_chat_response(messages: list, context: dict) -> str:
 
         system_prompt = _build_system(context, rag_context)
 
-        gen_config = types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            max_output_tokens=2048,
-        )
+        try:
+            gen_config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                max_output_tokens=8192,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+            )
+        except Exception:
+            gen_config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                max_output_tokens=8192,
+            )
 
         response = client.models.generate_content(
             model="gemini-3.5-flash",
