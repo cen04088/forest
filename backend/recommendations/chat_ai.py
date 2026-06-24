@@ -144,6 +144,18 @@ def _build_realtime_safety(context: dict) -> str:
             f"PM10 {aq.get('pm10_ugm3')}㎍/m³ ({aq.get('grade_pm10', '')})"
         )
 
+    flux = context.get("forest_flux") or {}
+    if flux.get("ok"):
+        flux_parts = [f"산림생태플럭스 ({flux.get('station_name', '관측소')}):"]
+        if flux.get("nee_umol") is not None:
+            status = flux.get("carbon_status", "")
+            flux_parts.append(f"탄소흡수 {flux['nee_umol']} μmol/m²/s ({status})")
+        if flux.get("temp_c") is not None:
+            flux_parts.append(f"산림기온 {flux['temp_c']}°C")
+        if flux.get("rg_wm2") is not None:
+            flux_parts.append(f"태양복사 {flux['rg_wm2']} W/m²")
+        parts.append("  ".join(flux_parts))
+
     return "\n".join(parts)
 
 

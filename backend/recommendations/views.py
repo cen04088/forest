@@ -538,6 +538,20 @@ def _enrich_chat_context(context: dict) -> dict:
     except Exception:
         pass
 
+    try:
+        from .forest_flux_api import fetch_forest_flux
+        mountain = context.get("mountain") or {}
+        mountain_name = mountain.get("name", "")
+        m_lat = mountain.get("lat") or mountain.get("course_lat")
+        m_lng = mountain.get("lng") or mountain.get("course_lng")
+        context["forest_flux"] = fetch_forest_flux(
+            mountain_name=mountain_name,
+            lat=float(m_lat) if m_lat else None,
+            lng=float(m_lng) if m_lng else None,
+        )
+    except Exception:
+        pass
+
     return context
 
 
