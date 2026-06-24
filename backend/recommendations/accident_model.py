@@ -44,6 +44,7 @@ _hourly_per_capita: dict = {}
 _monthly_per_capita: dict = {}
 _weekday_per_capita: dict = {}
 _training_summary: dict = {}
+_has_weather_features = False
 _initialized = False
 
 
@@ -69,10 +70,12 @@ def _accident_category(code: str) -> str:
     return "기타"
 
 
-def _make_features(month: int, hour: int, weekday: int) -> np.ndarray:
+def _make_features(month: int, hour: int, weekday: int, temp: float = 15.0, rain: float = 0.0, wind: float = 1.5, humidity: float = 50.0) -> np.ndarray:
     is_weekend = int(weekday >= 5)
     time_bin = 0 if hour <= 6 else 1 if hour <= 10 else 2 if hour <= 14 else 3 if hour <= 17 else 4 if hour <= 20 else 5
     season = 0 if month in (3, 4, 5) else 1 if month in (6, 7, 8) else 2 if month in (9, 10, 11) else 3
+    if _has_weather_features:
+        return np.array([[month, hour, weekday, is_weekend, time_bin, season, temp, rain, wind, humidity]])
     return np.array([[month, hour, weekday, is_weekend, time_bin, season]])
 
 
@@ -142,9 +145,24 @@ def _load_training_rows() -> pd.DataFrame:
     return df
 
 
+_PROVINCE_STATIONS = {
+    "서울특별시": 108, "인천광역시": 112, "경기도": 119,
+    "강원도": 114, "강원특별자치도": 114, "충청북도": 131,
+    "충청남도": 133, "대전광역시": 133, "세종특별자치시": 133,
+    "전라북도": 146, "전북특별자치도": 146, "전라남도": 156,
+    "광주광역시": 156, "경상북도": 143, "대구광역시": 143,
+    "경상남도": 159, "부산광역시": 159, "울산광역시": 159,
+    "제주특별자치도": 184
+}
+
+def _map_province_to_station(province):
+    return _PROVINCE_STATIONS.get(str(province).strip(), 108)
+
+
 def _prepare_training_frame(rows: pd.DataFrame) -> pd.DataFrame:
     df = rows.copy()
-    df["date"] = pd.to_datetime(df["date"].astype(str).str.strip(), errors="coerce")
+    df["date_str"] = df["date"].astype(str).str.strip()
+    df["date"] = pd.to_datetime(df["date_str"], errors="coerce")
     df = df.dropna(subset=["date"])
 
     df["month"] = df["date"].dt.month
@@ -161,13 +179,47 @@ def _prepare_training_frame(rows: pd.DataFrame) -> pd.DataFrame:
     )
     df["acc_type"] = df["accident_type"].apply(_accident_category)
     df["severity"] = df["result"].apply(_severity_label)
+
+    # ASOS 과거 기상 관측 데이터 파일 존재 시 결합
+    weather_path = DATA_DIR / "asos_historical_weather.csv"
+    if weather_path.exists():
+        try:
+            weather_df = pd.read_csv(weather_path)
+            if len(weather_df) > 1000:
+                df["station_id"] = df["발생장소_시"].apply(_map_province_to_station)
+                df["date_match"] = df["date"].dt.strftime("%Y-%m-%d")
+                
+                weather_df["station_id"] = weather_df["station_id"].astype(int)
+                weather_df["hour"] = weather_df["hour"].astype(int)
+                
+                df = df.merge(
+                    weather_df,
+                    left_on=["date_match", "hour", "station_id"],
+                    right_on=["date", "hour", "station_id"],
+                    how="left",
+                    suffixes=("", "_w")
+                )
+                df["temp"] = df["temp"].fillna(15.0)
+                df["rain"] = df["rain"].fillna(0.0)
+                df["wind"] = df["wind"].fillna(1.5)
+                df["humidity"] = df["humidity"].fillna(50.0)
+                df["has_weather"] = True
+                return df
+        except Exception:
+            pass
+
+    df["temp"] = 15.0
+    df["rain"] = 0.0
+    df["wind"] = 1.5
+    df["humidity"] = 50.0
+    df["has_weather"] = False
     return df
 
 
 def _initialize() -> None:
     global _type_clf, _sev_clf
     global _hourly_per_capita, _monthly_per_capita, _weekday_per_capita
-    global _training_summary, _initialized
+    global _training_summary, _has_weather_features, _initialized
     if _initialized:
         return
 
@@ -178,7 +230,13 @@ def _initialize() -> None:
         _initialized = True
         return
 
-    features = ["month", "hour", "weekday", "is_weekend", "time_bin", "season"]
+    _has_weather_features = bool(df["has_weather"].any() if "has_weather" in df.columns else False)
+    
+    if _has_weather_features:
+        features = ["month", "hour", "weekday", "is_weekend", "time_bin", "season", "temp", "rain", "wind", "humidity"]
+    else:
+        features = ["month", "hour", "weekday", "is_weekend", "time_bin", "season"]
+        
     X = df[features].values
 
     _type_clf = RandomForestClassifier(n_estimators=150, max_depth=8, random_state=42, class_weight="balanced")
@@ -195,6 +253,7 @@ def _initialize() -> None:
         "rows": int(len(df)),
         "sources": rows.attrs.get("source_counts", {}),
         "year_range": [int(df["date"].dt.year.min()), int(df["date"].dt.year.max())],
+        "has_weather_features": _has_weather_features
     }
     _initialized = True
 
@@ -204,7 +263,7 @@ def get_accident_model_training_summary() -> dict:
     return dict(_training_summary)
 
 
-def predict_accident_risk(month: int, hour: int, weekday: int) -> dict:
+def predict_accident_risk(month: int, hour: int, weekday: int, temp: float = 15.0, rain: float = 0.0, wind: float = 1.5, humidity: float = 50.0) -> dict:
     _initialize()
 
     if not _initialized or _type_clf is None or _sev_clf is None:
@@ -218,7 +277,7 @@ def predict_accident_risk(month: int, hour: int, weekday: int) -> dict:
             "training": dict(_training_summary),
         }
 
-    X = _make_features(month, hour, weekday)
+    X = _make_features(month, hour, weekday, temp, rain, wind, humidity)
     type_proba = dict(zip(_type_clf.classes_, _type_clf.predict_proba(X)[0].tolist()))
     sev_proba = dict(zip(_sev_clf.classes_, _sev_clf.predict_proba(X)[0].tolist()))
 

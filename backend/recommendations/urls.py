@@ -17,6 +17,7 @@ urlpatterns = [
     path("sun-times/", views.sun_times),
     path("wildfire/", views.wildfire),
     path("landslide/", views.landslide),
+    path("landslide-prediction/", views.landslide),
     path("recommendations/", views.recommendations),
     path("osm-trails/", views.osm_trails),
     path("disaster-zones/", views.disaster_zones),

@@ -757,7 +757,23 @@ def ml_risk_view(request):
             pass
 
     # 3. ML 기본 예측
-    result = predict_accident_risk(month=month, hour=hour, weekday=weekday)
+    temp = 15.0
+    rain = 0.0
+    wind = 1.5
+    humidity = 50.0
+    if weather:
+        try:
+            temp = float(weather.get("temperature_c", 15.0) or 15.0)
+            rain = float(weather.get("rainfall_mm", 0.0) or 0.0)
+            wind = float(weather.get("wind_speed_ms", 1.5) or 1.5)
+            humidity = float(weather.get("humidity_pct", 50.0) or 50.0)
+        except Exception:
+            pass
+
+    result = predict_accident_risk(
+        month=month, hour=hour, weekday=weekday,
+        temp=temp, rain=rain, wind=wind, humidity=humidity
+    )
 
     # 4. 날씨 보정 적용
     base_risk = result["risk_index"]
@@ -786,7 +802,10 @@ def ml_risk_view(request):
     # 5. 24시간 추이 계산 (날씨 보정 일괄 적용)
     hourly_risks = []
     for h in range(24):
-        h_res = predict_accident_risk(month=month, hour=h, weekday=weekday)
+        h_res = predict_accident_risk(
+            month=month, hour=h, weekday=weekday,
+            temp=temp, rain=rain, wind=wind, humidity=humidity
+        )
         h_base = h_res["risk_index"]
         h_adjusted = round(min(1.0, h_base + weather_penalty * 0.50), 3)
         hourly_risks.append({

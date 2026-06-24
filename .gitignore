@@ -30,3 +30,8 @@ frontend/vite.log
 Thumbs.db
 .vscode/
 .idea/
+
+# Large cached datasets and scripts
+data/asos_historical_weather.csv
+frontend/check_page.js
+

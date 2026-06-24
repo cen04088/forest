@@ -38,17 +38,30 @@ def generate_safety_advice(mountain: dict, weather: dict, profile: dict, sun_tim
         )
 
         if gms_key:
-            client = genai.Client(
-                api_key=api_key,
-                http_options={"base_url": "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/"},
-            )
+            client = genai.Client(api_key=api_key)
         else:
             client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=prompt,
-            config=types.GenerateContentConfig(max_output_tokens=200),
-        )
+
+        # 임시적 오류(503, 500, 타임아웃 등) 발생 시 최대 3회 재시도 (재시도 간격 1초)
+        response = None
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-3.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(max_output_tokens=200),
+                )
+                break
+            except Exception as e:
+                err_msg = str(e)
+                # 503, 500, 또는 네트워크/타임아웃 관련 에러인 경우 재시도
+                if any(x in err_msg for x in ["503", "500", "timeout", "Connection", "connect"]):
+                    if attempt < 2:
+                        import time
+                        time.sleep(1)
+                        continue
+                raise e
+
         return response.text.strip()
 
     except Exception:

@@ -229,10 +229,7 @@ def get_chat_response(messages: list, context: dict) -> str:
         from google.genai import types
 
         if gms_key:
-            client = genai.Client(
-                api_key=api_key,
-                http_options={"base_url": "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/"},
-            )
+            client = genai.Client(api_key=api_key)
         else:
             client = genai.Client(api_key=api_key)
 
@@ -255,11 +252,25 @@ def get_chat_response(messages: list, context: dict) -> str:
                 max_output_tokens=8192,
             )
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=contents,
-            config=gen_config,
-        )
+        # 임시적 오류(503, 500, 타임아웃 등) 발생 시 최대 3회 재시도 (재시도 간격 1초)
+        response = None
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-3.5-flash",
+                    contents=contents,
+                    config=gen_config,
+                )
+                break
+            except Exception as e:
+                err_msg = str(e)
+                # 503, 500, 또는 네트워크/타임아웃 관련 에러인 경우 재시도
+                if any(x in err_msg for x in ["503", "500", "timeout", "Connection", "connect"]):
+                    if attempt < 2:
+                        import time
+                        time.sleep(1)
+                        continue
+                raise e
 
         # thinking 파트를 제외한 실제 응답 텍스트만 추출 후 마크다운 볼드 제거
         text = _extract_response_text(response)
