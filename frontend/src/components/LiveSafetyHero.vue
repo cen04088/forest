@@ -28,32 +28,30 @@
     </div>
 
     <div class="theme-carousel">
-      <button class="theme-nav prev" type="button" aria-label="이전 테마" @click.stop="go(-1)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
-      </button>
-
-      <button
-        class="theme-slide"
-        :class="`tone-${activeSlide.tone}`"
-        type="button"
-        @click="emitTheme(activeSlide)"
-      >
-        <span class="theme-label">{{ activeSlide.label }}</span>
-        <strong class="theme-title">{{ activeSlide.title }}</strong>
-        <span class="theme-subtitle">{{ activeSlide.subtitle }}</span>
-        <span class="theme-chips">
-          <span v-for="chip in activeSlide.chips" :key="`${activeSlide.id}-${chip.label}`" class="theme-chip">
-            <strong>{{ chip.label }}</strong>
-            <em>{{ chip.meta }}</em>
+      <div class="theme-card-group">
+        <!-- 메인 슬라이드 -->
+        <button
+          class="theme-slide"
+          :class="`tone-${activeSlide.tone}`"
+          :style="activeSlide.image ? { backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.76) 0%, rgba(0,0,0,0.18) 60%, transparent 100%), url('${activeSlide.image}')` } : undefined"
+          type="button"
+          @click="emitTheme(activeSlide)"
+        >
+          <span class="theme-label">{{ activeSlide.label }}</span>
+          <strong class="theme-title">{{ activeSlide.title }}</strong>
+          <span class="theme-subtitle">{{ activeSlide.subtitle }}</span>
+          <span class="theme-chips">
+            <span v-for="chip in activeSlide.chips" :key="`${activeSlide.id}-${chip.label}`" class="theme-chip">
+              <strong>{{ chip.label }}</strong>
+              <em>{{ chip.meta }}</em>
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
 
-      <button class="theme-nav next" type="button" aria-label="다음 테마" @click.stop="go(1)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6" /></svg>
-      </button>
+      </div>
     </div>
 
+    <!-- 도트 네비게이션 (모바일 전용) -->
     <div class="theme-dots" role="tablist" aria-label="테마 슬라이드 선택">
       <button
         v-for="(slide, index) in slides"
@@ -114,10 +112,6 @@ function setSlide(index) {
   if (!props.slides.length) return;
   activeIndex.value = (index + props.slides.length) % props.slides.length;
   restart();
-}
-
-function go(delta) {
-  setSlide(activeIndex.value + delta);
 }
 
 function pause() {

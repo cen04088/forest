@@ -6,6 +6,7 @@ import {
 import { authToken, authUser, showAuthModal } from './useAuth.js';
 
 // ── 싱글톤 상태 ─────────────────────────────────────────────────────────────
+export const activeInfoPost = ref(null);
 export const communityView = ref('list');
 export const communityPosts = ref([]);
 export const communityPost = ref(null);

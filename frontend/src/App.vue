@@ -1,6 +1,5 @@
 <template>
   <main class="app-shell">
-    <!-- ─── 히어로 헤더 ──────────────────────────────────────────────────── -->
     <header v-if="showSafetyHero" class="app-hero">
       <LiveSafetyHero
         :safety-items="liveSafetyItems"
@@ -9,33 +8,36 @@
       />
     </header>
 
-    <!-- ─── 에러 배너 ──────────────────────────────────────────────────── -->
     <div v-if="globalError" class="error-banner" role="alert">
       <span>⚠️ {{ globalError }}</span>
-      <button class="error-close" type="button" aria-label="닫기" @click="globalError = ''">✕</button>
+      <button class="error-close" type="button" aria-label="닫기" @click="globalError = ''">×</button>
     </div>
 
-    <!-- ─── 탭바 ──────────────────────────────────────────────────────── -->
     <nav class="tabbar" aria-label="주요 화면">
       <div class="sidebar-brand" style="cursor:pointer" @click="goHome">
         <img src="/logo.png" alt="올라" class="sidebar-logo-img" />
       </div>
+
       <router-link to="/guide" class="tabbar-item" active-class="active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
         <span>안전코스</span>
       </router-link>
+
       <router-link to="/chat" class="tabbar-item" active-class="active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         <span>AI 도우미</span>
       </router-link>
+
       <router-link to="/safe-link" class="tabbar-item" active-class="active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         <span>안전공유</span>
       </router-link>
+
       <router-link to="/community" class="tabbar-item" active-class="active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         <span>커뮤니티</span>
       </router-link>
+
       <router-link
         v-if="authUser"
         to="/my-page"
@@ -45,6 +47,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         <span>마이페이지</span>
       </router-link>
+
       <router-link
         v-else
         to="/login"
@@ -55,79 +58,20 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         <span>로그인</span>
       </router-link>
-
-      <!-- ─── 실시간 산행 환경 미니 카드 ── -->
-      <div class="sidebar-weather">
-        <div class="sw-header">
-          <span class="sw-title">{{ selectedMountain ? selectedMountain.name + ' 날씨' : '실시간 산행 환경' }}</span>
-          <span v-if="weatherData" :class="weatherData.source === 'mock' ? 'live-badge mock-badge' : 'live-badge'" style="font-size:9px;padding:2px 6px">
-            {{ weatherData.source === 'mock' ? '추정' : '● LIVE' }}
-          </span>
-        </div>
-        <template v-if="weatherData">
-          <div class="sw-gauge-track">
-            <div class="sw-gauge-fill" :class="swSafetyClass" :style="{ width: swSafetyPct + '%' }"></div>
-          </div>
-          <p class="sw-gauge-label">{{ swSafetyLabel }}</p>
-          <div class="sw-grid">
-            <div class="sw-item">
-              <span>{{ swWeatherIcon }}</span>
-              <span>{{ swWeatherLabel }} {{ weatherData.temperature_c }}°C</span>
-            </div>
-            <div class="sw-item">
-              <span>🌄</span>
-              <span>일출 {{ weatherData.sunrise || '-' }}</span>
-            </div>
-            <div class="sw-item">
-              <span>🌅</span>
-              <span>일몰 {{ weatherData.sunset || '-' }}</span>
-            </div>
-            <div class="sw-item">
-              <span>💧</span>
-              <span :class="weatherData.rainfall_mm > 0 ? 'sw-warn' : ''">강수 {{ weatherData.rainfall_mm ?? 0 }}mm</span>
-            </div>
-            <div class="sw-item">
-              <span>💨</span>
-              <span :class="weatherData.wind_speed_ms >= 5 ? 'sw-warn' : ''">풍속 {{ weatherData.wind_speed_ms }}m/s</span>
-            </div>
-            <div class="sw-item">
-              <span>💦</span>
-              <span>습도 {{ weatherData.humidity_pct ?? '-' }}%</span>
-            </div>
-            <div class="sw-item">
-              <span>🔥</span>
-              <span :class="swWildfireClass">산불 {{ swWildfireLabel }}</span>
-            </div>
-            <div v-if="weatherData.pm10_ugm3 != null" class="sw-item" :class="swDustClass">
-              <span>🌫</span>
-              <span>미세먼지 {{ weatherData.pm10_ugm3 }}㎍ · {{ weatherData.grade_pm10 || '-' }}</span>
-            </div>
-            <div v-if="weatherData.pm25_ugm3 != null" class="sw-item" :class="swFineDustClass">
-              <span>💨</span>
-              <span>초미세먼지 {{ weatherData.pm25_ugm3 }}㎍ · {{ weatherData.grade_pm25 || '-' }}</span>
-            </div>
-          </div>
-        </template>
-        <p v-else style="font-size:10px;color:#9ca3af;margin:4px 0 0">날씨 불러오는 중...</p>
-      </div>
     </nav>
 
-    <!-- ─── 라우터 뷰 ─────────────────────────────────────────────────── -->
     <router-view />
 
-    <!-- ─── 로그인/회원가입 모달 ─────────────────────────────────────── -->
     <AuthModal v-if="showAuthModal" />
-
-    <!-- ─── 온보딩 모달 (첫 방문) ──────────────────────────────────── -->
     <OnboardingModal v-if="showOnboarding" @close="showOnboarding = false" />
   </main>
-
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { authMode, authUser, loadMe, showAuthModal } from './composables/useAuth.js';
+import { activeInfoPost, communityError, communityView } from './composables/useCommunity.js';
 import { loadMyPageData } from './composables/useUserData.js';
 import {
   guideError,
@@ -136,15 +80,16 @@ import {
   selectedMountain,
   weatherData,
 } from './composables/useGuide.js';
-import { communityError } from './composables/useCommunity.js';
 import AuthModal from './components/AuthModal.vue';
 import LiveSafetyHero from './components/LiveSafetyHero.vue';
 import OnboardingModal from './components/OnboardingModal.vue';
-import { heroThemeSlides, liveSafetyItems } from './data/heroCuration.js';
+import { heroThemeSlides } from './data/heroCuration.js';
 
 const showOnboarding = ref(!localStorage.getItem('ollaOnboarded'));
 const router = useRouter();
 const route = useRoute();
+
+const showSafetyHero = computed(() => route.path === '/guide');
 
 function goHome() {
   guideStep.value = 'browse';
@@ -153,10 +98,10 @@ function goHome() {
 }
 
 function handleThemeSelect(slide) {
-  router.push({ path: '/guide', query: { theme: slide.id } });
+  communityView.value = 'list';
+  activeInfoPost.value = slide.id;
+  router.push('/community');
 }
-
-const showSafetyHero = computed(() => route.path === '/guide');
 
 function openLogin() {
   authMode.value = 'login';
@@ -172,45 +117,43 @@ function syncLoginRoute() {
   openLogin();
 }
 
-const swWeatherIcon = computed(() => {
-  const w = weatherData.value;
-  if (!w) return '🌤️';
-  if (w.rainfall_mm >= 10) return '🌧️';
-  if (w.rainfall_mm > 0) return '🌦️';
-  if (w.wind_speed_ms >= 8) return '💨';
-  return '☀️';
-});
-const swWeatherLabel = computed(() => {
-  const w = weatherData.value;
-  if (!w) return '';
-  if (w.rainfall_mm >= 10) return '비';
-  if (w.rainfall_mm > 0) return '흐림';
-  return '맑음';
-});
-const swSafetyClass = computed(() => {
-  const w = weatherData.value;
-  if (!w) return 'safe';
-  const r = w.rainfall_mm ?? 0;
-  const wind = w.wind_speed_ms ?? 0;
-  if (r >= 10 || wind >= 10) return 'danger';
-  if (r > 0 || wind >= 5) return 'warning';
-  return 'safe';
-});
-const swSafetyPct = computed(() => {
-  return swSafetyClass.value === 'safe' ? 95 : swSafetyClass.value === 'warning' ? 55 : 20;
-});
-const swSafetyLabel = computed(() => {
-  return swSafetyClass.value === 'safe' ? '산행 적합' : swSafetyClass.value === 'warning' ? '주의 필요' : '산행 위험';
-});
-const swWildfireClass = computed(() => ({ low: '', medium: 'sw-warn', high: 'sw-danger', very_high: 'sw-danger' }[weatherData.value?.wildfire_risk || 'low'] || ''));
-const swWildfireLabel = computed(() => ({ low: '낮음', medium: '보통', high: '높음', very_high: '매우높음' }[weatherData.value?.wildfire_risk || 'low'] || '낮음'));
-const swDustClass = computed(() => ({ '보통': '', '나쁨': 'sw-warn', '매우나쁨': 'sw-danger' }[weatherData.value?.grade_pm10 || ''] || ''));
-const swFineDustClass = computed(() => ({ '보통': '', '나쁨': 'sw-warn', '매우나쁨': 'sw-danger' }[weatherData.value?.grade_pm25 || ''] || ''));
+const WILDFIRE_LABEL = { low: '낮음', medium: '보통', high: '높음', very_high: '매우높음' };
 
-// 전역 에러 — 어느 탭의 에러든 하나로 모음
+const liveSafetyItems = computed(() => {
+  const w = weatherData.value;
+  if (!w) return [{ id: 'loading', label: '날씨 정보', value: '불러오는 중' }];
+
+  const rainfall = w.rainfall_mm ?? 0;
+  const wind = w.wind_speed_ms ?? 0;
+  const weatherIcon = rainfall >= 10 ? '🌧' : rainfall > 0 ? '🌦' : wind >= 8 ? '💨' : '☀️';
+  const weatherLabel = rainfall >= 10 ? '비' : rainfall > 0 ? '흐림' : '맑음';
+
+  const items = [
+    { id: 'temp', label: '현재기온', value: `${weatherIcon} ${weatherLabel} ${w.temperature_c}°C` },
+    { id: 'rain', label: '강수', value: `${rainfall}mm` },
+    { id: 'wind', label: '풍속', value: `${wind}m/s` },
+    { id: 'humidity', label: '습도', value: `${w.humidity_pct ?? '-'}%` },
+    { id: 'wildfire', label: '산불위험', value: WILDFIRE_LABEL[w.wildfire_risk] || '낮음' },
+    { id: 'sunset', label: '일몰', value: w.sunset || '-' },
+    { id: 'sunrise', label: '일출', value: w.sunrise || '-' },
+  ];
+
+  if (w.pm10_ugm3 != null) {
+    items.push({ id: 'dust', label: '미세먼지', value: `${w.pm10_ugm3}㎍ ${w.grade_pm10 || '-'}` });
+  }
+  if (w.pm25_ugm3 != null) {
+    items.push({ id: 'fine-dust', label: '초미세먼지', value: `${w.pm25_ugm3}㎍ ${w.grade_pm25 || '-'}` });
+  }
+
+  return items;
+});
+
 const globalError = computed({
   get: () => guideError.value || communityError.value,
-  set: (v) => { guideError.value = v; communityError.value = v; },
+  set: (v) => {
+    guideError.value = v;
+    communityError.value = v;
+  },
 });
 
 onMounted(async () => {

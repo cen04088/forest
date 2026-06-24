@@ -3,6 +3,71 @@
 
     <!-- ── 목록 뷰 ── -->
     <template v-if="communityView === 'list'">
+
+      <!-- ── 에디터 정보글 섹션 ── -->
+      <template v-if="!activeInfoPost">
+        <section class="info-mag-section">
+          <div class="info-mag-header">
+            <span class="info-mag-eyebrow">EDITOR'S PICK</span>
+            <h2 class="info-mag-heading">이번 주 정보글</h2>
+            <p class="info-mag-sub">올라 에디터가 직접 큐레이션한 산행 정보</p>
+          </div>
+          <div class="info-mag-list">
+            <article
+              v-for="(slide, idx) in heroThemeSlides"
+              :key="slide.id"
+              class="info-mag-card"
+              :style="{ backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.28) 55%, rgba(0,0,0,0.06) 100%), url('${slide.image}')` }"
+              @click="activeInfoPost = slide.id"
+            >
+              <div class="info-mag-card-inner">
+                <div class="info-mag-card-top">
+                  <span class="info-mag-num">{{ String(idx + 1).padStart(2, '0') }}</span>
+                  <span class="info-mag-badge">{{ slide.infoPost.label }}</span>
+                  <span class="info-mag-readtime">{{ slide.infoPost.readTime }}</span>
+                </div>
+                <div class="info-mag-card-bottom">
+                  <p class="info-mag-mountain">{{ slide.infoPost.mountain }}</p>
+                  <strong class="info-mag-title">{{ slide.infoPost.title }}</strong>
+                  <div class="info-mag-tags">
+                    <span v-for="tag in slide.infoPost.tags.slice(0, 3)" :key="tag" class="info-mag-tag">{{ tag }}</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </template>
+
+      <!-- ── 정보글 상세 뷰 ── -->
+      <template v-else>
+        <section class="info-detail-section">
+          <button class="info-detail-back" type="button" @click="activeInfoPost = null">← 목록으로</button>
+          <template v-for="slide in heroThemeSlides" :key="slide.id">
+            <template v-if="slide.id === activeInfoPost">
+              <div
+                class="info-detail-hero"
+                :style="{ backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 60%, transparent 100%), url('${slide.image}')` }"
+              >
+                <span class="info-detail-badge">{{ slide.infoPost.label }}</span>
+                <h1 class="info-detail-title">{{ slide.infoPost.title }}</h1>
+                <p class="info-detail-mountain">{{ slide.infoPost.mountain }}</p>
+              </div>
+              <div class="info-detail-body">
+                <p
+                  v-for="(para, i) in slide.infoPost.content.split('\n\n')"
+                  :key="i"
+                  class="info-detail-para"
+                >{{ para }}</p>
+                <div class="info-detail-tags">
+                  <span v-for="tag in slide.infoPost.tags" :key="tag" class="info-mag-tag">{{ tag }}</span>
+                </div>
+              </div>
+            </template>
+          </template>
+        </section>
+      </template>
+
       <section class="panel community-feed">
         <div class="section-title compact">
           <div>
@@ -166,12 +231,14 @@
 import { onMounted } from 'vue';
 import { authUser, showAuthModal } from '../composables/useAuth.js';
 import {
+  activeInfoPost,
   communityCategory, communityCommentInput, communityError, communityLoading,
   communityPage, communityPost, communityPosts, communitySearch, communityTotal,
   communityView, filterCategory, formatRelativeTime, loadPosts, openEdit,
   openPost, openWrite, removeComment, removePost, submitComment, submitWrite,
   toggleLike, writeError, writeForm, writeLoading,
 } from '../composables/useCommunity.js';
+import { heroThemeSlides } from '../data/heroCuration.js';
 
 onMounted(() => {
   if (communityPosts.value.length === 0) loadPosts();
