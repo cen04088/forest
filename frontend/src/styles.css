@@ -2360,6 +2360,14 @@ p {
   position: relative;
   cursor: text;
   margin-bottom: 20px;
+  border-radius: 16px;
+  padding: 12px 8px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+.code-input-wrap.focused {
+  border-color: #22c55e;
+  background: #f0fdf4;
 }
 .code-hidden-input {
   position: absolute;
@@ -2382,7 +2390,16 @@ p {
   background: #fafafa;
   user-select: none;
 }
-.code-digit-input.active { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.15); background: #fff; }
+.code-digit-input.active {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+  background: #fff;
+  animation: digit-pulse 1s ease-in-out infinite;
+}
+@keyframes digit-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(34,197,94,0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(34,197,94,0.1); }
+}
 .code-digit-input.filled { border-color: #16a34a; background: #f0fdf4; color: #166534; }
 .guardian-entry-btn { width: 100%; margin-bottom: 16px; }
 .guardian-entry-error { font-size: 13px; color: var(--red); text-align: center; margin: 0 0 14px; }
@@ -3309,6 +3326,24 @@ p {
 }
 .back-to-browse-btn svg { width: 16px; height: 16px; }
 .back-to-browse-btn:hover { background: #dcfce7; }
+
+.csh-fav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.csh-fav-btn:hover { background: #fff1f2; border-color: #fca5a5; color: #ef4444; }
+.csh-fav-btn.active { background: #fff1f2; border-color: #f87171; color: #ef4444; }
+.csh-fav-btn.active svg { fill: #ef4444; stroke: #ef4444; }
 
 .course-step-header { display: flex; flex-direction: column; gap: 10px; padding-bottom: 4px; }
 

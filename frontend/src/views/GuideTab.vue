@@ -288,11 +288,22 @@
 
         <!-- 산 헤더 -->
         <section class="panel course-step-header">
-          <!-- 상단 내비 행: 뒤로가기 -->
+          <!-- 상단 내비 행: 뒤로가기 + 즐겨찾기 -->
           <div class="csh-nav">
             <button class="back-to-browse-btn" type="button" @click="backToBrowse">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
               산 목록
+            </button>
+            <button
+              class="csh-fav-btn"
+              type="button"
+              :class="{ active: isMountainFavorite(selectedMountain.id) }"
+              @click="toggleMountainFavorite(selectedMountain)"
+              :title="isMountainFavorite(selectedMountain.id) ? '즐겨찾기 해제' : '즐겨찾기 추가'"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
             </button>
           </div>
 

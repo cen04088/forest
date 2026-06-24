@@ -12,7 +12,7 @@
           산행자가 알려준 6자리 코드를 입력하면<br>현재 위치를 실시간으로 확인할 수 있습니다.
         </p>
 
-        <div class="code-input-wrap" @click="focusGuardianInput">
+        <div class="code-input-wrap" :class="{ focused: inputFocused }" @click="focusGuardianInput">
           <input
             ref="hiddenInput"
             class="code-hidden-input"
@@ -27,12 +27,14 @@
             @keydown="onGuardianKeydown"
             @keydown.enter="lookupCode"
             @paste="onGuardianPaste"
+            @focus="inputFocused = true"
+            @blur="inputFocused = false"
           />
           <div class="code-input-row">
             <div
               v-for="i in 6" :key="i"
               class="code-digit-input"
-              :class="{ filled: guardianCode.length >= i, active: guardianCode.length === i - 1 }"
+              :class="{ filled: guardianCode.length >= i, active: inputFocused && guardianCode.length === i - 1 }"
             >{{ guardianCode[i - 1] || '' }}</div>
           </div>
         </div>
@@ -213,6 +215,7 @@ const guardianCode = ref('');
 const guardianLoading = ref(false);
 const guardianError = ref('');
 const guardianResolved = ref(false);
+const inputFocused = ref(false);
 
 onMounted(() => {
   nextTick(() => hiddenInput.value?.focus());
@@ -235,7 +238,6 @@ function onGuardianInput(event) {
   const clean = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
   guardianCode.value = clean;
   event.target.value = clean;
-  event.target.setSelectionRange(clean.length, clean.length);
 }
 
 function onGuardianPaste(event) {
