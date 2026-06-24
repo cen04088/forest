@@ -58,6 +58,74 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         <span>로그인</span>
       </router-link>
+
+      <section class="sidebar-search-panel" aria-label="산 검색하기">
+        <div class="sidebar-search-head">
+          <h2>산 검색하기</h2>
+        </div>
+
+        <div class="bfp-search-row sidebar-search-row">
+          <svg class="bfp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input
+            v-model="mountainSearch"
+            class="bfp-search-input"
+            type="text"
+            placeholder="산 이름 또는 지역 검색"
+            autocomplete="off"
+          />
+        </div>
+
+        <div v-if="loading && !filteredMountains.length" class="community-loading sidebar-search-loading">분석 중…</div>
+        <p v-else-if="!filteredMountains.length && mountainSearch" class="tag-filter-empty sidebar-search-empty">
+          조건에 맞는 산이 없어요.
+        </p>
+
+        <div class="mountain-browse-list sidebar-mountain-list">
+          <button
+            v-for="mountain in filteredMountains"
+            :key="mountain.mountain_key || mountain.id"
+            class="mountain-browse-row sidebar-mountain-row"
+            type="button"
+            @click="handleSidebarMountainSelect(mountain)"
+          >
+            <i class="mbr-diff-dot" :style="{ background: diffDotColor(mountain.difficulty) }"></i>
+            <div class="mbr-body">
+              <strong class="mbr-name">{{ mountain.name }}</strong>
+              <span class="mbr-meta">{{ mountain.region }}&nbsp;·&nbsp;{{ mountain.elevation_m }}m</span>
+            </div>
+            <svg class="mbr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        <div v-if="mlRiskInfo" class="ml-risk-card sidebar-ml-risk-card">
+          <div class="ml-risk-header">
+            <span class="ml-risk-title">📊 소방청 사고 데이터 분석</span>
+            <span
+              :class="['ml-risk-badge',
+                mlRiskInfo.risk_index >= 0.70 ? 'mlr-high' :
+                mlRiskInfo.risk_index >= 0.45 ? 'mlr-medium' :
+                mlRiskInfo.risk_index >= 0.20 ? 'mlr-low' : 'mlr-safe']"
+            >
+              {{ mlRiskInfo.risk_index >= 0.70 ? '1인당 사고율 높음' :
+                 mlRiskInfo.risk_index >= 0.45 ? '주의 구간' :
+                 mlRiskInfo.risk_index >= 0.20 ? '보통' : '상대적 안전' }}
+            </span>
+          </div>
+          <p class="ml-risk-warn">{{ mlRiskInfo.warning }}</p>
+          <div class="ml-risk-types">
+            <span
+              v-for="(prob, type) in mlRiskInfo.type_proba"
+              :key="type"
+              class="ml-type-chip"
+              :class="type === mlRiskInfo.top_type ? 'ml-type-top' : ''"
+            >
+              {{ { '부상사고':'실족·추락', '조난수색':'길잃음·조난', '질환':'탈진·질환', '기타':'기타' }[type] }}
+              {{ Math.round(prob * 100) }}%
+            </span>
+          </div>
+          <p class="ml-risk-note">* {{ mlTrainingNote }} 기반 1인당 사고율 분석</p>
+        </div>
+      </section>
     </nav>
 
     <router-view />
@@ -76,7 +144,14 @@ import { loadMyPageData } from './composables/useUserData.js';
 import {
   guideError,
   guideStep,
+  diffDotColor,
+  filteredMountains,
+  loadMountains,
   loadWeather,
+  loading,
+  mlRiskInfo,
+  mlTrainingNote,
+  mountainSearch,
   selectedMountain,
   weatherData,
 } from './composables/useGuide.js';
@@ -106,6 +181,12 @@ function handleThemeSelect(slide) {
 function openLogin() {
   authMode.value = 'login';
   showAuthModal.value = true;
+}
+
+function handleSidebarMountainSelect(mountain) {
+  guideStep.value = 'courses';
+  selectedMountain.value = mountain;
+  router.push('/guide');
 }
 
 function syncLoginRoute() {
@@ -159,6 +240,7 @@ const globalError = computed({
 onMounted(async () => {
   await loadMe();
   if (authUser.value) loadMyPageData();
+  loadMountains();
   loadWeather();
   syncLoginRoute();
 });
