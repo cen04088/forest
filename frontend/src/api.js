@@ -168,8 +168,16 @@ export async function fetchSafetyReports(mountainName) {
   return request(`/safety-reports/?${params.toString()}`);
 }
 
-export async function fetchMountainStory(mountainName) {
-  const params = new URLSearchParams({ mountain: mountainName || "" });
+export async function fetchMountainStory(mountain) {
+  const params = new URLSearchParams();
+  if (mountain && typeof mountain === "object") {
+    params.set("mountain", mountain.name || mountain.mountain || "");
+    if (mountain.region) params.set("region", mountain.region);
+    if (mountain.elevation_m != null) params.set("elevation_m", mountain.elevation_m);
+    if (mountain.mountain_key) params.set("mountain_key", mountain.mountain_key);
+  } else {
+    params.set("mountain", mountain || "");
+  }
   return request(`/mountain-story/?${params.toString()}`);
 }
 

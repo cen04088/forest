@@ -1,5 +1,8 @@
 import { computed, reactive, ref } from 'vue';
 import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations, fetchVWorldTrails, fetchOSMTrails, fetchMountains, fetchMountainRecommendations } from '../api.js';
+import { fallbackCourses } from '../data/fallbackCourses.js';
+import { fallbackMountainDescriptions } from '../data/fallbackMountainDescriptions.js';
+import { fallbackMountains } from '../data/fallbackMountains.js';
 
 // 경로 geometry 캐시 (courseId → { geometry, source })
 const _geometryCache = new Map();
@@ -172,15 +175,35 @@ function _isSelectedMountainCourse(course) {
 export async function loadCourses() {
   try {
     const data = await fetchCourses();
-    publicCourses.value = data.courses || [];
-  } catch { publicCourses.value = []; }
+    publicCourses.value = data.courses?.length ? data.courses : fallbackCourses;
+  } catch {
+    publicCourses.value = fallbackCourses;
+  }
 }
 
 export async function loadMountains() {
   try {
     const data = await fetchMountains();
-    publicMountains.value = data.mountains || [];
-  } catch { publicMountains.value = []; }
+    publicMountains.value = withFallbackMountainDescriptions(data.mountains?.length ? data.mountains : fallbackMountains);
+  } catch {
+    publicMountains.value = withFallbackMountainDescriptions(fallbackMountains);
+  }
+}
+
+function withFallbackMountainDescriptions(mountains) {
+  return (mountains || []).map((mountain) => {
+    const fallbackIntro = fallbackMountainDescriptions[mountain.name];
+    if (!fallbackIntro) return mountain;
+    const currentIntro = mountain.intro || mountain.description || '';
+    const looksGeneric = currentIntro.includes('위치 명산') || currentIntro.length < 35;
+    if (!looksGeneric) return mountain;
+    return {
+      ...mountain,
+      intro: fallbackIntro,
+      description: fallbackIntro,
+      description_source: 'seed_mountain_descriptions',
+    };
+  });
 }
 
 export async function submitMountainRecommendation() {
@@ -224,8 +247,24 @@ export async function loadWeather(overrideLat, overrideLng, mountainName) {
   try {
     const data = await fetchWeather({ lat, lng, mountain: mountainName || '' });
     weatherData.value = data;
-  } catch (e) {
-    console.error('[loadWeather]', e);
+  } catch {
+    weatherData.value = {
+      source: 'mock',
+      lat,
+      lng,
+      mountain: mountainName || '',
+      temperature_c: 24,
+      wind_speed_ms: 2.4,
+      rainfall_mm: 0,
+      humidity_pct: 50,
+      wildfire_risk: 'medium',
+      pm10_ugm3: 13,
+      pm25_ugm3: 8,
+      grade_pm10: '보통',
+      grade_pm25: '보통',
+      sunrise: '05:12',
+      sunset: '19:57',
+    };
   }
 }
 

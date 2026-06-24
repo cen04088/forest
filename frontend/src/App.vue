@@ -2,6 +2,12 @@
   <main class="app-shell">
     <!-- ─── 히어로 헤더 ──────────────────────────────────────────────────── -->
     <header class="app-hero">
+      <LiveSafetyHero
+        :safety-items="liveSafetyItems"
+        :slides="heroThemeSlides"
+        @select-theme="handleThemeSelect"
+      />
+
       <div class="hero-nav">
         <div class="hero-nav-actions">
           <button v-if="authUser" class="hero-auth-btn" type="button" @click="showAuthModal = true">
@@ -17,27 +23,6 @@
         </div>
       </div>
 
-      <div class="hero-body">
-        <h1 class="hero-title">
-          동반자와 함께하는<br>
-          <span class="hero-title-accent">모든 산행을 안전하게</span>
-        </h1>
-        <p class="hero-desc">날씨 · 코스 · 재난 데이터를 종합해<br>출발 전 안전 등급을 진단합니다</p>
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <span class="hero-stat-num">138<span class="hero-stat-unit">개</span></span>
-            <span class="hero-stat-label">올라 추천 산</span>
-          </div>
-          <div class="hero-stat">
-            <span class="hero-stat-num">631<span class="hero-stat-unit">개</span></span>
-            <span class="hero-stat-label">실시간 분석 탐방로</span>
-          </div>
-          <div class="hero-stat">
-            <span class="hero-stat-num">3<span class="hero-stat-unit">단계</span></span>
-            <span class="hero-stat-label">추천 · 주의 · 비추천</span>
-          </div>
-        </div>
-      </div>
     </header>
 
     <!-- ─── 에러 배너 ──────────────────────────────────────────────────── -->
@@ -145,10 +130,18 @@ import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authUser, loadMe, showAuthModal } from './composables/useAuth.js';
 import { loadMyPageData } from './composables/useUserData.js';
-import { guideError, weatherData, loadWeather, selectedMountain, guideStep } from './composables/useGuide.js';
+import {
+  guideError,
+  guideStep,
+  loadWeather,
+  selectedMountain,
+  weatherData,
+} from './composables/useGuide.js';
 import { communityError } from './composables/useCommunity.js';
 import AuthModal from './components/AuthModal.vue';
+import LiveSafetyHero from './components/LiveSafetyHero.vue';
 import OnboardingModal from './components/OnboardingModal.vue';
+import { heroThemeSlides, liveSafetyItems } from './data/heroCuration.js';
 
 const showOnboarding = ref(!localStorage.getItem('ollaOnboarded'));
 const router = useRouter();
@@ -157,6 +150,10 @@ function goHome() {
   guideStep.value = 'browse';
   selectedMountain.value = null;
   router.push('/guide');
+}
+
+function handleThemeSelect(slide) {
+  router.push({ path: '/guide', query: { theme: slide.id } });
 }
 
 const swWeatherIcon = computed(() => {

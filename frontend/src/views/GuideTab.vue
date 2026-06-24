@@ -694,6 +694,7 @@ const fluxData = ref(null);
 
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
 let _courseStepToken = 0;
+const loadedMountainDetailKey = ref('');
 
 const storyText = computed(() => {
   const story = mountainStory.value;
@@ -714,7 +715,7 @@ const selectedMountainCourseRecommendations = computed(() => {
   const maxMinutes = Number(profile.availableMinutes || desiredMinutes + 120);
   const difficultyFilter = profile.difficultyFilter;
 
-  return publicCourses.value
+  const matchedCourses = publicCourses.value
     .filter((course) => {
       const mountainName = normalizeText(course.mountain);
       const courseName = normalizeText(course.name);
@@ -731,6 +732,8 @@ const selectedMountainCourseRecommendations = computed(() => {
     }))
     .sort((a, b) => b._trailScore - a._trailScore)
     .slice(0, 12);
+
+  return matchedCourses.length ? matchedCourses : [buildRepresentativeCourse(mountain)];
 });
 
 // ── 브라우즈 단계: 필터된 산 목록 ────────────────────────────────────────────
@@ -794,6 +797,10 @@ function normalizeText(value) {
   return String(value || '').replace(/\s/g, '').toLowerCase();
 }
 
+function mountainIdentity(mountain) {
+  return mountain?.mountain_key || mountain?.id || `${mountain?.name || ''}_${mountain?.region || ''}`;
+}
+
 function haversineKm(lat1, lng1, lat2, lng2) {
   const toRad = (v) => Number(v) * Math.PI / 180;
   const radius = 6371;
@@ -823,6 +830,31 @@ function scoreTrailForSelectedMountain(course, desiredMinutes, maxMinutes, diffi
   if (normalizeText(course.name) === normalizeText('주등산로')) score -= 16;
 
   return score;
+}
+
+function buildRepresentativeCourse(mountain) {
+  const min = Number(mountain.walk_time_min || 90);
+  const max = Number(mountain.walk_time_max || Math.max(min, 180));
+  const duration = Math.max(60, Math.min(Math.round((min + max) / 2), 240));
+  const distance = mountain.difficulty === 'hard' ? 5.8 : mountain.difficulty === 'medium' ? 4.2 : 2.8;
+  const gain = mountain.elevation_m ? Math.max(120, Math.round(Number(mountain.elevation_m) * 0.35)) : 180;
+  return {
+    id: `representative-${mountain.mountain_key || mountain.id || mountain.name}`,
+    mountain: mountain.name,
+    name: `${mountain.name} 대표 산행 코스`,
+    region: mountain.region || '',
+    difficulty: mountain.difficulty || 'easy',
+    distance_km: distance,
+    duration_min: duration,
+    elevation_gain_m: gain,
+    lat: mountain.lat,
+    lng: mountain.lng,
+    crowding: mountain.crowding ?? 0.4,
+    highlights: (mountain.highlights?.length ? mountain.highlights : ['자연 경관 우수']).slice(0, 3),
+    source: '대표 코스',
+    has_entrance_start: false,
+    _trailScore: 60,
+  };
 }
 
 function courseDifficultyLabel(difficulty) {
@@ -883,6 +915,7 @@ function refreshOverviewMap() {
 // ── 단계 전환 ─────────────────────────────────────────────────────────────────
 async function enterCourseStep(mountain) {
   const token = ++_courseStepToken;
+  loadedMountainDetailKey.value = mountainIdentity(mountain);
 
   guideStep.value = 'courses';
   selectedMountain.value = mountain;
@@ -945,6 +978,7 @@ async function enterCourseStep(mountain) {
 function backToBrowse() {
   guideStep.value = 'browse';
   selectedMountain.value = null;
+  loadedMountainDetailKey.value = '';
   selectedTrailCourse.value = null;
   refreshOverviewMap();
 }
@@ -1040,12 +1074,21 @@ async function handleGPS() {
 
 // ── 반응성 ────────────────────────────────────────────────────────────────────
 watch(mapMountains, () => refreshOverviewMap());
-watch(selectedMountain, () => refreshOverviewMap());
+watch(selectedMountain, (mountain) => {
+  if (guideStep.value === 'courses' && mountain && mountainIdentity(mountain) !== loadedMountainDetailKey.value) {
+    enterCourseStep(mountain);
+    return;
+  }
+  refreshOverviewMap();
+});
 watch(() => [profile.maxDistanceKm, location.value, customStartLocation.value], () => refreshOverviewMap());
 
 onMounted(async () => {
   await Promise.all([loadCourses(), loadMountains()]);
   loadWeather();
+  if (guideStep.value === 'courses' && selectedMountain.value) {
+    await enterCourseStep(selectedMountain.value);
+  }
   await nextTick();
   refreshOverviewMap();
 });
