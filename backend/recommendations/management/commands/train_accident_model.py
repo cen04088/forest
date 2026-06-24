@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand
 from recommendations.accident_model import (
     get_accident_model_training_summary,
     predict_accident_risk,
+    save_accident_model_to_disk,
 )
 
 
@@ -16,6 +17,11 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(self.style.SUCCESS("Accident model trained."))
+        if save_accident_model_to_disk():
+            self.stdout.write(self.style.SUCCESS("Trained model successfully saved to accident_trained_model.pkl."))
+        else:
+            self.stdout.write(self.style.WARNING("Failed to save trained model to disk."))
+
         self.stdout.write(f"Rows used: {summary.get('rows')}")
         self.stdout.write(f"Year range: {summary.get('year_range')}")
         self.stdout.write("Sources:")

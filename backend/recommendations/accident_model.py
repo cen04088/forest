@@ -1,4 +1,5 @@
 from pathlib import Path
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -223,6 +224,24 @@ def _initialize() -> None:
     if _initialized:
         return
 
+    # 사전 학습된 모델 파일 존재 시 바로 로드
+    model_path = DATA_DIR / "accident_trained_model.pkl"
+    if model_path.exists():
+        try:
+            with open(model_path, "rb") as f:
+                data = pickle.load(f)
+            _type_clf = data["type_clf"]
+            _sev_clf = data["sev_clf"]
+            _hourly_per_capita = data["hourly_per_capita"]
+            _monthly_per_capita = data["monthly_per_capita"]
+            _weekday_per_capita = data["weekday_per_capita"]
+            _training_summary = data["training_summary"]
+            _has_weather_features = data.get("has_weather_features", False)
+            _initialized = True
+            return
+        except Exception:
+            pass
+
     rows = _load_training_rows()
     df = _prepare_training_frame(rows) if not rows.empty else pd.DataFrame()
     if df.empty:
@@ -317,3 +336,26 @@ def predict_accident_risk(month: int, hour: int, weekday: int, temp: float = 15.
         },
         "training": dict(_training_summary),
     }
+
+
+def save_accident_model_to_disk() -> bool:
+    _initialize()
+    if not _initialized or _type_clf is None or _sev_clf is None:
+        return False
+    
+    model_path = DATA_DIR / "accident_trained_model.pkl"
+    try:
+        data = {
+            "type_clf": _type_clf,
+            "sev_clf": _sev_clf,
+            "hourly_per_capita": _hourly_per_capita,
+            "monthly_per_capita": _monthly_per_capita,
+            "weekday_per_capita": _weekday_per_capita,
+            "training_summary": _training_summary,
+            "has_weather_features": _has_weather_features,
+        }
+        with open(model_path, "wb") as f:
+            pickle.dump(data, f)
+        return True
+    except Exception:
+        return False
