@@ -3522,6 +3522,55 @@ p {
   margin-left: 4px;
   vertical-align: middle;
 }
+/* ── 추천 분석 로딩 카드 ───────────────────────────────────── */
+.rec-loading-panel {
+  text-align: center;
+  padding: 36px 24px !important;
+}
+.rec-loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.rec-loading-icon {
+  font-size: 36px;
+  animation: rec-bounce 1.2s ease-in-out infinite;
+}
+@keyframes rec-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+.rec-loading-msg {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a3c2b;
+  min-height: 24px;
+  animation: rec-fadein 0.4s ease;
+}
+@keyframes rec-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rec-loading-bar-wrap {
+  width: 100%;
+  max-width: 280px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.rec-loading-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 99px;
+  transition: width 1.2s ease;
+}
+.rec-loading-sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
 .mwc-dust-row {
   display: flex;
   align-items: center;

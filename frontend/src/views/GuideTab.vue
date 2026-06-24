@@ -194,6 +194,18 @@
           </div>
         </section>
 
+        <!-- ── 분석 중 로딩 카드 ── -->
+        <section v-if="loading" class="panel rec-loading-panel">
+          <div class="rec-loading-inner">
+            <div class="rec-loading-icon">🔍</div>
+            <p class="rec-loading-msg">{{ recLoadingMsg }}</p>
+            <div class="rec-loading-bar-wrap">
+              <div class="rec-loading-bar" :style="{ width: recLoadingPct + '%' }"></div>
+            </div>
+            <p class="rec-loading-sub">AI가 수십 가지 안전·환경 지표를 분석하고 있어요</p>
+          </div>
+        </section>
+
         <!-- ── AI 추천 결과 ── -->
         <section v-if="hasRecommendationResult && (recommendedMountains.length || alternativeMountains.length)" class="panel">
           <div class="section-title compact">
@@ -706,6 +718,40 @@ const selectedTrailCourse = ref(null);
 const fluxData = ref(null);
 const fluxLoading = ref(false);
 const dustData = ref(null);
+
+// ── 추천 분석 로딩 메시지 ────────────────────────────────────────────────────
+const _recLoadingSteps = [
+  { icon: '📡', text: '실시간 기상 데이터를 불러오고 있어요' },
+  { icon: '🔥', text: '전국 산불 위험도를 확인하는 중이에요' },
+  { icon: '🌊', text: '산사태 예측 모델을 돌리고 있어요' },
+  { icon: '💨', text: '산림 미세먼지 농도를 체크하는 중이에요' },
+  { icon: '🌿', text: '산림 생태 환경 지표를 분석하는 중이에요' },
+  { icon: '🗻', text: '3,000개 등산로 빅데이터를 조회하는 중이에요' },
+  { icon: '📏', text: '거리·난이도·체력 조건을 맞춰보는 중이에요' },
+  { icon: '🤖', text: 'AI가 최적의 산을 최종 선별하는 중이에요' },
+];
+const recLoadingIdx = ref(0);
+const recLoadingPct = ref(0);
+let _recLoadingTimer = null;
+
+watch(loading, (isLoading) => {
+  if (isLoading) {
+    recLoadingIdx.value = 0;
+    recLoadingPct.value = 5;
+    _recLoadingTimer = setInterval(() => {
+      recLoadingIdx.value = (recLoadingIdx.value + 1) % _recLoadingSteps.length;
+      recLoadingPct.value = Math.min(92, recLoadingPct.value + Math.random() * 10 + 5);
+    }, 1800);
+  } else {
+    clearInterval(_recLoadingTimer);
+    recLoadingPct.value = 100;
+  }
+});
+
+const recLoadingMsg = computed(() => {
+  const step = _recLoadingSteps[recLoadingIdx.value];
+  return `${step.icon}  ${step.text}`;
+});
 
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
 let _courseStepToken = 0;
