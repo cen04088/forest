@@ -38,7 +38,10 @@ def generate_safety_advice(mountain: dict, weather: dict, profile: dict, sun_tim
         )
 
         if gms_key:
-            client = genai.Client(api_key=api_key)
+            client = genai.Client(
+                api_key=api_key,
+                http_options={"base_url": "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/"},
+            )
         else:
             client = genai.Client(api_key=api_key)
 
@@ -47,7 +50,7 @@ def generate_safety_advice(mountain: dict, weather: dict, profile: dict, sun_tim
         for attempt in range(3):
             try:
                 response = client.models.generate_content(
-                    model="gemini-3.5-flash",
+                    model="gemini-2.5-flash-lite",
                     contents=prompt,
                     config=types.GenerateContentConfig(max_output_tokens=200),
                 )

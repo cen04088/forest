@@ -19,7 +19,8 @@ def get_or_generate_intro(mountain_name: str, raw_summary: str, selection_reason
 
 
 def _generate(name: str, raw_summary: str, selection_reason: str = "") -> str | None:
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    gms_key = os.environ.get("GMS_KEY", "").strip()
+    api_key = gms_key or os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key or not raw_summary:
         return None
 
@@ -42,7 +43,13 @@ def _generate(name: str, raw_summary: str, selection_reason: str = "") -> str | 
             "- 출력은 문단 하나만, 라벨·제목 없이\n"
         )
 
-        client = genai.Client(api_key=api_key)
+        if gms_key:
+            client = genai.Client(
+                api_key=api_key,
+                http_options={"base_url": "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/"},
+            )
+        else:
+            client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
             model="gemini-2.5-flash-lite",
             contents=prompt,
