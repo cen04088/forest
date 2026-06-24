@@ -9,7 +9,7 @@
             <span class="chat-avatar-emoji">🌲</span>
             <span class="chat-online-dot"></span>
           </div>
-          <div class="chat-header-info">
+          <div>
             <h2 class="chat-title">올라 안전 도우미</h2>
             <p class="chat-subtitle">산행 AI · 항상 응답 중</p>
           </div>
@@ -28,48 +28,55 @@
       <!-- 메시지 영역 -->
       <div ref="scrollEl" class="chat-messages">
 
-        <!-- 웰컴 카드 -->
+        <!-- 웰컴 -->
         <div v-if="!chatMessages.length" class="chat-welcome">
-          <div class="chat-welcome-hero">
+          <div class="chat-welcome-top">
             <div class="chat-welcome-avatar">🌲</div>
-            <h3 class="chat-welcome-title">안녕하세요!</h3>
+            <h3 class="chat-welcome-title">무엇을 도와드릴까요?</h3>
             <p class="chat-welcome-desc">
-              산행 안전 · 날씨 · 장비 · 응급 처치<br>
-              무엇이든 물어보세요
-              <span v-if="selectedMountain" class="chat-welcome-mountain">— <strong>{{ selectedMountain.name }}</strong> 맞춤 정보도 드려요</span>
+              산행 안전 · 날씨 대응 · 장비 · 응급처치 등<br>
+              등산에 관한 모든 것을 물어보세요
+              <span v-if="selectedMountain" class="chat-welcome-mountain">
+                <br><strong>{{ selectedMountain.name }}</strong> 맞춤 정보를 드려요
+              </span>
             </p>
           </div>
 
-          <p class="chat-suggestions-label">자주 묻는 질문</p>
-          <div class="chat-suggestions">
+          <div class="chat-suggestion-grid">
             <button
-              v-for="q in SUGGESTED" :key="q"
-              class="chat-suggestion-btn" type="button"
-              @click="submit(q)"
+              v-for="(item, i) in SUGGESTIONS" :key="i"
+              class="chat-sug-card"
+              :style="{ '--sug-color': item.color }"
+              type="button"
+              @click="submit(item.text)"
             >
-              <span class="suggestion-icon">{{ suggestionIcon(q) }}</span>
-              <span>{{ q }}</span>
+              <span class="sug-icon">{{ item.icon }}</span>
+              <span class="sug-text">{{ item.text }}</span>
             </button>
           </div>
         </div>
 
         <!-- 대화 버블 -->
-        <div
-          v-for="(msg, i) in chatMessages" :key="i"
-          :class="['chat-bubble-row', msg.role === 'user' ? 'row-user' : 'row-ai']"
-        >
-          <div v-if="msg.role === 'assistant'" class="bubble-avatar-wrap">
-            <span class="bubble-avatar-emoji">🌲</span>
+        <template v-for="(msg, i) in chatMessages" :key="i">
+          <!-- 날짜 구분선 (첫 메시지에만) -->
+          <div v-if="i === 0" class="chat-date-divider">
+            <span>{{ formatDate(msg.ts) }}</span>
           </div>
-          <div class="bubble-col">
-            <div :class="['chat-bubble', msg.role === 'user' ? 'bubble-user' : 'bubble-ai']">
-              {{ msg.content }}
-            </div>
-            <span class="bubble-time">{{ formatTime(msg.ts) }}</span>
-          </div>
-        </div>
 
-        <!-- 타이핑 표시 -->
+          <div :class="['chat-bubble-row', msg.role === 'user' ? 'row-user' : 'row-ai']">
+            <div v-if="msg.role === 'assistant'" class="bubble-avatar-wrap">
+              <span class="bubble-avatar-emoji">🌲</span>
+            </div>
+            <div class="bubble-col">
+              <div :class="['chat-bubble', msg.role === 'user' ? 'bubble-user' : 'bubble-ai']">
+                {{ msg.content }}
+              </div>
+              <span class="bubble-time">{{ formatTime(msg.ts) }}</span>
+            </div>
+          </div>
+        </template>
+
+        <!-- 타이핑 -->
         <div v-if="chatLoading" class="chat-bubble-row row-ai">
           <div class="bubble-avatar-wrap">
             <span class="bubble-avatar-emoji">🌲</span>
@@ -80,7 +87,6 @@
               <span class="typing-dot"></span>
               <span class="typing-dot"></span>
             </div>
-            <span class="bubble-time">분석 중…</span>
           </div>
         </div>
       </div>
@@ -90,7 +96,7 @@
 
       <!-- 입력창 -->
       <div class="chat-input-wrap">
-        <form class="chat-input-row" @submit.prevent="handleSubmit">
+        <form class="chat-input-form" @submit.prevent="handleSubmit">
           <textarea
             ref="inputEl"
             v-model="input"
@@ -108,7 +114,7 @@
             </svg>
           </button>
         </form>
-        <p class="chat-input-hint">Enter로 전송 · Shift+Enter로 줄바꿈</p>
+        <p class="chat-input-hint">Enter 전송 · Shift+Enter 줄바꿈</p>
       </div>
 
     </div>
@@ -117,44 +123,38 @@
 
 <script setup>
 import { nextTick, ref, watch } from 'vue';
-import { chatMessages, chatLoading, chatError, SUGGESTED, sendMessage, clearChat } from '../composables/useChat.js';
+import { chatMessages, chatLoading, chatError, sendMessage, clearChat } from '../composables/useChat.js';
 import { selectedMountain } from '../composables/useGuide.js';
 
 const input = ref('');
 const scrollEl = ref(null);
 const inputEl = ref(null);
 
-const _iconMap = {
-  '비': '🌧', '눈': '❄️', '날씨': '⛅', '기온': '🌡',
-  '안전': '🦺', '응급': '🚑', '조난': '🆘', '119': '📞',
-  '장비': '🎒', '등산화': '👟', '배낭': '🎒',
-  '코스': '🗺', '난이도': '📊', '거리': '📏',
-  '산불': '🔥', '산사태': '🌊', '낙뢰': '⚡',
-};
-function suggestionIcon(q) {
-  for (const [k, v] of Object.entries(_iconMap)) {
-    if (q.includes(k)) return v;
-  }
-  return '💬';
-}
+const SUGGESTIONS = [
+  { icon: '🌤', text: '지금 이 산 가도 괜찮을까요?',        color: '#3b82f6' },
+  { icon: '🗺', text: '초보자가 가기 좋은 코스는?',          color: '#8b5cf6' },
+  { icon: '🌧', text: '등산 중 갑자기 비가 오면 어떻게 해야 하나요?', color: '#06b6d4' },
+  { icon: '🎒', text: '산행 전 챙겨야 할 필수 장비는?',      color: '#f59e0b' },
+];
 
+function formatDate(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+}
 function formatTime(ts) {
   if (!ts) return '';
-  const d = new Date(ts);
-  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 async function submit(text) {
   const msg = text || input.value;
   if (!msg.trim()) return;
   input.value = '';
-  if (inputEl.value) { inputEl.value.style.height = 'auto'; }
+  if (inputEl.value) inputEl.value.style.height = 'auto';
   await sendMessage(msg);
 }
 
-function handleSubmit() {
-  submit(input.value);
-}
+function handleSubmit() { submit(input.value); }
 
 function autoResize() {
   const el = inputEl.value;
