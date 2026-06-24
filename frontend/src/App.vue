@@ -121,7 +121,7 @@ const WILDFIRE_LABEL = { low: '낮음', medium: '보통', high: '높음', very_h
 
 const liveSafetyItems = computed(() => {
   const w = weatherData.value;
-  if (!w) return [{ id: 'loading', label: '날씨 정보', value: '불러오는 중' }];
+  if (!w) return [{ id: 'loading', label: '날씨 정보', value: '불러오는 중…' }];
 
   const rainfall = w.rainfall_mm ?? 0;
   const wind = w.wind_speed_ms ?? 0;
@@ -129,20 +129,20 @@ const liveSafetyItems = computed(() => {
   const weatherLabel = rainfall >= 10 ? '비' : rainfall > 0 ? '흐림' : '맑음';
 
   const items = [
-    { id: 'temp', label: '현재기온', value: `${weatherIcon} ${weatherLabel} ${w.temperature_c}°C` },
-    { id: 'rain', label: '강수', value: `${rainfall}mm` },
-    { id: 'wind', label: '풍속', value: `${wind}m/s` },
-    { id: 'humidity', label: '습도', value: `${w.humidity_pct ?? '-'}%` },
-    { id: 'wildfire', label: '산불위험', value: WILDFIRE_LABEL[w.wildfire_risk] || '낮음' },
-    { id: 'sunset', label: '일몰', value: w.sunset || '-' },
-    { id: 'sunrise', label: '일출', value: w.sunrise || '-' },
+    { id: 'temp',      label: '현재기온',  value: `${weatherIcon} ${weatherLabel} ${w.temperature_c}°C` },
+    { id: 'rain',      label: '강수',      value: `${rainfall}mm` },
+    { id: 'wind',      label: '풍속',      value: `${wind}m/s` },
+    { id: 'humidity',  label: '습도',      value: `${w.humidity_pct ?? '-'}%` },
+    { id: 'wildfire',  label: '산불위험',  value: WILDFIRE_LABEL[w.wildfire_risk] || '낮음' },
+    { id: 'sunset',    label: '일몰',      value: w.sunset || '-' },
+    { id: 'sunrise',   label: '일출',      value: w.sunrise || '-' },
   ];
 
   if (w.pm10_ugm3 != null) {
-    items.push({ id: 'dust', label: '미세먼지', value: `${w.pm10_ugm3}㎍ ${w.grade_pm10 || '-'}` });
+    items.push({ id: 'dust', label: '미세먼지', value: `${w.pm10_ugm3}㎍ · ${w.grade_pm10 || '-'}` });
   }
   if (w.pm25_ugm3 != null) {
-    items.push({ id: 'fine-dust', label: '초미세먼지', value: `${w.pm25_ugm3}㎍ ${w.grade_pm25 || '-'}` });
+    items.push({ id: 'fine-dust', label: '초미세먼지', value: `${w.pm25_ugm3}㎍ · ${w.grade_pm25 || '-'}` });
   }
 
   return items;
