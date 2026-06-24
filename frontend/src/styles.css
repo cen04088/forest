@@ -578,6 +578,10 @@ p {
 
 .panel {
   padding: 18px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .subtle-panel {
@@ -4880,7 +4884,8 @@ p {
   .guide-layout {
     display: grid !important;
     grid-template-columns: 2fr 1fr;
-    grid-template-rows: calc(100vh - 100px);
+    /* grid-template-rows 제거: 자연스러운 높이 계산으로 변경 */
+    min-height: calc(100vh - 160px);
     gap: 24px;
     align-items: start;
   }
@@ -4889,7 +4894,8 @@ p {
   .guide-map {
     position: sticky;
     top: 24px;
-    height: calc(100vh - 124px);
+    height: calc(100vh - 100px);
+    min-height: 500px;
     border-radius: 20px;
   }
 
@@ -4898,11 +4904,11 @@ p {
     display: grid;
     gap: 20px;
     min-width: 0;
-    max-height: calc(100vh - 124px);
-    overflow-y: auto;
+    min-height: calc(100vh - 100px);
+    max-height: none;
+    overflow-y: visible;
     padding-right: 2px;
-    scrollbar-width: thin;
-    scrollbar-color: #d4e8d8 transparent;
+    align-content: start;
   }
 
   .guide-panel::-webkit-scrollbar { width: 4px; }
