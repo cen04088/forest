@@ -28,25 +28,48 @@
     </div>
 
     <div class="theme-carousel">
-      <button
-        class="theme-slide"
-        :class="`tone-${activeSlide.tone}`"
-        :style="activeSlide.image ? { backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.74) 0%, rgba(0,0,0,0.18) 60%, transparent 100%), url('${activeSlide.image}')` } : undefined"
-        type="button"
-        @click="emitTheme(activeSlide)"
-      >
-        <span class="theme-label">{{ activeSlide.label }}</span>
-        <strong class="theme-title">{{ activeSlide.title }}</strong>
-        <span class="theme-subtitle">{{ activeSlide.subtitle }}</span>
-        <span class="theme-chips">
-          <span v-for="chip in activeSlide.chips" :key="`${activeSlide.id}-${chip.label}`" class="theme-chip">
-            <strong>{{ chip.label }}</strong>
-            <em>{{ chip.meta }}</em>
+      <div class="theme-card-group">
+        <!-- 메인 슬라이드 -->
+        <button
+          class="theme-slide"
+          :class="`tone-${activeSlide.tone}`"
+          :style="activeSlide.image ? { backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.76) 0%, rgba(0,0,0,0.18) 60%, transparent 100%), url('${activeSlide.image}')` } : undefined"
+          type="button"
+          @click="emitTheme(activeSlide)"
+        >
+          <span class="theme-label">{{ activeSlide.label }}</span>
+          <strong class="theme-title">{{ activeSlide.title }}</strong>
+          <span class="theme-subtitle">{{ activeSlide.subtitle }}</span>
+          <span class="theme-chips">
+            <span v-for="chip in activeSlide.chips" :key="`${activeSlide.id}-${chip.label}`" class="theme-chip">
+              <strong>{{ chip.label }}</strong>
+              <em>{{ chip.meta }}</em>
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+
+        <!-- 데스크탑 사이드바 썸네일 -->
+        <nav class="theme-sidebar" aria-label="슬라이드 목록">
+          <button
+            v-for="(slide, i) in slides"
+            :key="slide.id"
+            class="theme-sidebar-item"
+            :class="{ 'is-active': i === activeIndex }"
+            :style="slide.image ? {
+              backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 100%), url('${slide.image}')`
+            } : undefined"
+            type="button"
+            @click="setSlide(i)"
+          >
+            <span class="sidebar-num">{{ String(i + 1).padStart(2, '0') }}</span>
+            <span class="sidebar-eyebrow">{{ slide.label }}</span>
+            <strong class="sidebar-title">{{ slide.title }}</strong>
+          </button>
+        </nav>
+      </div>
     </div>
 
+    <!-- 도트 네비게이션 (모바일 전용) -->
     <div class="theme-dots" role="tablist" aria-label="테마 슬라이드 선택">
       <button
         v-for="(slide, index) in slides"
@@ -107,10 +130,6 @@ function setSlide(index) {
   if (!props.slides.length) return;
   activeIndex.value = (index + props.slides.length) % props.slides.length;
   restart();
-}
-
-function go(delta) {
-  setSlide(activeIndex.value + delta);
 }
 
 function pause() {
