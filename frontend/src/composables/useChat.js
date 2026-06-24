@@ -16,7 +16,7 @@ export const SUGGESTED = [
 export async function sendMessage(text) {
   if (!text.trim() || chatLoading.value) return;
 
-  chatMessages.value.push({ role: 'user', content: text.trim() });
+  chatMessages.value.push({ role: 'user', content: text.trim(), ts: Date.now() });
   chatLoading.value = true;
   chatError.value = '';
 
@@ -58,7 +58,7 @@ export async function sendMessage(text) {
 
   try {
     const data = await fetchChatResponse({ messages, context });
-    chatMessages.value.push({ role: 'assistant', content: data.response });
+    chatMessages.value.push({ role: 'assistant', content: data.response, ts: Date.now() });
   } catch (e) {
     chatError.value = '응답을 가져오지 못했습니다. 네트워크를 확인해 주세요.';
     chatMessages.value.pop(); // 보낸 메시지 롤백
