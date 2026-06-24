@@ -172,9 +172,10 @@ def _seeded_intro_for_mountain(mountain_name, region="", elevation_m=None):
 
 def _seed_intro_matches_mountain(intro, region="", elevation_m=None):
     intro_regions = _region_groups_in_text(intro)
-    mountain_region = _region_group_for_text(region)
-    if mountain_region and intro_regions and mountain_region not in intro_regions:
-        return False
+    mountain_regions = _region_groups_in_text(region)
+    if mountain_regions and intro_regions:
+        if not (mountain_regions & intro_regions):
+            return False
 
     intro_height = _extract_height_m(intro)
     if intro_height and elevation_m:
@@ -187,8 +188,15 @@ def _seed_intro_matches_mountain(intro, region="", elevation_m=None):
 
 
 def _extract_height_m(text):
-    match = re.search(r"(?:해발\s*)?(\d{2,4}(?:\.\d+)?)\s*(?:m|미터)", text or "", re.IGNORECASE)
-    return float(match.group(1)) if match else None
+    match = re.search(
+        r"(?:해발\s*)?([\d,]+(?:\.\d+)?)\s*(?:m|미터)", text or "", re.IGNORECASE
+    )
+    if not match:
+        return None
+    try:
+        return float(match.group(1).replace(",", ""))
+    except ValueError:
+        return None
 
 
 def _region_group_for_text(text):
