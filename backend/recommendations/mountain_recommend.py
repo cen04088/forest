@@ -2,7 +2,6 @@ import math
 from datetime import datetime
 from .mountain_data import MOUNTAINS
 from .mountain_identity import with_mountain_identity
-from .accident_model import predict_accident_risk
 from .landslide_api import fetch_landslide_prediction
 
 
@@ -39,19 +38,29 @@ def _duration_score(mountain, desired_min):
 
 
 
-def _distance_score(mountain, user_lat, user_lng):
+def _distance_score(mountain, user_lat, user_lng, max_km=None):
     if user_lat is None or user_lng is None:
         return 0.5
     d = _haversine(user_lat, user_lng, mountain["lat"], mountain["lng"])
+
+    # 선형 보간 — 경계 계단 제거
     if d <= 30:
-        return 1.0
-    if d <= 80:
-        return 0.85
-    if d <= 150:
-        return 0.65
-    if d <= 300:
-        return 0.4
-    return 0.2
+        base = 1.0
+    elif d <= 80:
+        base = 1.0 - (d - 30) / 50 * 0.15      # 1.0 → 0.85
+    elif d <= 150:
+        base = 0.85 - (d - 80) / 70 * 0.20     # 0.85 → 0.65
+    elif d <= 300:
+        base = 0.65 - (d - 150) / 150 * 0.25   # 0.65 → 0.40
+    else:
+        base = max(0.2, 0.40 - (d - 300) / 200 * 0.20)  # 0.40 → 0.20
+
+    # 사용자 설정 최대 거리 초과 시 추가 페널티
+    if max_km and d > max_km:
+        excess_ratio = min((d - max_km) / max(max_km, 30), 1.5)
+        base = max(0.0, base - excess_ratio * 0.55)
+
+    return base
 
 
 def _weather_score(weather):
@@ -117,7 +126,8 @@ def _sunset_score(mountain, departure_time_str, sun_times):
     """
     일몰 전에 하산 가능한지 평가.
     반환값: (score 0.0~1.0, margin_min: 일몰까지 여유분 or None)
-    - 여유 > 60분: 1.0
+    - 여유 > 90분: 1.0
+    - 여유 60~90분: 0.9
     - 여유 30~60분: 0.75
     - 여유 0~30분: 0.5  (아슬아슬)
     - 여유 -60~0분: 0.2  (일몰 후 하산)
@@ -156,28 +166,6 @@ def _sunset_score(mountain, departure_time_str, sun_times):
     return score, margin
 
 
-def _season_score(mountain):
-    """
-    계절별 패널티.
-    - 겨울(12, 1, 2)에 해발 1000m 이상 고산: 감점
-    - 여름(6, 7, 8)에 해발 1500m 이상: 오히려 선호 (더위 회피)
-    """
-    month = datetime.now().month
-    elev = mountain.get("elevation_m", 500) or 500
-    score = 1.0
-
-    if month in (12, 1, 2):
-        if elev >= 1500:
-            score -= 0.25
-        elif elev >= 1000:
-            score -= 0.1
-    elif month in (6, 7, 8):
-        if elev >= 1000:
-            score += 0.05  # 여름엔 고산 약간 선호
-
-    return min(1.0, max(0.0, score))
-
-
 # ── 산사태 위험 ──────────────────────────────────────────────────────────────────
 
 
@@ -209,13 +197,13 @@ def _landslide_multiplier(mountain, risk_map):
 
 # ── 메인 추천 함수 ─────────────────────────────────────────────────────────────
 
-# 가중치 합계 = 1.0 (ML 제거 후 비례 재배분)
+# 가중치 합계 = 1.0  안전(55%) : 편의(45%)
 WEIGHTS = {
-    "duration":  0.27,
-    "sunset":    0.21,
-    "distance":  0.20,
-    "weather":   0.26,
-    "season":    0.06,
+    "weather":  0.32,
+    "sunset":   0.23,
+    "duration": 0.24,
+    "distance": 0.18,
+    # season 제거 — 최종 점수 영향 < 1점으로 무의미
 }
 
 
@@ -226,6 +214,7 @@ def recommend_mountains(payload):
     user_lng = float(loc["lng"]) if loc.get("lng") else None
 
     desired_min = int(profile.get("desiredHikingMinutes", 180))
+    max_distance_km = int(profile.get("maxDistanceKm", 200))
     difficulty_filter = profile.get("difficultyFilter", "all")
     departure_time = profile.get("departureTime", "")
     weather = payload.get("weather")
@@ -236,15 +225,6 @@ def recommend_mountains(payload):
     # 산사태 예보 (한 번만 조회)
     landslide_risk_map = _build_landslide_risk_map()
 
-    # ML 위험 예측: 출발 시각 기반 (없으면 현재 시각)
-    dep_hhmm = departure_time or ""
-    try:
-        dep_hour = int(dep_hhmm.split(":")[0]) if dep_hhmm else datetime.now().hour
-    except Exception:
-        dep_hour = datetime.now().hour
-    now = datetime.now()
-    ml_risk = predict_accident_risk(month=now.month, hour=dep_hour, weekday=now.weekday())
-
     results = []
     for m in MOUNTAINS:
         # 난이도 하드 필터
@@ -252,9 +232,8 @@ def recommend_mountains(payload):
             continue
 
         t_score = _duration_score(m, desired_min)
-        dist_score = _distance_score(m, user_lat, user_lng)
+        dist_score = _distance_score(m, user_lat, user_lng, max_distance_km)
         sun_score, margin_min = _sunset_score(m, departure_time, sun_times)
-        season_score = _season_score(m)
         ls_mult = _landslide_multiplier(m, landslide_risk_map)
 
         # 산사태 위험 지역 식별
@@ -265,24 +244,33 @@ def recommend_mountains(payload):
                 break
 
         base = (
-            t_score      * WEIGHTS["duration"]
+            w_weather    * WEIGHTS["weather"]
             + sun_score  * WEIGHTS["sunset"]
+            + t_score    * WEIGHTS["duration"]
             + dist_score * WEIGHTS["distance"]
-            + w_weather  * WEIGHTS["weather"]
-            + season_score * WEIGHTS["season"]
         )
         # 산사태 경보(0.3) / 주의(0.7): 곱셈 패널티 유지
         total = base * ls_mult
 
         safety_score = round(total * 100)
 
-        # 산사태 경보 지역은 점수 무관 비추천 강제
+        # 등급 판정 — 산사태 / 날씨 하드 오버라이드 우선 적용
         if landslide_risk == "danger":
+            # 산사태 경보 지역은 점수 무관 비추천 강제
+            safety_label = "비추천"
+            safety_class = "danger"
+        elif w_weather < 0.2:
+            # 폭우+강풍 등 복합 극단 위험 → 점수 무관 비추천
             safety_label = "비추천"
             safety_class = "danger"
         elif safety_score >= 72:
-            safety_label = "추천"
-            safety_class = "safe"
+            if w_weather < 0.45:
+                # 날씨 나쁨 → 점수가 높아도 최대 주의
+                safety_label = "주의"
+                safety_class = "caution"
+            else:
+                safety_label = "추천"
+                safety_class = "safe"
         elif safety_score >= 42:
             safety_label = "주의"
             safety_class = "caution"
@@ -314,14 +302,12 @@ def recommend_mountains(payload):
             "sunset_note": sunset_note,
             "landslide_risk": landslide_risk,
             "score_breakdown": {
-                "duration":  round(t_score, 2),
-                "sunset":    round(sun_score, 2),
-                "distance":  round(dist_score, 2),
                 "weather":   round(w_weather, 2),
-                "season":    round(season_score, 2),
+                "sunset":    round(sun_score, 2),
+                "duration":  round(t_score, 2),
+                "distance":  round(dist_score, 2),
                 "landslide": round(ls_mult, 2),
             },
-            "ml_risk_info": ml_risk,
         }))
 
     results.sort(key=lambda x: x["safety_score"], reverse=True)

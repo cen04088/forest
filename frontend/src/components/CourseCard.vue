@@ -22,7 +22,6 @@
         </span>
       </div>
       <div class="meta-right">
-        <span class="vulnerable-label">{{ course.safe_for_vulnerable ? '✅ 취약자 동반 가능' : '⚠️ 취약자 주의' }}</span>
         <button
           :class="['fav-heart-btn', { favorited: isFavorite }]"
           type="button"
@@ -128,8 +127,6 @@ const topReason = computed(() => {
 
   const dist = c.distance_from_user_km;
   if (dist !== null && dist !== undefined && dist <= 15) parts.push(`${dist}km 거리`);
-
-  if (c.safe_for_vulnerable) parts.push('취약자 동반 적합');
 
   return parts.length ? parts.join(' · ') : '현재 조건 최적 코스';
 });

@@ -159,6 +159,37 @@
             </div>
           </div>
 
+          <!-- 목적 -->
+          <div class="bfp-field">
+            <span class="bfp-label">목적</span>
+            <div class="chips">
+              <button type="button" :class="['chip', profile.purpose === 'balanced' ? 'active' : '']" @click="profile.purpose = 'balanced'">균형</button>
+              <button type="button" :class="['chip', profile.purpose === 'healing'  ? 'active' : '']" @click="profile.purpose = 'healing'">힐링</button>
+              <button type="button" :class="['chip', profile.purpose === 'workout'  ? 'active' : '']" @click="profile.purpose = 'workout'">운동</button>
+              <button type="button" :class="['chip', profile.purpose === 'view'     ? 'active' : '']" @click="profile.purpose = 'view'">전망</button>
+            </div>
+          </div>
+
+          <!-- 선호 태그 (선택, 접기/펼치기) -->
+          <div class="bfp-field">
+            <button type="button" class="tag-toggle-btn" @click="tagsOpen = !tagsOpen">
+              <span class="bfp-label">선호 태그</span>
+              <span v-if="selectedTags.length" class="tag-count-badge">{{ selectedTags.length }}개 선택됨</span>
+              <span class="tag-toggle-pill">{{ tagsOpen ? '접기 ▲' : '선택하기 ▼' }}</span>
+            </button>
+            <template v-if="tagsOpen">
+              <div class="tag-filter-wrap tag-filter-compact" style="margin-top:8px">
+                <button
+                  v-for="tag in ALL_TAGS"
+                  :key="tag"
+                  type="button"
+                  :class="['tag-filter-chip', selectedTags.includes(tag) ? 'active' : '']"
+                  @click="toggleTag(tag)"
+                ><span class="tfc-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}</button>
+              </div>
+              <button v-if="selectedTags.length" class="clear-tag-btn" type="button" @click="selectedTags = []">선택 초기화</button>
+            </template>
+          </div>
           <!-- 선택 요약 -->
           <div class="selection-summary">
             <span class="ss-pill" :class="`ss-diff-${profile.difficultyFilter}`">

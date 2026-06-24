@@ -104,7 +104,6 @@ const topReason = computed(() => {
   if (m.difficulty === 'easy') parts.push('완만한 코스');
   if (m.national_park) parts.push('국립공원');
   if (m.distance_from_user_km != null && m.distance_from_user_km <= 50) parts.push(`${m.distance_from_user_km}km 거리`);
-  if ((m.companion_fit || []).includes('vulnerable')) parts.push('취약자 동반 가능');
   return parts.join(' · ') || '현재 조건 최적 산';
 });
 

@@ -76,6 +76,9 @@
           <button :class="['act-tab', activityTab === 'liked' ? 'active' : '']" type="button" @click="activityTab = 'liked'">
             좋아요한 글<span v-if="likedPosts.length" class="act-count">{{ likedPosts.length }}</span>
           </button>
+          <button :class="['act-tab', activityTab === 'following' ? 'active' : '']" type="button" @click="activityTab = 'following'">
+            팔로잉<span v-if="followingList.length" class="act-count">{{ followingList.length }}</span>
+          </button>
         </div>
       </div>
       <div v-if="!authUser" class="mypage-login-needed">로그인 후 이용 가능합니다.</div>
@@ -91,7 +94,7 @@
             </div>
           </div>
         </template>
-        <template v-else>
+        <template v-else-if="activityTab === 'liked'">
           <div v-if="likedPostsLoading" class="community-loading">불러오는 중…</div>
           <div v-else-if="likedPosts.length === 0" class="community-empty"><p>아직 좋아요한 글이 없습니다.</p></div>
           <div v-else class="mypost-grid">
@@ -99,6 +102,20 @@
               <span class="category-tag">{{ post.category_label }}</span>
               <strong>{{ post.title }}</strong>
               <small>{{ formatRelativeTime(post.created_at) }} · 👍 {{ post.like_count }} · 💬 {{ post.comment_count }}</small>
+            </div>
+          </div>
+        </template>
+
+        <template v-else-if="activityTab === 'following'">
+          <div v-if="followingList.length === 0" class="community-empty"><p>팔로잉 중인 사용자가 없습니다.</p></div>
+          <div v-else class="following-user-list">
+            <div v-for="user in followingList" :key="user.id" class="following-user-item">
+              <div class="following-user-avatar">{{ (user.nickname || user.username)?.[0]?.toUpperCase() || 'U' }}</div>
+              <div class="following-user-info">
+                <strong>{{ user.nickname || user.username }}</strong>
+                <small>@{{ user.username }}</small>
+              </div>
+              <button class="unfollow-btn-sm" type="button" @click="handleUnfollow(user.id)">언팔로우</button>
             </div>
           </div>
         </template>
@@ -139,7 +156,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authUser, logout, showAuthModal } from '../composables/useAuth.js';
 import { favorites, hikingRecords, emergencyContacts, loadMyPageData, removeRecord, removeFav, addContact, removeContact } from '../composables/useUserData.js';
-import { myPosts, myPostsTotal, myPostsLoading, loadMyPosts, likedPosts, likedPostsLoading, loadLikedPosts, formatRelativeTime, openPost } from '../composables/useCommunity.js';
+import { myPosts, myPostsTotal, myPostsLoading, loadMyPosts, likedPosts, likedPostsLoading, loadLikedPosts, followingList, loadFollowingList, toggleFollow, formatRelativeTime, openPost } from '../composables/useCommunity.js';
 import { profile, applyAndSaveProfile } from '../composables/useGuide.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 
@@ -186,8 +203,6 @@ const favMountain = computed(() => {
 // ── 나의 등산 프로필 ─────────────────────────────────────────────────────────
 const editProfile = reactive({
   experience: profile.experience,
-  companion: profile.companion,
-  intensity: profile.intensity,
   availableMinutes: profile.availableMinutes,
   maxDistanceKm: profile.maxDistanceKm,
 });
@@ -235,6 +250,10 @@ const earnedCount = computed(() => badges.value.filter(b => b.achieved).length);
 // ── 내 활동 탭 ───────────────────────────────────────────────────────────────
 const activityTab = ref('posts');
 
+async function handleUnfollow(userId) {
+  await toggleFollow(userId);
+}
+
 // ── 공통 ─────────────────────────────────────────────────────────────────────
 function goToPost(id) {
   openPost(id);
@@ -252,6 +271,7 @@ onMounted(() => {
     loadMyPageData();
     if (myPosts.value.length === 0) loadMyPosts();
     if (likedPosts.value.length === 0) loadLikedPosts();
+    if (followingList.value.length === 0) loadFollowingList();
   }
 });
 </script>

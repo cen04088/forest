@@ -37,13 +37,11 @@ export async function sendMessage(text) {
     now: `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${DAYS[now.getDay()]}) ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
     userProfile: {
       experience: p.experience,
-      companion: p.companion,
       availableMinutes: p.availableMinutes,
       desiredHikingMinutes: p.desiredHikingMinutes,
       departureTime: p.departureTime,
       departureDate: p.departureDate,
       maxDistanceKm: p.maxDistanceKm,
-      intensity: p.intensity,
       isDefault: !profileIsExplicitlySet.value,
     },
     disasterZones: (disasterZones.value || []).slice(0, 5).map((z) => ({

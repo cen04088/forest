@@ -98,15 +98,13 @@ export const profile = reactive({
   availableMinutes: 240,
   desiredHikingMinutes: 120,
   experience: 'beginner',
-  condition: 4,
-  intensity: 'moderate',
   difficultyFilter: 'all',
   transport: 'public',
   maxDistanceKm: 30,
-  companion: 'solo',
+  purpose: 'balanced',
 });
 
-const _PROFILE_FIELDS = ['experience', 'companion', 'intensity', 'maxDistanceKm', 'availableMinutes'];
+const _PROFILE_FIELDS = ['experience', 'maxDistanceKm', 'availableMinutes', 'purpose'];
 export const profileIsExplicitlySet = ref(localStorage.getItem('olla_profile_saved') === 'true');
 
 try {
@@ -335,9 +333,7 @@ export async function submitMountainRecommendation() {
 function _buildMountainSummary(mountains, profile) {
   if (!mountains.length) return '현재 조건에 맞는 추천 산이 없습니다.';
   const top = mountains[0];
-  const compMap = { vulnerable: '어린이·노약자 동반', family: '가족', solo: '혼자' };
-  const compLabel = compMap[profile.companion] || '';
-  return `${compLabel} 기준으로 ${top.name}(${top.region.split(' ')[0]})이 가장 적합합니다. 해발 ${top.elevation_m}m, 소요시간 ${Math.floor(top.walk_time_min / 60)}~${Math.floor(top.walk_time_max / 60)}시간 코스입니다.`;
+  return `${top.name}(${top.region.split(' ')[0]})이 가장 적합합니다. 해발 ${top.elevation_m}m, 소요시간 ${Math.floor(top.walk_time_min / 60)}~${Math.floor(top.walk_time_max / 60)}시간 코스입니다.`;
 }
 
 export async function loadWeather(overrideLat, overrideLng, mountainName) {
