@@ -578,6 +578,19 @@ function setTimeNow() {
 }
 const { renderOverviewMap, focusOverviewCourse, enableLocationPick, disableLocationPick, clearLocationPickMarker } = useLeafletMap();
 
+// ── 태그 필터 ─────────────────────────────────────────────────────────────────
+const tagsOpen = ref(false);
+const selectedTags = ref([]);
+const ALL_TAGS = [
+  '조망', '계곡', '단풍', '야생화', '역사문화', '암릉', '숲치유',
+  '일출·일몰', '설경', '호수·강뷰', '억새', '철쭉', '야경', '능선종주', '100대명산',
+];
+function toggleTag(tag) {
+  const idx = selectedTags.value.indexOf(tag);
+  if (idx === -1) selectedTags.value.push(tag);
+  else selectedTags.value.splice(idx, 1);
+}
+
 // ── 브라우즈 상태 ─────────────────────────────────────────────────────────────
 const hasRecommendationResult = ref(false);
 
