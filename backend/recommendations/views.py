@@ -697,14 +697,14 @@ def safety_advice_view(request):
     return JsonResponse({"advice": advice or ""})
 
 
-def _cached_weather(lat, lng):
+def _cached_weather(lat, lng, mountain=""):
     from django.core.cache import cache
-    cache_key = f"weather:{round(lat, 2)}:{round(lng, 2)}:"
+    cache_key = f"weather:{round(lat, 2)}:{round(lng, 2)}:{mountain}"
     cached = cache.get(cache_key)
     if cached:
         return cached
     result = fetch_current_weather(lat, lng)
-    if result and result.get("source") != "mock":
+    if result:
         cache.set(cache_key, result, 600)
     return result
 
@@ -741,6 +741,7 @@ def ml_risk_view(request):
     # 2. 날씨 정보 및 점수 산출
     lat_str = request.GET.get("lat")
     lng_str = request.GET.get("lng")
+    mountain = request.GET.get("mountain", "")
     weather_score = 1.0
     weather = None
 
@@ -748,7 +749,7 @@ def ml_risk_view(request):
         try:
             lat = float(lat_str)
             lng = float(lng_str)
-            weather = _cached_weather(lat, lng)
+            weather = _cached_weather(lat, lng, mountain)
             if weather:
                 from .mountain_recommend import _weather_score
                 weather_score = _weather_score(weather)
