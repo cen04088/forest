@@ -7,6 +7,18 @@
       <button class="primary-btn" type="button" @click="showAuthModal = true">로그인 / 회원가입</button>
     </div>
 
+    <div v-else class="panel mypage-account-bar mypage-col-full">
+      <div class="mypage-account-main">
+        <span class="mypage-account-avatar">{{ authUser.nickname?.[0] || authUser.username?.[0] || 'U' }}</span>
+        <div>
+          <p class="eyebrow">My Account</p>
+          <h2>{{ authUser.nickname || authUser.username }}님</h2>
+          <p class="mypage-account-id">{{ authUser.username }}</p>
+        </div>
+      </div>
+      <button class="outline-btn mypage-logout-btn" type="button" @click="handleLogout">로그아웃</button>
+    </div>
+
     <!-- ① 즐겨찾기 -->
     <section class="panel mypage-col-1">
       <div class="section-title compact">
@@ -190,7 +202,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { authUser, showAuthModal } from '../composables/useAuth.js';
+import { authUser, logout, showAuthModal } from '../composables/useAuth.js';
 import { favorites, hikingRecords, emergencyContacts, loadMyPageData, removeRecord, removeFav, addContact, removeContact } from '../composables/useUserData.js';
 import { myPosts, myPostsTotal, myPostsLoading, loadMyPosts, likedPosts, likedPostsLoading, loadLikedPosts, formatRelativeTime, openPost } from '../composables/useCommunity.js';
 import { profile, applyAndSaveProfile } from '../composables/useGuide.js';
@@ -262,6 +274,12 @@ const activityTab = ref('posts');
 function goToPost(id) {
   openPost(id);
   router.push('/community');
+}
+
+async function handleLogout() {
+  await logout(() => {
+    router.push('/guide');
+  });
 }
 
 onMounted(() => {
