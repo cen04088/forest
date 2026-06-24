@@ -159,6 +159,32 @@ def _build_realtime_safety(context: dict) -> str:
     return "\n".join(parts)
 
 
+def _extract_response_text(response) -> str:
+    """Gemini 응답에서 thinking 파트를 제외한 실제 텍스트만 추출."""
+    # response.text가 있으면 바로 반환
+    if response.text:
+        return response.text.strip()
+
+    # candidates에서 직접 추출 (thinking 파트 제외)
+    try:
+        for candidate in (response.candidates or []):
+            parts = (candidate.content or {}).parts or []
+            text_parts = []
+            for part in parts:
+                # thinking 파트는 thought=True 속성을 가짐
+                if getattr(part, "thought", False):
+                    continue
+                if getattr(part, "text", None):
+                    text_parts.append(part.text)
+            result = "".join(text_parts).strip()
+            if result:
+                return result
+    except Exception:
+        pass
+
+    return ""
+
+
 def get_chat_response(messages: list, context: dict) -> str:
     gms_key = os.environ.get("GMS_KEY", "").strip()
     api_key = gms_key or os.environ.get("GEMINI_API_KEY", "").strip()
@@ -196,31 +222,32 @@ def get_chat_response(messages: list, context: dict) -> str:
             role = "model" if msg.get("role") == "assistant" else "user"
             contents.append(types.Content(role=role, parts=[types.Part(text=msg.get("content", ""))]))
 
-        gen_config = types.GenerateContentConfig(
-            system_instruction=_build_system(context, rag_context),
-            max_output_tokens=1200,
+        system_prompt = _build_system(context, rag_context)
+
+        # gemini-2.5-pro는 thinking 모델 — thinking_budget 제한으로 응답 토큰 확보
+        try:
+            gen_config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                max_output_tokens=8192,
+                thinking_config=types.ThinkingConfig(thinking_budget=1024),
+            )
+        except Exception:
+            # 구버전 SDK는 thinking_config 미지원 → 일반 설정으로 폴백
+            gen_config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                max_output_tokens=8192,
+            )
+
+        response = client.models.generate_content(
+            model="gemini-2.5-pro",
+            contents=contents,
+            config=gen_config,
         )
 
-        # GMS 프록시는 pro를 미지원할 수 있으므로 flash로 자동 폴백
-        for model in ("gemini-2.5-pro", "gemini-2.5-flash"):
-            try:
-                response = client.models.generate_content(
-                    model=model,
-                    contents=contents,
-                    config=gen_config,
-                )
-            except Exception:
-                continue
-
-            text = response.text
-            if not text:
-                try:
-                    text = response.candidates[0].content.parts[0].text or ""
-                except Exception:
-                    text = ""
-
-            if text.strip():
-                return text.strip()
+        # thinking 파트를 제외한 실제 응답 텍스트만 추출
+        text = _extract_response_text(response)
+        if text:
+            return text
 
         return "응답을 생성하지 못했습니다. 다시 질문해 주세요."
 
