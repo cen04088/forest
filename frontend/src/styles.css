@@ -4262,6 +4262,26 @@ p {
   .theme-chip { padding: 6px 12px; font-size: 12px; }
   .theme-label { font-size: 11px; letter-spacing: 1.4px; }
 
+  /* ── 정보글 3열 카드 레이아웃 ── */
+  .info-mag-header {
+    border-radius: 22px 22px 0 0;
+    padding: 22px 24px 16px;
+  }
+  .info-mag-heading { font-size: 24px; }
+  .info-mag-list {
+    grid-template-columns: repeat(3, 1fr);
+    border-radius: 0 0 22px 22px;
+  }
+  .info-mag-card {
+    min-height: 240px;
+  }
+  .info-mag-card + .info-mag-card {
+    border-top: none;
+    border-left: 1px solid rgba(255,255,255,0.08);
+  }
+  .info-mag-title { font-size: 17px; }
+  .info-mag-num { font-size: 34px; }
+
   /* ── 사이드바 브랜딩 ── */
   .sidebar-brand { display: block; }
 
