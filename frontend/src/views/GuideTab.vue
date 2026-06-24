@@ -235,12 +235,17 @@
 
         </section>
 
-        <!-- ── 태그로 산 찾기 (항상 표시) ── -->
-        <section class="panel tag-browse-panel">
+        <!-- ── 직접 찾기 ── -->
+        <section v-if="directBrowseOpen || mountainSearch" class="panel mountain-list-panel">
           <div class="section-title compact">
-            <div><p class="eyebrow">Tag Filter</p><h2>태그로 산 찾기</h2></div>
-            <button v-if="selectedTags.length" class="clear-rec-btn" type="button" @click="selectedTags = []">초기화</button>
+            <div>
+              <p class="eyebrow">Manual Search</p>
+              <h2>직접 산 찾기<span class="mini-status" style="margin-left:6px">{{ filteredMountains.length }}</span></h2>
+            </div>
+            <button v-if="selectedTags.length" class="clear-rec-btn" type="button" @click="selectedTags = []">태그 초기화</button>
           </div>
+
+          <!-- 태그 필터 -->
           <div class="tag-filter-wrap">
             <button
               v-for="tag in ALL_TAGS"
@@ -251,16 +256,6 @@
             >
               <span class="tfc-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}
             </button>
-          </div>
-        </section>
-
-        <!-- ── 직접 찾기 (산 목록) ── -->
-        <section v-if="directBrowseOpen || mountainSearch || selectedTags.length" class="panel mountain-list-panel">
-          <div class="section-title compact">
-            <div>
-              <p class="eyebrow">Manual Search</p>
-              <h2>직접 산 찾기<span class="mini-status" style="margin-left:6px">{{ filteredMountains.length }}</span></h2>
-            </div>
           </div>
 
           <div class="bfp-search-row">
@@ -276,7 +271,7 @@
 
           <div v-if="loading && !filteredMountains.length" class="community-loading">분석 중…</div>
           <p v-else-if="!filteredMountains.length && (selectedTags.length || mountainSearch)" class="tag-filter-empty">
-            조건에 맞는 산이 없어요. 태그를 줄여보세요.
+            조건에 맞는 산이 없어요. 태그나 검색어를 줄여보세요.
           </p>
 
           <div class="mountain-browse-list">
