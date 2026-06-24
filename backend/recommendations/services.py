@@ -34,6 +34,7 @@ def weather_safety_score(weather):
     rainfall = float(weather.get("rainfall_mm") or 0)
     wind = float(weather.get("wind_speed_ms") or 0)
     temp = float(weather.get("temperature_c") or 15)
+    humidity = float(weather.get("humidity_pct") or 50)
 
     if rainfall >= 10:
         score -= 45
@@ -54,9 +55,22 @@ def weather_safety_score(weather):
     # 영하권 강수: 결빙/블랙아이스 위험
     if temp <= 2 and rainfall > 0:
         score -= 15
-    # 폭염+무풍: 열사병 위험
-    if temp >= 30 and wind < 2:
-        score -= 10
+    # 불쾌지수 (기온+습도 복합 열스트레스)
+    if temp >= 25 and humidity >= 60:
+        di = 0.81 * temp + 0.01 * humidity * (0.99 * temp - 14.99) + 46.3
+        if di >= 80:
+            score -= 12
+        elif di >= 75:
+            score -= 6
+
+    # 대기질 PM2.5 (에어코리아 연계 — 없으면 무시)
+    pm25 = float(weather.get("pm25_ugm3") or 0)
+    if pm25 >= 75:
+        score -= 18
+    elif pm25 >= 35:
+        score -= 9
+    elif pm25 >= 15:
+        score -= 4
 
     return max(score, 0)
 
@@ -278,6 +292,7 @@ def recommend_courses(payload):
 
     weather_score = weather_safety_score(weather)
     all_disaster_zones = load_disaster_risk_zones()  # lru_cache — 한 번만 IO 발생
+
     if mountain_name:
         radius_km = max(int(profile.get("maxDistanceKm", 30)) / 2, 8)
 

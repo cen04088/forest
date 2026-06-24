@@ -155,6 +155,16 @@ class EmergencyContact(models.Model):
         db_table = "recommendations_emergencycontact"
 
 
+class Follow(models.Model):
+    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name="following_set")
+    following = models.ForeignKey(User, on_delete=models.CASCADE, related_name="follower_set")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("follower", "following")
+        db_table = "recommendations_follow"
+
+
 class MountainKnowledge(models.Model):
     """산림청 API에서 사전 수집한 산 정보 (RAG 검색용)."""
     mountain_name = models.CharField(max_length=100, db_index=True)

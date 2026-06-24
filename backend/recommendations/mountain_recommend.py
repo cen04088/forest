@@ -55,7 +55,7 @@ def _distance_score(mountain, user_lat, user_lng):
 
 
 def _weather_score(weather):
-    """날씨 조건 점수 (0.0~1.0)."""
+    """날씨 + 대기질 통합 점수 (0.0~1.0)."""
     if not weather:
         return 0.7
     score = 1.0
@@ -87,9 +87,24 @@ def _weather_score(weather):
     elif temp <= 0 or temp >= 35:
         score -= 0.15
 
-    # 습도 (폭염 + 고습)
-    if temp >= 30 and humidity >= 80:
-        score -= 0.1
+    # 불쾌지수 (기온+습도 복합 열스트레스 — 기존 단순 습도 페널티 대체)
+    if temp >= 25 and humidity >= 60:
+        di = 0.81 * temp + 0.01 * humidity * (0.99 * temp - 14.99) + 46.3
+        if di >= 80:
+            score -= 0.12   # 매우불쾌 — 열사병 위험
+        elif di >= 75:
+            score -= 0.06   # 불쾌
+        elif di >= 68:
+            score -= 0.02   # 약간불쾌
+
+    # 대기질 PM2.5 (에어코리아 실측 연계 — 없으면 무시)
+    pm25 = float(weather.get("pm25_ugm3") or 0)
+    if pm25 >= 75:
+        score -= 0.18   # 매우나쁨
+    elif pm25 >= 35:
+        score -= 0.09   # 나쁨
+    elif pm25 >= 15:
+        score -= 0.04   # 보통
 
     # 산불 위험
     wildfire_pen = {"low": 0.0, "medium": 0.1, "high": 0.25, "very_high": 0.45}.get(wildfire, 0.0)
@@ -194,13 +209,13 @@ def _landslide_multiplier(mountain, risk_map):
 
 # ── 메인 추천 함수 ─────────────────────────────────────────────────────────────
 
-# 가중치 합계 = 1.0 (ML 위험 지수 추가로 기존 항목 소폭 감소)
+# 가중치 합계 = 1.0 (ML 제거 후 비례 재배분)
 WEIGHTS = {
-    "duration":  0.25,
-    "sunset":    0.20,
+    "duration":  0.27,
+    "sunset":    0.21,
     "distance":  0.20,
-    "weather":   0.17,
-    "ml_risk":   0.18,
+    "weather":   0.26,
+    "season":    0.06,
 }
 
 
@@ -229,7 +244,6 @@ def recommend_mountains(payload):
         dep_hour = datetime.now().hour
     now = datetime.now()
     ml_risk = predict_accident_risk(month=now.month, hour=dep_hour, weekday=now.weekday())
-    ml_safety_score = ml_risk.get("ml_safety_score", 0.5)
 
     results = []
     for m in MOUNTAINS:
@@ -251,16 +265,22 @@ def recommend_mountains(payload):
                 break
 
         base = (
-            t_score           * WEIGHTS["duration"]
-            + sun_score       * WEIGHTS["sunset"]
-            + dist_score      * WEIGHTS["distance"]
-            + w_weather       * WEIGHTS["weather"]
-            + ml_safety_score * WEIGHTS["ml_risk"]
+            t_score      * WEIGHTS["duration"]
+            + sun_score  * WEIGHTS["sunset"]
+            + dist_score * WEIGHTS["distance"]
+            + w_weather  * WEIGHTS["weather"]
+            + season_score * WEIGHTS["season"]
         )
-        total = base * season_score * ls_mult
+        # 산사태 경보(0.3) / 주의(0.7): 곱셈 패널티 유지
+        total = base * ls_mult
 
         safety_score = round(total * 100)
-        if safety_score >= 72:
+
+        # 산사태 경보 지역은 점수 무관 비추천 강제
+        if landslide_risk == "danger":
+            safety_label = "비추천"
+            safety_class = "danger"
+        elif safety_score >= 72:
             safety_label = "추천"
             safety_class = "safe"
         elif safety_score >= 42:
@@ -294,13 +314,12 @@ def recommend_mountains(payload):
             "sunset_note": sunset_note,
             "landslide_risk": landslide_risk,
             "score_breakdown": {
-                "duration":   round(t_score, 2),
-                "sunset":     round(sun_score, 2),
-                "distance":   round(dist_score, 2),
-                "weather":    round(w_weather, 2),
-                "season":     round(season_score, 2),
-                "ml_risk":    round(ml_safety_score, 2),
-                "landslide":  round(ls_mult, 2),
+                "duration":  round(t_score, 2),
+                "sunset":    round(sun_score, 2),
+                "distance":  round(dist_score, 2),
+                "weather":   round(w_weather, 2),
+                "season":    round(season_score, 2),
+                "landslide": round(ls_mult, 2),
             },
             "ml_risk_info": ml_risk,
         }))

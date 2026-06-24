@@ -76,40 +76,14 @@
             <p v-else-if="gpsStatus === 'error'" class="bfp-error">⚠️ {{ gpsError }}</p>
           </div>
 
-          <!-- 출발 시간 -->
-          <div class="bfp-field">
-            <span class="bfp-label">출발 시간</span>
-            <!-- 구간 버튼 -->
-            <div class="chips">
-              <button type="button" class="chip chip-now" @click="setTimeNow">지금</button>
-              <button v-for="seg in TIME_SEGMENTS" :key="seg.key" type="button"
-                :class="['chip time-seg-chip', activeTimeSegment === seg.key ? 'active' : '']"
-                @click="selectTimeSegment(seg.key)">{{ seg.label }}</button>
-            </div>
-            <!-- 타임바 -->
-            <div class="time-bar-wrap">
-              <div class="time-bar-header">
-                <span class="time-bar-val">{{ profile.departureTime || '--:--' }} 출발</span>
-              </div>
-              <input
-                type="range"
-                class="time-bar-input"
-                :min="TIME_MIN"
-                :max="TIME_MAX"
-                step="30"
-                :value="departureMinutes"
-                @input="onTimeBarInput"
-              />
-              <div class="time-bar-ticks">
-                <span v-for="(tick, i) in TIME_TICKS" :key="tick.h"
-                  class="time-bar-tick"
-                  :class="{ 'tick-first': i === 0, 'tick-last': i === TIME_TICKS.length - 1 }"
-                  :style="{ left: timeTickPct(tick.h) + '%' }">{{ tick.label }}</span>
-              </div>
-            </div>
-          </div>
-
+          <!-- 2×2 폼 그리드 -->
           <div class="recommend-form-grid">
+            <!-- 출발 시간 -->
+            <div class="bfp-field">
+              <span class="bfp-label">출발 시간</span>
+              <input type="time" class="time-direct-input" v-model="profile.departureTime" />
+            </div>
+
             <!-- 산행 강도 -->
             <div class="bfp-field">
               <span class="bfp-label">산행 강도</span>
@@ -121,7 +95,7 @@
               </div>
             </div>
 
-            <!-- 등산 가능 시간 스텝퍼 -->
+            <!-- 등산 가능 시간 -->
             <div class="bfp-field">
               <span class="bfp-label">등산 가능 시간</span>
               <div class="stepper-card">
@@ -142,7 +116,7 @@
               </div>
             </div>
 
-            <!-- 이동 거리 스텝퍼 -->
+            <!-- 이동 거리 -->
             <div class="bfp-field">
               <span class="bfp-label">이동 거리</span>
               <div class="stepper-card">

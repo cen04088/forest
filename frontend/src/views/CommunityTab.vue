@@ -94,48 +94,104 @@
           <button :class="{ active: communityCategory === 'question' }" type="button" @click="filterCategory('question')">질문</button>
           <button :class="{ active: communityCategory === 'safety' }" type="button" @click="filterCategory('safety')">안전 제보</button>
           <button :class="{ active: communityCategory === 'general' }" type="button" @click="filterCategory('general')">자유</button>
+          <button v-if="authUser" :class="['follow-feed-btn', { active: communityCategory === 'following' }]" type="button" @click="filterCategory('following')">👥 팔로우</button>
         </div>
 
-        <div v-if="communityLoading" class="community-loading">게시글을 불러오는 중입니다…</div>
-        <div v-else-if="communityError" class="error-banner">{{ communityError }}</div>
-        <div v-else-if="communityPosts.length === 0" class="community-empty">
-          <p>아직 게시글이 없습니다.</p>
-          <button v-if="authUser" class="primary-btn" type="button" @click="openWrite">첫 글 작성하기</button>
-        </div>
+        <!-- 팔로우 피드 -->
+        <template v-if="communityCategory === 'following'">
+          <div v-if="followingPostsLoading" class="community-loading">게시글을 불러오는 중입니다…</div>
+          <div v-else-if="followingPosts.length === 0" class="community-empty">
+            <p>팔로우한 사람의 게시글이 없습니다.</p>
+            <p style="font-size:13px;color:var(--muted);margin-top:6px">게시글 상세에서 작성자를 팔로우해 보세요.</p>
+          </div>
+          <div v-else class="community-post-grid">
+            <article
+              v-for="post in followingPosts"
+              :key="post.id"
+              class="community-post-modern"
+              style="cursor:pointer"
+              @click="openPost(post.id)"
+            >
+              <div class="post-header">
+                <div class="post-avatar">{{ post.author[0] }}</div>
+                <div class="post-meta">
+                  <div class="post-meta-author-row">
+                    <strong>{{ post.author }}</strong>
+                    <button class="follow-tag following" type="button" @click.stop="handleToggleFollow(post.author_id)">팔로잉</button>
+                  </div>
+                  <span>{{ formatRelativeTime(post.created_at) }} · <span class="category-tag">{{ post.category_label }}</span></span>
+                </div>
+                <span v-if="post.mountain" class="post-mountain">⛰️ {{ post.mountain }}</span>
+              </div>
+              <div class="post-content">
+                <strong>{{ post.title }}</strong>
+                <p>{{ post.content.length > 120 ? post.content.slice(0, 120) + '…' : post.content }}</p>
+              </div>
+              <div class="post-actions">
+                <span>👍 {{ post.like_count }}</span>
+                <span>💬 {{ post.comment_count }}</span>
+                <span>👀 {{ post.view_count }}</span>
+              </div>
+            </article>
+          </div>
+          <div v-if="followingPostsTotal > 15" class="pagination-row">
+            <button class="outline-btn" type="button" :disabled="followingPage === 1" @click="loadFollowingPosts(followingPage - 1)">이전</button>
+            <span>{{ followingPage }} / {{ Math.ceil(followingPostsTotal / 15) }}</span>
+            <button class="outline-btn" type="button" :disabled="followingPage * 15 >= followingPostsTotal" @click="loadFollowingPosts(followingPage + 1)">다음</button>
+          </div>
+        </template>
 
-        <div class="community-post-grid">
-        <article
-          v-for="post in communityPosts"
-          :key="post.id"
-          class="community-post-modern"
-          style="cursor:pointer"
-          @click="openPost(post.id)"
-        >
-          <div class="post-header">
-            <div class="post-avatar">{{ post.author[0] }}</div>
-            <div class="post-meta">
-              <strong>{{ post.author }}</strong>
-              <span>{{ formatRelativeTime(post.created_at) }} · <span class="category-tag">{{ post.category_label }}</span></span>
-            </div>
-            <span v-if="post.mountain" class="post-mountain">⛰️ {{ post.mountain }}</span>
+        <!-- 일반 피드 -->
+        <template v-else>
+          <div v-if="communityLoading" class="community-loading">게시글을 불러오는 중입니다…</div>
+          <div v-else-if="communityError" class="error-banner">{{ communityError }}</div>
+          <div v-else-if="communityPosts.length === 0" class="community-empty">
+            <p>아직 게시글이 없습니다.</p>
+            <button v-if="authUser" class="primary-btn" type="button" @click="openWrite">첫 글 작성하기</button>
           </div>
-          <div class="post-content">
-            <strong>{{ post.title }}</strong>
-            <p>{{ post.content.length > 120 ? post.content.slice(0, 120) + '…' : post.content }}</p>
-          </div>
-          <div class="post-actions">
-            <span>👍 {{ post.like_count }}</span>
-            <span>💬 {{ post.comment_count }}</span>
-            <span>👀 {{ post.view_count }}</span>
-          </div>
-        </article>
-        </div><!-- /community-post-grid -->
 
-        <div v-if="communityTotal > 15" class="pagination-row">
-          <button class="outline-btn" type="button" :disabled="communityPage === 1" @click="loadPosts(communityPage - 1)">이전</button>
-          <span>{{ communityPage }} / {{ Math.ceil(communityTotal / 15) }}</span>
-          <button class="outline-btn" type="button" :disabled="communityPage * 15 >= communityTotal" @click="loadPosts(communityPage + 1)">다음</button>
-        </div>
+          <div class="community-post-grid">
+            <article
+              v-for="post in communityPosts"
+              :key="post.id"
+              class="community-post-modern"
+              style="cursor:pointer"
+              @click="openPost(post.id)"
+            >
+              <div class="post-header">
+                <div class="post-avatar">{{ post.author[0] }}</div>
+                <div class="post-meta">
+                  <div class="post-meta-author-row">
+                    <strong>{{ post.author }}</strong>
+                    <button
+                      v-if="authUser && !post.is_owner"
+                      :class="['follow-tag', post.is_following_author ? 'following' : '']"
+                      type="button"
+                      @click.stop="handleToggleFollow(post.author_id)"
+                    >{{ post.is_following_author ? '팔로잉' : '팔로우' }}</button>
+                  </div>
+                  <span>{{ formatRelativeTime(post.created_at) }} · <span class="category-tag">{{ post.category_label }}</span></span>
+                </div>
+                <span v-if="post.mountain" class="post-mountain">⛰️ {{ post.mountain }}</span>
+              </div>
+              <div class="post-content">
+                <strong>{{ post.title }}</strong>
+                <p>{{ post.content.length > 120 ? post.content.slice(0, 120) + '…' : post.content }}</p>
+              </div>
+              <div class="post-actions">
+                <span>👍 {{ post.like_count }}</span>
+                <span>💬 {{ post.comment_count }}</span>
+                <span>👀 {{ post.view_count }}</span>
+              </div>
+            </article>
+          </div>
+
+          <div v-if="communityTotal > 15" class="pagination-row">
+            <button class="outline-btn" type="button" :disabled="communityPage === 1" @click="loadPosts(communityPage - 1)">이전</button>
+            <span>{{ communityPage }} / {{ Math.ceil(communityTotal / 15) }}</span>
+            <button class="outline-btn" type="button" :disabled="communityPage * 15 >= communityTotal" @click="loadPosts(communityPage + 1)">다음</button>
+          </div>
+        </template>
       </section>
     </template>
 
@@ -148,7 +204,16 @@
         </div>
         <h2 class="post-detail-title">{{ communityPost.title }}</h2>
         <div class="post-detail-meta">
-          <span>{{ communityPost.author }}</span>
+          <div class="post-detail-author-row">
+            <div class="post-avatar">{{ communityPost.author[0] }}</div>
+            <span class="post-detail-author-name">{{ communityPost.author }}</span>
+            <button
+              v-if="authUser && !communityPost.is_owner"
+              :class="['follow-btn-sm', communityPost.is_following_author ? 'following' : '']"
+              type="button"
+              @click="handleToggleFollow(communityPost.author_id)"
+            >{{ communityPost.is_following_author ? '팔로잉 ✓' : '+ 팔로우' }}</button>
+          </div>
           <span>{{ formatRelativeTime(communityPost.created_at) }}</span>
           <span v-if="communityPost.mountain">⛰️ {{ communityPost.mountain }}</span>
           <span>👀 {{ communityPost.view_count }}</span>
@@ -228,7 +293,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { authUser, showAuthModal } from '../composables/useAuth.js';
 import {
   activeInfoPost,
@@ -237,8 +302,18 @@ import {
   communityView, filterCategory, formatRelativeTime, loadPosts, openEdit,
   openPost, openWrite, removeComment, removePost, submitComment, submitWrite,
   toggleLike, writeError, writeForm, writeLoading,
+  followingPosts, followingPostsLoading, followingPostsTotal, loadFollowingPosts, toggleFollow,
 } from '../composables/useCommunity.js';
 import { heroThemeSlides } from '../data/heroCuration.js';
+
+const followingPage = ref(1);
+
+async function handleToggleFollow(authorId) {
+  const data = await toggleFollow(authorId);
+  if (data && !data.is_following && communityCategory.value === 'following') {
+    await loadFollowingPosts(followingPage.value);
+  }
+}
 
 onMounted(() => {
   if (communityPosts.value.length === 0) loadPosts();

@@ -2,6 +2,7 @@ import { reactive, ref } from 'vue';
 import {
   createComment, createPost, deleteComment, deletePost,
   fetchPost, fetchPosts, likePost, updatePost, fetchMyPosts, fetchLikedPosts,
+  followUser, fetchFollowingPosts,
 } from '../api.js';
 import { authToken, authUser, showAuthModal } from './useAuth.js';
 
@@ -25,6 +26,9 @@ export const myPostsTotal = ref(0);
 export const myPostsLoading = ref(false);
 export const likedPosts = ref([]);
 export const likedPostsLoading = ref(false);
+export const followingPosts = ref([]);
+export const followingPostsLoading = ref(false);
+export const followingPostsTotal = ref(0);
 
 export async function loadPosts(page = 1) {
   communityLoading.value = true;
@@ -142,7 +146,11 @@ export async function removePost() {
 
 export function filterCategory(cat) {
   communityCategory.value = cat;
-  loadPosts(1);
+  if (cat === 'following') {
+    loadFollowingPosts(1);
+  } else {
+    loadPosts(1);
+  }
 }
 
 export async function loadMyPosts() {
@@ -164,6 +172,35 @@ export async function loadLikedPosts() {
     likedPosts.value = data.posts || [];
   } catch {}
   finally { likedPostsLoading.value = false; }
+}
+
+export async function loadFollowingPosts(page = 1) {
+  if (!authToken.value) return;
+  followingPostsLoading.value = true;
+  try {
+    const data = await fetchFollowingPosts(authToken.value, page);
+    followingPosts.value = data.posts || [];
+    followingPostsTotal.value = data.total || 0;
+  } catch {}
+  finally { followingPostsLoading.value = false; }
+}
+
+export async function toggleFollow(authorId) {
+  if (!authUser.value) { showAuthModal.value = true; return; }
+  try {
+    const data = await followUser(authorId, authToken.value);
+    if (communityPost.value && communityPost.value.author_id === authorId) {
+      communityPost.value.is_following_author = data.is_following;
+    }
+    // 목록에서도 반영
+    communityPosts.value.forEach(p => {
+      if (p.author_id === authorId) p.is_following_author = data.is_following;
+    });
+    followingPosts.value = followingPosts.value.filter(p => p.author_id !== authorId || data.is_following);
+    return data;
+  } catch (err) {
+    communityError.value = err.message || '팔로우 처리에 실패했습니다.';
+  }
 }
 
 export function formatRelativeTime(isoString) {
