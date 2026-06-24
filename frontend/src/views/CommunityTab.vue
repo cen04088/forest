@@ -68,7 +68,8 @@
         </section>
       </template>
 
-      <section class="panel community-feed">
+      <template v-if="!activeInfoPost">
+        <section class="panel community-feed">
         <div class="section-title compact">
           <div>
             <p class="eyebrow">Community</p>
@@ -224,7 +225,8 @@
             <button class="outline-btn" type="button" :disabled="communityPage * 15 >= communityTotal" @click="loadPosts(communityPage + 1)">다음</button>
           </div>
         </template>
-      </section>
+        </section>
+      </template>
     </template>
 
     <!-- ── 상세 뷰 ── -->
@@ -253,7 +255,7 @@
         <div class="post-detail-content">{{ communityPost.content }}</div>
         <div class="post-detail-actions">
           <button :class="['like-btn', { liked: communityPost.is_liked }]" type="button" @click="toggleLike">
-            👍 {{ communityPost.is_liked ? '좋아요 취소' : '좋아요' }} {{ communityPost.like_count }}
+            👍 좋아요 {{ communityPost.like_count }}
           </button>
           <template v-if="communityPost.is_owner">
             <button class="outline-btn" type="button" @click="openEdit">수정</button>
