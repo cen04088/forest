@@ -119,6 +119,7 @@ def _load_accident_dataset(path: Path) -> pd.DataFrame:
             "accident_type": raw["사고원인코드명_사고종별"],
             "result": _first_existing(raw, ("처리결과코드",), ""),
             "rescue_count": _first_existing(raw, ("구조인원",), 0),
+            "province": _first_existing(raw, ("발생장소_시",), ""),
             "source": path.name,
         }
     )
@@ -187,7 +188,7 @@ def _prepare_training_frame(rows: pd.DataFrame) -> pd.DataFrame:
         try:
             weather_df = pd.read_csv(weather_path)
             if len(weather_df) > 1000:
-                df["station_id"] = df["발생장소_시"].apply(_map_province_to_station)
+                df["station_id"] = df["province"].apply(_map_province_to_station)
                 df["date_match"] = df["date"].dt.strftime("%Y-%m-%d")
                 
                 weather_df["station_id"] = weather_df["station_id"].astype(int)
