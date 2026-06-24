@@ -38,14 +38,15 @@ AI 기반 산행 안전 진단 서비스. 날씨·코스·재난위험·일몰 �
 
 ### 시연 흐름
 
-1. **산 선택** → 날씨 자동 로드 (설악산·지리산 등 77개 추천 산 바로 선택)
-2. **조건 입력** → 동반자 유형 · 산행 목적(힐링/운동/전망/균형) · 출발 시간
-3. **안전코스 찾기** → AI 브리핑 카드 최상단 + Top3 추천
-4. **코스 카드 클릭** → Leaflet 지형도 + 3색 등산로 + 위험 마커 + 커뮤니티 안전 제보
-5. **안전공유 탭** → "산행 시작" → **6자리 코드** 생성 (예: `A3K7PQ`)
-6. **코드 공유** → 보호자가 "보호자" 탭에서 코드 입력 → 실시간 위치 확인
-7. **AI 도우미 탭** → 산행 안전·코스·장비 질문 → Gemini RAG 답변
-8. **산행 종료** → 기록 자동 저장 → 내정보 탭에서 확인
+1. **산 선택** → 날씨 자동 로드 (138개 추천 산 직접 찾기 또는 AI 추천)
+2. **태그 필터** → 조망·계곡·단풍 등 15종 매력 태그로 원하는 산 필터링
+3. **조건 입력** → 동반자 유형 · 산행 목적(힐링/운동/전망/균형) · 출발 시간
+4. **안전코스 찾기** → AI 브리핑 카드 최상단 + Top3 추천
+5. **코스 카드 클릭** → Leaflet 지형도 + 3색 등산로 + 위험 마커 + 커뮤니티 안전 제보
+6. **안전공유 탭** → "산행 시작" → **6자리 코드** 생성 (예: `A3K7PQ`)
+7. **코드 공유** → 보호자가 "보호자" 탭에서 코드 입력 → 실시간 위치 확인
+8. **AI 도우미 탭** → 산행 안전·코스·장비 질문 → Gemini RAG 답변
+9. **산행 종료** → 기록 자동 저장 → 내정보 탭에서 확인
 
 ---
 
@@ -54,6 +55,7 @@ AI 기반 산행 안전 진단 서비스. 날씨·코스·재난위험·일몰 �
 | 기능 | 상태 | 비고 |
 |------|------|------|
 | 산·코스 선택 + 프로필 입력 | ✅ | 산행 목적(힐링/운동/전망/균형) 포함 |
+| **15종 매력 태그 시스템** | ✅ | 138개 산 DB 저장, 검색 필터·상세 헤더 표시 |
 | 기상청 초단기실황 실시간 연동 | ✅ | 10분 캐시 |
 | 안전 등급 기반 Top3 추천 | ✅ | 점수 숫자 비표시 |
 | AI 안전 브리핑 (Claude Haiku) | ✅ | 결과 최상단 카드, 1시간 캐시 |
@@ -64,8 +66,7 @@ AI 기반 산행 안전 진단 서비스. 날씨·코스·재난위험·일몰 �
 | 한국천문연구원 일몰 연동 | ✅ | |
 | 산림청 산불위험예보 연동 | ✅ | |
 | **NIFOS 산악기상 연동** | ✅ | 국립산림과학원, AI 컨텍스트 주입 |
-| **NIFOS 산림 미세먼지 연동** | ✅ | PM2.5·PM10, AI 컨텍스트 주입 |
-| **에어코리아 대기질 연동** | ✅ | PM2.5·PM10, AI 컨텍스트 주입 |
+| **에어코리아 대기질 연동** | ✅ | PM2.5·PM10 실시간, AI 컨텍스트 주입 |
 | **산 스토리 API** | ✅ | 선택 산 정보·역사 제공 |
 | **산악기상 전용 API** | ✅ | 산 기준 날씨 조회 |
 | 재난위험지구 매칭·감점 | ✅ | |
@@ -115,25 +116,26 @@ forest/
 │       ├── sun_api.py            한국천문연구원 일몰
 │       ├── wildfire_api.py       산림청 산불위험예보
 │       ├── forest_api.py         산림청 산림공간정보
-│       ├── nifos_api.py          국립산림과학원 산악기상·미세먼지
-│       ├── airquality_api.py     에어코리아 대기질 (PM2.5·PM10)
+│       ├── nifos_api.py          국립산림과학원 산악기상
+│       ├── airquality_api.py     에어코리아 대기질 (PM2.5·PM10 실시간)
 │       ├── vworld_api.py         국토부 브이월드 등산로
 │       ├── local_road_api.py     지방도로 등산로
 │       ├── landslide_api.py      산사태 예측
 │       ├── disaster_risk.py      재난위험지구 매칭
 │       ├── mountain_story_api.py 산 정보·스토리 제공
-│       ├── mountain_data.py      77개 추천 산 정적 데이터
+│       ├── mountain_data.py      138개 추천 산 정적 데이터
+│       ├── mountain_tags.py      15종 매력 태그 정의 및 산별 배치
 │       ├── mountain_recommend.py 산 추천 로직
 │       ├── mountain_coordinates.py 산 좌표 데이터
 │       ├── data_sources.py       데이터 소스 목록 API
-│       └── migrations/           0001 ~ 0006
+│       └── migrations/           0001 ~ 0010
 ├── frontend/
 │   └── src/
 │       ├── App.vue               셸 (히어로·사이드바 날씨위젯·탭바·router-view)
 │       ├── router.js             Vue Router 4 (해시 히스토리)
 │       ├── api.js                백엔드 API 호출 레이어
 │       ├── views/
-│       │   ├── GuideTab.vue          안전코스 추천 탭
+│       │   ├── GuideTab.vue          안전코스 추천 탭 (태그 필터·산 상세 포함)
 │       │   ├── SafeLinkTab.vue       안전공유 탭 (2컬럼)
 │       │   ├── CommunityTab.vue      커뮤니티 탭 (포스트 그리드)
 │       │   ├── MyPageTab.vue         내정보 탭 (3컬럼 그리드)
@@ -153,7 +155,7 @@ forest/
 │       │   └── useLocation.js        GPS 위치
 │       ├── components/
 │       │   ├── CourseCard.vue        코스 카드
-│       │   ├── MountainCard.vue      산 선택 카드
+│       │   ├── MountainCard.vue      산 선택 카드 (태그 표시 포함)
 │       │   ├── AuthModal.vue         로그인/회원가입 모달
 │       │   ├── OnboardingModal.vue   첫 방문 온보딩 모달
 │       │   └── ChatWidget.vue        플로팅 AI 챗봇 위젯
@@ -178,6 +180,7 @@ python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
+python manage.py seed_mountain_tags   # 15종 태그 DB 시드
 python manage.py runserver 127.0.0.1:8000
 ```
 
@@ -203,7 +206,6 @@ Vite 개발 서버가 `/api` 요청을 `http://127.0.0.1:8000`으로 프록시�
 | `DATABASE_URL` | 프로덕션 필수 | Railway PostgreSQL 연결 문자열. 미설정 시 SQLite 자동 사용 |
 | `ANTHROPIC_API_KEY` | 선택 | Claude Haiku 안전 브리핑 생성. 없으면 템플릿 폴백 |
 | `GEMINI_API_KEY` | 선택 | Gemini 2.5 Flash Lite AI 도우미 채팅 및 개인화 안전 조언. 없으면 안내 메시지 반환 |
-| `NIFOS_API_KEY` | 선택 | NIFOS 산림 미세먼지 관측시스템(aican.nifos.go.kr) 전용 키. 없으면 미세먼지 데이터 생략 |
 | `RAILWAY_PUBLIC_DOMAIN` | 자동 주입 | 프로덕션 환경 감지용 |
 
 ---
@@ -216,8 +218,8 @@ Vite 개발 서버가 `/api` 요청을 `http://127.0.0.1:8000`으로 프록시�
 |--------|------|------|
 | GET | `/api/health/` | 서비스 상태, 공공데이터키 로드 확인 |
 | GET | `/api/data-sources/` | 연동 데이터 소스 목록 및 상태 |
-| GET | `/api/courses/` | 전체 탐방로 목록 (631개, CSV 기반) |
-| GET | `/api/mountains/` | 올라 추천 산 목록 (77개) |
+| GET | `/api/courses/` | 전체 탐방로 목록 (302개) |
+| GET | `/api/mountains/` | 올라 추천 산 목록 (138개, 태그 포함) |
 | POST | `/api/recommend-mountains/` | 프로필 기반 산 추천 |
 | POST | `/api/recommendations/` | 안전 코스 추천 (body: profile + location) |
 | GET | `/api/weather/?lat=&lng=` | 기상청 초단기실황 (10분 캐시) |
@@ -233,7 +235,6 @@ Vite 개발 서버가 `/api` 요청을 `http://127.0.0.1:8000`으로 프록시�
 | GET | `/api/safety-reports/?mountain=` | 커뮤니티 안전 제보 게시글 |
 | GET | `/api/air-quality/?sido=` | 에어코리아 대기질 (PM2.5·PM10) |
 | GET | `/api/nifos-mountain-weather/?mountain=` | NIFOS 산악기상 (기온·풍속·강수·습도·적설) |
-| GET | `/api/nifos-fine-dust/?station=` | NIFOS 산림 미세먼지 (PM2.5·PM10) |
 
 ### AI
 
@@ -299,6 +300,7 @@ Vite 개발 서버가 `/api` 요청을 `http://127.0.0.1:8000`으로 프록시�
 | `EmergencyContact` | user, name, phone, relation | 긴급 연락처 |
 | `SafeLinkSession` | id(UUID), **share_code**(6자리 unique), course 정보, current_lat/lng, status | 세이프링크 세션 |
 | `LocationLog` | session(FK), lat, lng, recorded_at | GPS 궤적 로그 |
+| `MountainTags` | mountain_name(unique), tags(JSONField) | 산별 15종 매력 태그 |
 
 ---
 
@@ -340,7 +342,7 @@ Pinia/Vuex 없이 **모듈 레벨 싱글톤 composable** 패턴 사용.
 ├── weather_api          기상청 (10분 Django cache)
 ├── osm_trail_api        OSM Overpass (24시간 Django cache)
 ├── llm_briefing         Claude 브리핑 (1시간 Django cache)
-├── nifos_api            NIFOS 산악기상·미세먼지 (lru_cache)
+├── nifos_api            NIFOS 산악기상 (lru_cache)
 └── airquality_api       에어코리아 대기질 (lru_cache)
 ```
 
@@ -449,7 +451,7 @@ Pinia/Vuex 없이 **모듈 레벨 싱글톤 composable** 패턴 사용.
 
 - **모델**: Gemini 2.5 Flash Lite (`gemini-2.5-flash-lite`)
 - **멀티턴**: 이전 대화 메시지 전체를 contents로 전달
-- **컨텍스트 주입**: 선택 산(이름·고도·난이도·소요 시간), 날씨, 산불위험, 산사태, NIFOS 산악기상, NIFOS 미세먼지, 에어코리아 대기질
+- **컨텍스트 주입**: 선택 산(이름·고도·난이도·소요 시간), 날씨, 산불위험, 산사태, NIFOS 산악기상, 에어코리아 대기질
 
 ### RAG 파이프라인
 
@@ -458,7 +460,7 @@ Pinia/Vuex 없이 **모듈 레벨 싱글톤 composable** 패턴 사용.
   ↓
 BM25 검색 (rag_retriever.py)
   ├── 정적 지식 베이스 (31개 문서: 응급처치·날씨·장비·코스·계절·국립공원 등)
-  ├── 탐방로 데이터 (국립공원공단 CSV 631개)
+  ├── 탐방로 데이터 (국립공원공단 CSV 302개)
   └── 재난위험 데이터 (선택 산 해당 위험지구)
   ↓
 시스템 프롬프트에 [참고 정보] 섹션 추가
@@ -479,7 +481,7 @@ Gemini API 호출 (max_output_tokens: 400)
 
 | 소스 | 커버리지 | 비고 |
 |------|----------|------|
-| CSV (국립공원공단) | 631개 코스 | 좌표 44.8%, 경로선 0% |
+| CSV (국립공원공단) | 302개 코스, 42개 산 | 좌표 포함, 경로선 별도 fetch |
 | VWorld API | ~30% 추정 | 코스 선택 시 on-demand, 경로선 포함 |
 | **OSM Overpass** | **~65% 추정** | VWorld 없을 때 폴백, 24시간 캐시 |
 
@@ -511,7 +513,7 @@ OSM Overpass (반경 3km) → 있으면 캐시 후 표시
 
 | 데이터 | 연동 방식 | 상태 |
 |--------|-----------|------|
-| 국립공원공단 탐방로 CSV | 로컬 파일 파싱 | ✅ 631개 코스 |
+| 국립공원공단 탐방로 CSV | 로컬 파일 파싱 | ✅ 302개 코스 (42개 산) |
 | 기상청 초단기실황 | 공공데이터포털 API | ✅ 실시간 |
 | 한국천문연구원 일몰 | 공공데이터포털 API | ✅ |
 | 산림청 산불위험예보 | 공공데이터포털 API | ✅ |
@@ -521,8 +523,7 @@ OSM Overpass (반경 3km) → 있으면 캐시 후 표시
 | 재난위험지구 | 로컬 CSV/JSON | ✅ |
 | 산사태 예측 | 공공데이터포털 API | ✅ |
 | **NIFOS 산악기상** | 공공데이터포털 API | ✅ AI 컨텍스트 주입 |
-| **NIFOS 산림 미세먼지** | aican.nifos.go.kr | ✅ AI 컨텍스트 주입 |
-| **에어코리아 대기질** | 공공데이터포털 API | ✅ AI 컨텍스트 주입 |
+| **에어코리아 대기질** | 공공데이터포털 API | ✅ PM2.5·PM10 실시간, AI 컨텍스트 주입 |
 | Leaflet + OSM 타일 | 무료 (키 불필요) | ✅ |
 | Claude Haiku | Anthropic API | ✅ 안전 브리핑, 키 선택 사항 |
 | **Gemini 2.5 Flash Lite** | Google AI API | ✅ 채팅·안전 조언, 키 선택 사항 |
@@ -534,6 +535,8 @@ OSM Overpass (반경 3km) → 있으면 캐시 후 표시
 ```
 Backend:  requirements.txt 기반
           python manage.py migrate --noinput
+          python manage.py seed_mountain_descriptions
+          python manage.py seed_mountain_tags        ← 15종 태그 시드
           gunicorn forestrx.wsgi
 
 Frontend: npm run build → Django WhiteNoise로 정적 서빙
@@ -551,6 +554,10 @@ PostgreSQL: DATABASE_URL 자동 주입 → dj-database-url 파싱
 | 0004 | AuthToken.expires_at + SafeLinkSession |
 | 0005 | LocationLog (GPS 궤적) |
 | 0006 | SafeLinkSession.share_code (3단계: 컬럼 추가 → 기존 행 코드 채우기 → unique 제약) |
+| 0007 | MountainKnowledge, TrailCourse, DisasterRiskZone |
+| 0008 | MountainIntro |
+| 0009 | MountainIntro 필드 보완 |
+| 0010 | MountainTags (15종 태그 JSONField) |
 
 ---
 
@@ -570,7 +577,7 @@ PostgreSQL: DATABASE_URL 자동 주입 → dj-database-url 파싱
 
 ### 등산로 경로 커버리지
 
-CSV 631개 코스 중 실제 경로선 보유율은 0%. VWorld + OSM on-demand fetch로 약 65% 보완.  
+CSV 302개 코스 중 실제 경로선 보유율은 낮음. VWorld + OSM on-demand fetch로 약 65% 보완.  
 나머지는 위치 점(마커)만 표시된다.
 
 ### Gemini API 무료 한도
