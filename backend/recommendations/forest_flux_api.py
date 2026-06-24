@@ -1,134 +1,63 @@
-"""국립산림과학원(NIFOS) 산림생태플럭스 관측 데이터 API.
+"""산림 생태 환경 지표 모듈.
 
-산림생태플럭스시스템(igportal.nifos.go.kr):
-- 광릉, 태안, 양양, 가리왕산, 지리산 등 전국 산림 플럭스 관측탑 운영
-- 측정 항목: 탄소플럭스(NEE), 잠열(LE), 현열(H), 태양복사(Rg), 기온, 토양온도
-- 목적: 산림 탄소흡수원 정량화, 탄소중립 정책 근거 데이터 제공
+실시간 플럭스 OpenAPI는 존재하지 않음.
+- data.go.kr/data/15042678 : 파일데이터(CSV) 전용 — 실시간 불가
+- igportal.nifos.go.kr    : 웹 뷰어만 제공, API 없음
 
-공공데이터포털 등록 서비스: apis.data.go.kr/1400377/fluxObsrInfo
+현재 전략: NIFOS 연구 논문 기반 계절별 대표값을 사용하여
+탄소흡수, UV, 불쾌지수, 습윤도, 토양 상태 지표를 제공.
 """
-import json
-import os
-import time
-import urllib.parse
-import urllib.request
-
-from .loaders import load_public_service_key
-
-FOREST_FLUX_URL = "http://apis.data.go.kr/1400377/fluxObsrInfo/getFluxObsrInfo"
+import datetime
 
 # 주요 플럭스 관측소 (위도/경도 기반 최근접 탐색용)
 FLUX_STATIONS = [
-    {"code": "KOR-GCK", "name": "광릉",    "lat": 37.7383, "lng": 127.1560, "region": "경기 포천"},
-    {"code": "KOR-TAN", "name": "태안",    "lat": 36.9689, "lng": 126.1392, "region": "충남 태안"},
-    {"code": "KOR-YAN", "name": "양양",    "lat": 38.0899, "lng": 128.6276, "region": "강원 양양"},
-    {"code": "KOR-GRW", "name": "가리왕산", "lat": 37.4611, "lng": 128.5697, "region": "강원 정선"},
-    {"code": "KOR-JRS", "name": "지리산",  "lat": 35.2669, "lng": 127.3740, "region": "경남 함양"},
+    {"name": "광릉",    "lat": 37.7383, "lng": 127.1560, "region": "경기 포천"},
+    {"name": "태안",    "lat": 36.9689, "lng": 126.1392, "region": "충남 태안"},
+    {"name": "양양",    "lat": 38.0899, "lng": 128.6276, "region": "강원 양양"},
+    {"name": "가리왕산", "lat": 37.4611, "lng": 128.5697, "region": "강원 정선"},
+    {"name": "지리산",  "lat": 35.2669, "lng": 127.3740, "region": "경남 함양"},
 ]
 
-_TTL = 1800  # 30분 캐시
-_cache: dict = {}  # {station_code: (timestamp, result)}
 
+def fetch_forest_flux(mountain_name: str = "", lat: float = None, lng: float = None, **_) -> dict:
+    """계절별 산림 생태 지표 반환.
 
-def fetch_forest_flux(mountain_name: str = "", lat: float = None, lng: float = None, timeout: int = 4) -> dict:
-    """산림생태플럭스 실시간 관측 데이터 조회 (30분 TTL 캐시).
-
-    산 이름 또는 위경도로 가장 가까운 플럭스 관측소 데이터를 반환합니다.
-    NEE, LE, H, Rg, 기온, 토양온도에서 UV·불쾌지수·탄소발자국 지표를 추가 계산합니다.
+    NIFOS 광릉 활엽수림 장기관측 논문 기반 계절 대표값 사용.
+    가장 가까운 관측소를 선택해 지역명을 표시.
     """
     station = _find_nearest_station(mountain_name, lat, lng)
-    service_key = load_public_service_key()
-    if not service_key:
-        return _fallback(station, "PUBLIC_SERVICE_KEY 미설정")
-    return _fetch_with_ttl(station, service_key, timeout)
+    return _seasonal_data(station)
 
 
-def _fetch_with_ttl(station: dict, service_key: str, timeout: int) -> dict:
-    code = station["code"]
-    now = time.time()
-    if code in _cache:
-        ts, cached = _cache[code]
-        if now - ts < _TTL:
-            return cached
-    result = _call_api(station, service_key, timeout)
-    _cache[code] = (now, result)
-    return result
+def _seasonal_data(station: dict) -> dict:
+    month = datetime.datetime.now().month
 
-
-def _call_api(station: dict, service_key: str, timeout: int) -> dict:
-    query = {
-        "serviceKey": service_key,
-        "stnId": station["code"],
-        "numOfRows": "1",
-        "pageNo": "1",
-        "_type": "json",
-    }
-    url = f"{FOREST_FLUX_URL}?{urllib.parse.urlencode(query, safe='%')}"
-    try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:
-            body = resp.read()
-        result = _parse_flux(body, station["name"])
-        # API는 성공했지만 데이터가 없으면 계절별 대표값으로 폴백
-        if not result.get("ok"):
-            return _seasonal_fallback(station)
-        return result
-    except Exception:
-        # HTTP 500 (미승인) 또는 네트워크 오류 → 계절별 대표값 반환
-        return _seasonal_fallback(station)
-
-
-def _parse_flux(body: bytes, station_name: str) -> dict:
-    try:
-        payload = json.loads(body.decode("utf-8", errors="replace"))
-    except json.JSONDecodeError:
-        return {"ok": False, "source": "forest_flux", "error": "JSON 파싱 오류"}
-
-    items_raw = (
-        payload.get("response", {}).get("body", {}).get("items", {}).get("item")
-        or payload.get("items")
-        or (payload if isinstance(payload, list) else None)
-    ) or []
-    if isinstance(items_raw, dict):
-        items_raw = [items_raw]
-
-    if not items_raw:
-        return {"ok": False, "source": "forest_flux", "error": "데이터 없음", "station_name": station_name}
-
-    item = items_raw[0]
-    nee      = _f(item.get("nee")  or item.get("NEE")    or item.get("fc"))
-    le       = _f(item.get("le")   or item.get("LE"))
-    h        = _f(item.get("h")    or item.get("H"))
-    rg       = _f(item.get("rg")   or item.get("Rg")     or item.get("sw_in"))
-    temp     = _f(item.get("ta")   or item.get("temp")   or item.get("air_temp"))
-    soil     = _f(item.get("ts")   or item.get("soil_temp") or item.get("ts_5cm"))
+    # NIFOS 광릉 활엽수림 장기관측 계절 대표값
+    if 3 <= month <= 5:      # 봄
+        nee, le, h, rg, temp, soil = -3.2, 110, 55, 320, 14, 11
+    elif 6 <= month <= 8:    # 여름
+        nee, le, h, rg, temp, soil = -5.8, 185, 60, 410, 24, 21
+    elif 9 <= month <= 11:   # 가을
+        nee, le, h, rg, temp, soil = -2.1, 80, 65, 260, 15, 13
+    else:                    # 겨울
+        nee, le, h, rg, temp, soil = 0.4, 20, 45, 150, 2, 1
 
     derived = _derive_indicators(nee, le, h, rg, temp, soil)
-
     return {
         "ok": True,
-        "source": "forest_flux",
-        "station_name": item.get("stnNm") or station_name,
-        "obs_time": item.get("obsTime") or item.get("date"),
-        # 원시 측정값
-        "nee_umol": nee,
-        "le_wm2": le,
-        "h_wm2": h,
-        "rg_wm2": rg,
-        "temp_c": temp,
-        "soil_temp_c": soil,
-        # 탄소 상태
+        "source": "forest_flux_seasonal",
+        "station_name": station["name"],
+        "nee_umol": nee, "le_wm2": le, "h_wm2": h,
+        "rg_wm2": rg, "temp_c": temp, "soil_temp_c": soil,
         "carbon_status": _carbon_status(nee),
-        # 도출 지표 (1순위 개선)
         **derived,
     }
 
 
-# ── 지표 도출 ────────────────────────────────────────────────────────────────
-
 def _derive_indicators(nee, le, h, rg, temp, soil) -> dict:
     out = {}
 
-    # ① 자외선 위험도 — 태양복사(Rg) → UV Index 근사
+    # ① 자외선 — 태양복사(Rg) → UV Index 근사
     if rg is not None:
         uv = round(rg / 230, 1)
         out["uv_index"] = uv
@@ -146,7 +75,7 @@ def _derive_indicators(nee, le, h, rg, temp, soil) -> dict:
             "자외선 낮음"
         )
 
-    # ② 산림 습윤도 — Bowen 비율(H/LE)로 산림 건조·습윤 상태 판단
+    # ② 습윤도 — Bowen 비율(H/LE)
     if le is not None and h is not None and le > 0:
         bowen = h / le
         out["bowen_ratio"] = round(bowen, 2)
@@ -171,7 +100,7 @@ def _derive_indicators(nee, le, h, rg, temp, soil) -> dict:
             "쾌적"
         )
 
-    # ④ 토양 건조도 — 토양온도와 기온 차이로 추정
+    # ④ 토양 건조도
     if soil is not None and temp is not None:
         diff = soil - temp
         out["soil_status"] = (
@@ -181,12 +110,11 @@ def _derive_indicators(nee, le, h, rg, temp, soil) -> dict:
         )
         out["soil_temp_diff"] = round(diff, 1)
 
-    # ⑤ 탄소 발자국 교육 메시지
+    # ⑤ 탄소 발자국 메시지
     if nee is not None and nee < 0:
-        # μmol CO₂/m²/s → gCO₂/ha/h
         g_per_ha_h = round(abs(nee) * 44e-6 * 10_000 * 3600)
         out["carbon_absorption_g_ha_h"] = g_per_ha_h
-        hiker_co2_g = 250  # 등산 시 1인 호흡 약 250 g CO₂/h
+        hiker_co2_g = 250
         ha_to_offset = round(hiker_co2_g / g_per_ha_h, 1) if g_per_ha_h > 0 else None
         out["carbon_footprint_msg"] = (
             f"지금 이 산림 1ha가 시간당 약 {g_per_ha_h}g의 CO₂를 흡수하고 있습니다. "
@@ -198,14 +126,12 @@ def _derive_indicators(nee, le, h, rg, temp, soil) -> dict:
 
 
 def _carbon_status(nee) -> str:
-    if nee is None:   return "측정불가"
-    if nee < -5:      return "강한탄소흡수"
-    if nee < 0:       return "탄소흡수"
-    if nee < 2:       return "탄소균형"
+    if nee is None:  return "측정불가"
+    if nee < -5:     return "강한탄소흡수"
+    if nee < 0:      return "탄소흡수"
+    if nee < 2:      return "탄소균형"
     return "탄소방출"
 
-
-# ── 관측소 탐색 ──────────────────────────────────────────────────────────────
 
 def _find_nearest_station(mountain_name: str, lat=None, lng=None) -> dict:
     for s in FLUX_STATIONS:
@@ -221,55 +147,6 @@ def _find_nearest_station(mountain_name: str, lat=None, lng=None) -> dict:
     return FLUX_STATIONS[0]
 
 
-def _seasonal_fallback(station: dict) -> dict:
-    """공공API 미승인/장애 시 NIFOS 연구 기반 계절 대표값을 반환 (출처 명시)."""
-    import datetime
-    month = datetime.datetime.now().month
-    # NIFOS 관측 데이터 기반 계절별 광릉 활엽수림 평균값 (논문 참조)
-    if 3 <= month <= 5:     # 봄
-        nee, le, h, rg, temp, soil = -3.2, 110, 55, 320, 14, 11
-    elif 6 <= month <= 8:   # 여름
-        nee, le, h, rg, temp, soil = -5.8, 185, 60, 410, 24, 21
-    elif 9 <= month <= 11:  # 가을
-        nee, le, h, rg, temp, soil = -2.1, 80, 65, 260, 15, 13
-    else:                   # 겨울
-        nee, le, h, rg, temp, soil = 0.4, 20, 45, 150, 2, 1
-
-    derived = _derive_indicators(nee, le, h, rg, temp, soil)
-    return {
-        "ok": True,
-        "source": "forest_flux_seasonal",  # 실시간이 아닌 계절 대표값임을 표시
-        "station_name": station.get("name", "광릉"),
-        "obs_time": None,
-        "nee_umol": nee, "le_wm2": le, "h_wm2": h,
-        "rg_wm2": rg, "temp_c": temp, "soil_temp_c": soil,
-        "carbon_status": _carbon_status(nee),
-        **derived,
-    }
-
-
-def _fallback(station: dict, error: str) -> dict:
-    return {"ok": False, "source": "forest_flux", "error": error,
-            "station_name": station.get("name", "")}
-
-
-def _f(value) -> float | None:
-    try:
-        return float(str(value).strip())
-    except (TypeError, ValueError, AttributeError):
-        return None
-
-
 def warm_flux_cache() -> None:
-    """서버 시작 시 5개 관측소 데이터를 백그라운드로 미리 조회."""
-    import threading
-    service_key = load_public_service_key()
-    if not service_key:
-        return
-    def _warm():
-        for station in FLUX_STATIONS:
-            try:
-                _fetch_with_ttl(station, service_key, timeout=4)
-            except Exception:
-                pass
-    threading.Thread(target=_warm, daemon=True).start()
+    """하위 호환성 유지용 — 실제로 아무것도 하지 않음 (캐시 불필요)."""
+    pass
