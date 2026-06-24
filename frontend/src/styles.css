@@ -3791,27 +3791,27 @@ p {
   margin: 10px 0 0;
 }
 
-/* 하이라이트 목록 */
-.highlight-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* 산 매력 태그 그리드 */
+.mountain-appeal-tags {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.appeal-tag {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
-}
-.highlight-list li {
-  font-size: 13px;
-  color: var(--ink);
-  padding: 8px 12px;
+  padding: 8px 14px;
+  border-radius: 24px;
   background: #f0fdf4;
-  border-radius: 8px;
-  border-left: 3px solid #22c55e;
+  border: 1.5px solid #a7f3d0;
+  color: #065f46;
+  font-size: 13px;
+  font-weight: 600;
 }
-.highlight-list li::before {
-  content: '✓ ';
-  color: #16a34a;
-  font-weight: 700;
+.appeal-tag-icon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 /* AI 도우미 연결 CTA */

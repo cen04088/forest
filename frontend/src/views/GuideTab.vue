@@ -584,14 +584,20 @@
         </section>
 
 
-        <!-- 하이라이트 -->
-        <section v-if="selectedMountain.highlights?.length" class="panel">
+        <!-- 이 산의 매력 태그 -->
+        <section v-if="(selectedMountain.tags || []).length" class="panel">
           <div class="section-title compact">
             <div><p class="eyebrow">Highlights</p><h2>이 산의 매력</h2></div>
           </div>
-          <ul class="highlight-list">
-            <li v-for="h in selectedMountain.highlights" :key="h">{{ h }}</li>
-          </ul>
+          <div class="mountain-appeal-tags">
+            <span
+              v-for="tag in selectedMountain.tags"
+              :key="tag"
+              class="appeal-tag"
+            >
+              <span class="appeal-tag-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}
+            </span>
+          </div>
         </section>
 
         <!-- AI 도우미 CTA -->
