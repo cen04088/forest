@@ -115,6 +115,46 @@ class RecommendationApiTests(TestCase):
         self.assertNotIn("disaster_risk_zones", before)
         self.assertNotIn("disaster_risk_zones", after)
 
+    def test_ml_risk_without_params(self):
+        response = Client().get("/api/ml-risk/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("risk_index", data)
+        self.assertIn("hourly_risks", data)
+        self.assertEqual(len(data["hourly_risks"]), 24)
+
+    def test_ml_risk_with_bad_weather_increases_risk(self):
+        from unittest.mock import patch
+        with patch("recommendations.views._cached_weather") as mock_weather:
+            mock_weather.return_value = {
+                "temperature_c": 20,
+                "rainfall_mm": 0,
+                "wind_speed_ms": 1.0,
+                "humidity_pct": 50,
+                "wildfire_risk": "low",
+            }
+            res_good = Client().get("/api/ml-risk/", {"lat": "37.5", "lng": "127.0", "date": "2026-06-25", "time": "12:00"})
+            self.assertEqual(res_good.status_code, 200)
+            good_risk = res_good.json()["risk_index"]
+
+        with patch("recommendations.views._cached_weather") as mock_weather:
+            mock_weather.return_value = {
+                "temperature_c": 15,
+                "rainfall_mm": 15,
+                "wind_speed_ms": 12.0,
+                "humidity_pct": 95,
+                "wildfire_risk": "low",
+            }
+            res_bad = Client().get("/api/ml-risk/", {"lat": "37.5", "lng": "127.0", "date": "2026-06-25", "time": "12:00"})
+            self.assertEqual(res_bad.status_code, 200)
+            bad_risk = res_bad.json()["risk_index"]
+            warning = res_bad.json().get("warning", "")
+            
+            self.assertGreater(bad_risk, good_risk)
+            self.assertIn("기상 악화 요인", warning)
+
+
+
 
 class RecommendationServiceTests(TestCase):
     def test_select_alternatives_prefers_short_easy_daylight_safe_courses(self):

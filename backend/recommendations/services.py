@@ -547,3 +547,50 @@ def parse_departure_datetime(date_value=None, time_value=None, now=None):
 
 def parse_today_time(value, now=None):
     return parse_departure_datetime(None, value, now)
+
+
+def data_quality_adjustment(course):
+    penalty = 0
+    name = (course.get("name") or "").strip()
+    mountain = (course.get("mountain") or "").strip()
+    lat = course.get("lat")
+    lng = course.get("lng")
+    if name in GENERIC_COURSE_NAMES:
+        penalty -= 18
+    if mountain == "국립공원":
+        penalty -= 5
+    if lat is None or lng is None:
+        penalty -= 10
+    return penalty
+
+
+def purpose_bonus(course, profile):
+    purpose = profile.get("purpose", "balanced")
+    duration = int(course.get("duration_min") or 0)
+    difficulty = course.get("difficulty")
+    bonus = 0
+    if purpose == "healing":
+        if difficulty == "easy":
+            bonus += 15
+        elif difficulty == "medium":
+            bonus += 5
+        if duration and duration <= 90:
+            bonus += 10
+    elif purpose == "workout":
+        if difficulty == "hard":
+            bonus += 15
+        elif difficulty == "medium":
+            bonus += 5
+        if duration and duration >= 180:
+            bonus += 10
+    return bonus
+
+
+def time_buffer_range(duration_min, profile):
+    companion = profile.get("companion")
+    if companion == "vulnerable":
+        return (duration_min - 30, duration_min + 15)
+    return (duration_min - 30, duration_min + 30)
+
+
+

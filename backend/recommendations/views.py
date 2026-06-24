@@ -697,13 +697,103 @@ def safety_advice_view(request):
     return JsonResponse({"advice": advice or ""})
 
 
+def _cached_weather(lat, lng):
+    from django.core.cache import cache
+    cache_key = f"weather:{round(lat, 2)}:{round(lng, 2)}:"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+    result = fetch_current_weather(lat, lng)
+    if result and result.get("source") != "mock":
+        cache.set(cache_key, result, 600)
+    return result
+
+
 @require_GET
 def ml_risk_view(request):
-    """현재 시각 기반 소방청 사고 ML 위험 예측 (산 무관, 시간 기반)."""
+    """지정 시각 및 날씨 기반 소방청 사고 ML 위험 예측 (위험 지수 보정 및 24시간 추이 반환)."""
     import datetime
     from .accident_model import predict_accident_risk
+
+    # 1. 날짜 및 시간 파라미터 파싱
+    date_str = request.GET.get("date")
+    time_str = request.GET.get("time")
+
     now = datetime.datetime.now()
-    result = predict_accident_risk(month=now.month, hour=now.hour, weekday=now.weekday())
+    month = now.month
+    hour = now.hour
+    weekday = now.weekday()
+
+    if date_str:
+        try:
+            dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+            month = dt.month
+            weekday = dt.weekday()
+        except ValueError:
+            pass
+
+    if time_str:
+        try:
+            hour = int(time_str.split(":")[0])
+        except (ValueError, IndexError):
+            pass
+
+    # 2. 날씨 정보 및 점수 산출
+    lat_str = request.GET.get("lat")
+    lng_str = request.GET.get("lng")
+    weather_score = 1.0
+    weather = None
+
+    if lat_str and lng_str:
+        try:
+            lat = float(lat_str)
+            lng = float(lng_str)
+            weather = _cached_weather(lat, lng)
+            if weather:
+                from .mountain_recommend import _weather_score
+                weather_score = _weather_score(weather)
+        except Exception:
+            pass
+
+    # 3. ML 기본 예측
+    result = predict_accident_risk(month=month, hour=hour, weekday=weekday)
+
+    # 4. 날씨 보정 적용
+    base_risk = result["risk_index"]
+    weather_penalty = 1.0 - weather_score
+    # 날씨 안 좋을수록 사고 지수 가산 (최대 +0.50)
+    adjusted_risk = min(1.0, base_risk + weather_penalty * 0.50)
+    result["risk_index"] = round(adjusted_risk, 3)
+    result["ml_safety_score"] = round(1.0 - adjusted_risk, 3)
+
+    # 날씨 반영 경고 조합
+    if weather_penalty > 0.15:
+        w_reasons = []
+        if weather:
+            try:
+                rainfall = float(weather.get("rainfall_mm", 0) or 0)
+                wind = float(weather.get("wind_speed_ms", 0) or 0)
+                if rainfall > 0:
+                    w_reasons.append(f"비({rainfall}mm)")
+                if wind >= 5:
+                    w_reasons.append(f"강풍({wind}m/s)")
+            except Exception:
+                pass
+        w_msg = f"기상 악화 요인({', '.join(w_reasons) if w_reasons else '비/바람'}) 반영으로 위험도가 크게 상승했습니다."
+        result["warning"] = w_msg + " " + result.get("warning", "")
+
+    # 5. 24시간 추이 계산 (날씨 보정 일괄 적용)
+    hourly_risks = []
+    for h in range(24):
+        h_res = predict_accident_risk(month=month, hour=h, weekday=weekday)
+        h_base = h_res["risk_index"]
+        h_adjusted = round(min(1.0, h_base + weather_penalty * 0.50), 3)
+        hourly_risks.append({
+            "hour": h,
+            "risk_index": h_adjusted
+        })
+    result["hourly_risks"] = hourly_risks
+
     return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
 
 

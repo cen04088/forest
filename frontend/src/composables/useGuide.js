@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { fetchCourses, fetchDisasterZones, fetchWeather, fetchRecommendations, fetchVWorldTrails, fetchOSMTrails, fetchMountains, fetchMountainRecommendations, fetchMlRisk } from '../api.js';
 import { fallbackCourses } from '../data/fallbackCourses.js';
 import { fallbackMountainDescriptions } from '../data/fallbackMountainDescriptions.js';
@@ -191,8 +191,7 @@ export const filteredMountains = computed(() => {
 export const mlRiskInfo = computed(() => {
   const m = selectedMountain.value;
   if (!m) return null;
-  const scored = [...recommendedMountains.value, ...alternativeMountains.value].find((r) => r.id === m.id);
-  return scored?.ml_risk_info || localMlRisk.value || null;
+  return localMlRisk.value;
 });
 
 export const mlTrainingNote = computed(() => {
@@ -209,15 +208,38 @@ export function resetLocalMlRisk() {
   localMlRisk.value = null;
 }
 
-export function loadLocalMlRiskIfNeeded(mountain) {
-  const alreadyScored = [...recommendedMountains.value, ...alternativeMountains.value].find(
-    (r) => r.id === mountain?.id,
-  );
-  if (alreadyScored) return;
-  fetchMlRisk()
-    .then((d) => { localMlRisk.value = d; })
-    .catch(() => {});
+export async function updateMlRisk() {
+  const m = selectedMountain.value;
+  if (!m) {
+    localMlRisk.value = null;
+    return;
+  }
+  try {
+    const d = await fetchMlRisk(
+      profile.departureDate,
+      profile.departureTime,
+      m.lat,
+      m.lng,
+      m.name
+    );
+    localMlRisk.value = d;
+  } catch (err) {
+    console.error('[ML RISK] Failed to update:', err);
+  }
 }
+
+export function loadLocalMlRiskIfNeeded(mountain) {
+  updateMlRisk();
+}
+
+// Reactively update ML risk when departure date, time, or selected mountain changes
+watch(
+  [selectedMountain, () => profile.departureDate, () => profile.departureTime],
+  () => {
+    updateMlRisk();
+  },
+  { immediate: false }
+);
 
 function searchRank(mountain, normalizedSearch) {
   const name = (mountain.name || '').toLowerCase().replace(/\s/g, '');

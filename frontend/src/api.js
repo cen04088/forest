@@ -134,8 +134,15 @@ export async function fetchNifosFineDust() {
   return request(`/nifos-fine-dust/`);
 }
 
-export async function fetchMlRisk() {
-  return request(`/ml-risk/`);
+export async function fetchMlRisk(date, time, lat, lng, mountain) {
+  const params = new URLSearchParams();
+  if (date) params.set('date', date);
+  if (time) params.set('time', time);
+  if (lat != null) params.set('lat', lat);
+  if (lng != null) params.set('lng', lng);
+  if (mountain) params.set('mountain', mountain);
+  const qs = params.toString();
+  return request(`/ml-risk/${qs ? '?' + qs : ''}`);
 }
 
 export async function fetchRecommendations(payload) {
