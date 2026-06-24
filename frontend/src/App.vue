@@ -4,21 +4,14 @@
     <header class="app-hero">
       <LiveSafetyHero
         :safety-items="liveSafetyItems"
-        :slides="heroThemeSlides"
+:slides="heroThemeSlides"
         @select-theme="handleThemeSelect"
       />
 
       <div class="hero-nav">
         <div class="hero-nav-actions">
-          <button v-if="authUser" class="hero-auth-btn" type="button" @click="showAuthModal = true">
-            <span class="auth-avatar">{{ authUser.nickname[0] }}</span>
-            <span class="auth-nickname">{{ authUser.nickname }}</span>
-          </button>
-          <button v-else class="hero-login-btn" type="button" @click="showAuthModal = true">로그인</button>
-          <button class="hero-refresh-btn" type="button" title="새로고침" @click="reload">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 3v4h-4M6 21v-4h4" />
-            </svg>
+          <button class="hero-login-btn" type="button" @click="showAuthModal = true">
+            {{ authUser ? authUser.nickname : '로그인' }}
           </button>
         </div>
       </div>
@@ -56,61 +49,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         <span>내정보</span>
       </router-link>
-
-      <!-- ─── 실시간 산행 환경 미니 카드 ── -->
-      <div class="sidebar-weather">
-        <div class="sw-header">
-          <span class="sw-title">{{ selectedMountain ? selectedMountain.name + ' 날씨' : '실시간 산행 환경' }}</span>
-          <span v-if="weatherData" :class="weatherData.source === 'mock' ? 'live-badge mock-badge' : 'live-badge'" style="font-size:9px;padding:2px 6px">
-            {{ weatherData.source === 'mock' ? '추정' : '● LIVE' }}
-          </span>
-        </div>
-        <template v-if="weatherData">
-          <div class="sw-gauge-track">
-            <div class="sw-gauge-fill" :class="swSafetyClass" :style="{ width: swSafetyPct + '%' }"></div>
-          </div>
-          <p class="sw-gauge-label">{{ swSafetyLabel }}</p>
-          <div class="sw-grid">
-            <div class="sw-item">
-              <span>{{ swWeatherIcon }}</span>
-              <span>{{ swWeatherLabel }} {{ weatherData.temperature_c }}°C</span>
-            </div>
-            <div class="sw-item">
-              <span>🌄</span>
-              <span>일출 {{ weatherData.sunrise || '-' }}</span>
-            </div>
-            <div class="sw-item">
-              <span>🌅</span>
-              <span>일몰 {{ weatherData.sunset || '-' }}</span>
-            </div>
-            <div class="sw-item">
-              <span>💧</span>
-              <span :class="weatherData.rainfall_mm > 0 ? 'sw-warn' : ''">강수 {{ weatherData.rainfall_mm ?? 0 }}mm</span>
-            </div>
-            <div class="sw-item">
-              <span>💨</span>
-              <span :class="weatherData.wind_speed_ms >= 5 ? 'sw-warn' : ''">풍속 {{ weatherData.wind_speed_ms }}m/s</span>
-            </div>
-            <div class="sw-item">
-              <span>💦</span>
-              <span>습도 {{ weatherData.humidity_pct ?? '-' }}%</span>
-            </div>
-            <div class="sw-item">
-              <span>🔥</span>
-              <span :class="swWildfireClass">산불 {{ swWildfireLabel }}</span>
-            </div>
-            <div v-if="weatherData.pm10_ugm3 != null" class="sw-item" :class="swDustClass">
-              <span>🌫</span>
-              <span>미세먼지 {{ weatherData.pm10_ugm3 }}㎍ · {{ weatherData.grade_pm10 || '-' }}</span>
-            </div>
-            <div v-if="weatherData.pm25_ugm3 != null" class="sw-item" :class="swFineDustClass">
-              <span>💨</span>
-              <span>초미세먼지 {{ weatherData.pm25_ugm3 }}㎍ · {{ weatherData.grade_pm25 || '-' }}</span>
-            </div>
-          </div>
-        </template>
-        <p v-else style="font-size:10px;color:#9ca3af;margin:4px 0 0">날씨 불러오는 중...</p>
-      </div>
     </nav>
 
     <!-- ─── 라우터 뷰 ─────────────────────────────────────────────────── -->
@@ -129,6 +67,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authUser, loadMe, showAuthModal } from './composables/useAuth.js';
+import { activeInfoPost, communityError, communityView } from './composables/useCommunity.js';
 import { loadMyPageData } from './composables/useUserData.js';
 import {
   guideError,
@@ -137,11 +76,10 @@ import {
   selectedMountain,
   weatherData,
 } from './composables/useGuide.js';
-import { communityError } from './composables/useCommunity.js';
 import AuthModal from './components/AuthModal.vue';
 import LiveSafetyHero from './components/LiveSafetyHero.vue';
 import OnboardingModal from './components/OnboardingModal.vue';
-import { heroThemeSlides, liveSafetyItems } from './data/heroCuration.js';
+import { heroThemeSlides } from './data/heroCuration.js';
 
 const showOnboarding = ref(!localStorage.getItem('ollaOnboarded'));
 const router = useRouter();
@@ -153,53 +91,47 @@ function goHome() {
 }
 
 function handleThemeSelect(slide) {
-  router.push({ path: '/guide', query: { theme: slide.id } });
+  communityView.value = 'list';
+  activeInfoPost.value = slide.id;
+  router.push('/community');
 }
 
-const swWeatherIcon = computed(() => {
-  const w = weatherData.value;
-  if (!w) return '🌤️';
-  if (w.rainfall_mm >= 10) return '🌧️';
-  if (w.rainfall_mm > 0) return '🌦️';
-  if (w.wind_speed_ms >= 8) return '💨';
-  return '☀️';
-});
-const swWeatherLabel = computed(() => {
-  const w = weatherData.value;
-  if (!w) return '';
-  if (w.rainfall_mm >= 10) return '비';
-  if (w.rainfall_mm > 0) return '흐림';
-  return '맑음';
-});
-const swSafetyClass = computed(() => {
-  const w = weatherData.value;
-  if (!w) return 'safe';
-  const r = w.rainfall_mm ?? 0;
-  const wind = w.wind_speed_ms ?? 0;
-  if (r >= 10 || wind >= 10) return 'danger';
-  if (r > 0 || wind >= 5) return 'warning';
-  return 'safe';
-});
-const swSafetyPct = computed(() => {
-  return swSafetyClass.value === 'safe' ? 95 : swSafetyClass.value === 'warning' ? 55 : 20;
-});
-const swSafetyLabel = computed(() => {
-  return swSafetyClass.value === 'safe' ? '산행 적합' : swSafetyClass.value === 'warning' ? '주의 필요' : '산행 위험';
-});
-const swWildfireClass = computed(() => ({ low: '', medium: 'sw-warn', high: 'sw-danger', very_high: 'sw-danger' }[weatherData.value?.wildfire_risk || 'low'] || ''));
-const swWildfireLabel = computed(() => ({ low: '낮음', medium: '보통', high: '높음', very_high: '매우높음' }[weatherData.value?.wildfire_risk || 'low'] || '낮음'));
-const swDustClass = computed(() => ({ '보통': '', '나쁨': 'sw-warn', '매우나쁨': 'sw-danger' }[weatherData.value?.grade_pm10 || ''] || ''));
-const swFineDustClass = computed(() => ({ '보통': '', '나쁨': 'sw-warn', '매우나쁨': 'sw-danger' }[weatherData.value?.grade_pm25 || ''] || ''));
+const WILDFIRE_LABEL = { low: '낮음', medium: '보통', high: '높음', very_high: '매우높음' };
 
-// 전역 에러 — 어느 탭의 에러든 하나로 모음
+const liveSafetyItems = computed(() => {
+  const w = weatherData.value;
+  if (!w) return [{ id: 'loading', label: '날씨 정보', value: '불러오는 중…' }];
+
+  const rainfall = w.rainfall_mm ?? 0;
+  const wind = w.wind_speed_ms ?? 0;
+
+  const weatherIcon = rainfall >= 10 ? '🌧' : rainfall > 0 ? '🌦' : wind >= 8 ? '💨' : '☀️';
+  const weatherLabel = rainfall >= 10 ? '비' : rainfall > 0 ? '흐림' : '맑음';
+
+  const items = [
+    { id: 'temp',      label: '현재기온',  value: `${weatherIcon} ${weatherLabel} ${w.temperature_c}°C` },
+    { id: 'rain',      label: '강수',      value: `${rainfall}mm` },
+    { id: 'wind',      label: '풍속',      value: `${wind}m/s` },
+    { id: 'humidity',  label: '습도',      value: `${w.humidity_pct ?? '-'}%` },
+    { id: 'wildfire',  label: '산불위험',  value: WILDFIRE_LABEL[w.wildfire_risk] || '낮음' },
+    { id: 'sunset',    label: '일몰',      value: w.sunset || '-' },
+    { id: 'sunrise',   label: '일출',      value: w.sunrise || '-' },
+  ];
+
+  if (w.pm10_ugm3 != null) {
+    items.push({ id: 'dust', label: '미세먼지', value: `${w.pm10_ugm3}㎍ · ${w.grade_pm10 || '-'}` });
+  }
+  if (w.pm25_ugm3 != null) {
+    items.push({ id: 'fine-dust', label: '초미세먼지', value: `${w.pm25_ugm3}㎍ · ${w.grade_pm25 || '-'}` });
+  }
+
+  return items;
+});
+
 const globalError = computed({
   get: () => guideError.value || communityError.value,
   set: (v) => { guideError.value = v; communityError.value = v; },
 });
-
-function reload() {
-  window.location.reload();
-}
 
 onMounted(async () => {
   await loadMe();

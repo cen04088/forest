@@ -28,13 +28,10 @@
     </div>
 
     <div class="theme-carousel">
-      <button class="theme-nav prev" type="button" aria-label="이전 테마" @click.stop="go(-1)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
-      </button>
-
       <button
         class="theme-slide"
         :class="`tone-${activeSlide.tone}`"
+        :style="activeSlide.image ? { backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.74) 0%, rgba(0,0,0,0.18) 60%, transparent 100%), url('${activeSlide.image}')` } : undefined"
         type="button"
         @click="emitTheme(activeSlide)"
       >
@@ -47,10 +44,6 @@
             <em>{{ chip.meta }}</em>
           </span>
         </span>
-      </button>
-
-      <button class="theme-nav next" type="button" aria-label="다음 테마" @click.stop="go(1)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6" /></svg>
       </button>
     </div>
 
