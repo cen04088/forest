@@ -521,7 +521,7 @@
             </div>
           </div>
 
-          <div class="recommended-trails-panel">
+          <div v-if="selectedMountainCourseRecommendations.length" class="recommended-trails-panel">
             <div class="rtp-header">
               <div>
                 <p class="eyebrow">Recommended Trails</p>
@@ -560,9 +560,6 @@
               </button>
             </div>
 
-            <div v-else class="trail-empty-state">
-              이 산과 바로 연결된 탐방로 데이터가 아직 없어요.
-            </div>
           </div>
 
           <!-- 재난위험지구 -->
