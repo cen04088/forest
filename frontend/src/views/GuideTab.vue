@@ -365,7 +365,10 @@
           <div v-if="fluxData && fluxData.ok" class="forest-flux-card">
             <div class="ffc-header">
               <span class="ffc-title">🌳 산림 생태 현황</span>
-              <span class="ffc-station">{{ fluxData.station_name }} 관측소</span>
+              <span class="ffc-station">
+                {{ fluxData.station_name }} 관측소
+                <span v-if="fluxData.source === 'forest_flux_seasonal'" class="ffc-seasonal-badge">계절 대표값</span>
+              </span>
             </div>
             <div class="ffc-badges">
               <span :class="['ffc-badge', 'ffc-carbon', fluxData.carbon_status === '강한탄소흡수' || fluxData.carbon_status === '탄소흡수' ? 'ffc-green' : fluxData.carbon_status === '탄소방출' ? 'ffc-red' : 'ffc-gray']">

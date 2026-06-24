@@ -3510,15 +3510,17 @@ p {
   padding: 5px 8px;
   margin: 4px 0 0;
 }
-.ffc-loading {
-  font-size: 12px;
-  color: #6b7280;
-  padding: 4px 0;
-}
-.ffc-error {
-  font-size: 11px;
-  color: #9ca3af;
-  padding: 2px 0;
+.ffc-loading { font-size: 12px; color: #6b7280; padding: 4px 0; }
+.ffc-error { font-size: 11px; color: #9ca3af; padding: 2px 0; }
+.ffc-seasonal-badge {
+  display: inline-block;
+  font-size: 9px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: middle;
 }
 
 .course-step-form { padding-bottom: 4px; }
