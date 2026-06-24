@@ -4,22 +4,43 @@
     <!-- ── 지도 (왼쪽, 양 단계 공통) ── -->
     <div class="guide-map">
       <div ref="overviewMapEl" class="overview-map-container" aria-label="등산 추천 지도"></div>
-      <div class="map-legend">
-<div class="map-legend-body">
-          <div class="mli-col">
+      <div class="map-legend" aria-label="난이도별 산 마커 필터">
+        <div class="map-legend-body">
+          <button
+            type="button"
+            :class="['mli-col', 'mli-all', mapDifficultyFilter === 'all' ? 'active' : '']"
+            @click="setMapDifficultyFilter('all')"
+          >
+            <span class="mli-all-dot"></span>
+            <span class="mli-label">전체</span>
+          </button>
+          <div class="mli-divider"></div>
+          <button
+            type="button"
+            :class="['mli-col', mapDifficultyFilter === 'easy' ? 'active' : '']"
+            @click="setMapDifficultyFilter('easy')"
+          >
             <img src="/marker-easy.png" class="mli-icon" />
             <span class="mli-label mli-easy">초급</span>
-          </div>
+          </button>
           <div class="mli-divider"></div>
-          <div class="mli-col">
+          <button
+            type="button"
+            :class="['mli-col', mapDifficultyFilter === 'medium' ? 'active' : '']"
+            @click="setMapDifficultyFilter('medium')"
+          >
             <img src="/marker-medium.png" class="mli-icon" />
             <span class="mli-label mli-medium">중급</span>
-          </div>
+          </button>
           <div class="mli-divider"></div>
-          <div class="mli-col">
+          <button
+            type="button"
+            :class="['mli-col', mapDifficultyFilter === 'hard' ? 'active' : '']"
+            @click="setMapDifficultyFilter('hard')"
+          >
             <img src="/marker-hard.png" class="mli-icon" />
             <span class="mli-label mli-hard">고급</span>
-          </div>
+          </button>
         </div>
       </div>
     </div>
@@ -777,19 +798,33 @@ function selectTrailCourse(course) {
 }
 
 // ── 지도 ─────────────────────────────────────────────────────────────────────
+const mapDifficultyFilter = ref('all');
+
+function setMapDifficultyFilter(level) {
+  mapDifficultyFilter.value = level;
+}
+
 const mapMountains = computed(() => {
-  // 추천 실행 전: 모든 산을 그대로 (난이도 색상으로 표시)
+  let mountains;
   if (!hasRecommendationResult.value || !recommendedMountains.value.length) {
-    return publicMountains.value;
+    mountains = publicMountains.value;
+  } else {
+    const recommended = new Set(recommendedMountains.value.map((m) => m.id));
+    const alternatives = new Set(alternativeMountains.value.map((m) => m.id));
+    mountains = publicMountains.value.map((m) => ({
+      ...m,
+      _highlighted: recommended.has(m.id),
+      _muted: !recommended.has(m.id) && !alternatives.has(m.id),
+    }));
   }
-  // 추천 실행 후: 추천된 산에 _highlighted, 나머지는 _muted
-  const recommended = new Set(recommendedMountains.value.map((m) => m.id));
-  const alternatives = new Set(alternativeMountains.value.map((m) => m.id));
-  return publicMountains.value.map((m) => ({
-    ...m,
-    _highlighted: recommended.has(m.id),
-    _muted: !recommended.has(m.id) && !alternatives.has(m.id),
-  }));
+
+  if (mapDifficultyFilter.value === 'all') return mountains;
+
+  return mountains.filter((mountain) => {
+    if (mountain.difficulty === mapDifficultyFilter.value) return true;
+    const selectedKey = selectedMountain.value?.mountain_key || selectedMountain.value?.id;
+    return guideStep.value === 'courses' && selectedKey && mountainIdentity(mountain) === selectedKey;
+  });
 });
 
 function refreshOverviewMap() {
@@ -948,7 +983,7 @@ watch(selectedMountain, (mountain) => {
   }
   _debouncedMapRefresh();
 });
-watch(() => [profile.maxDistanceKm, location.value, customStartLocation.value], _debouncedMapRefresh);
+watch(() => [profile.maxDistanceKm, location.value, customStartLocation.value, mapDifficultyFilter.value], _debouncedMapRefresh);
 
 onMounted(async () => {
   await Promise.all([loadCourses(), loadMountains()]);
