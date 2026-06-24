@@ -99,28 +99,21 @@
 
         <div v-if="mlRiskInfo" class="ml-risk-card sidebar-ml-risk-card">
           <div class="ml-risk-header">
-            <span class="ml-risk-title">📊 소방청 사고 데이터 분석</span>
+            <span class="ml-risk-title">📊 소방청 데이터 기반 예측</span>
             <span
               :class="['ml-risk-badge',
                 mlRiskInfo.risk_index >= 0.70 ? 'mlr-high' :
                 mlRiskInfo.risk_index >= 0.45 ? 'mlr-medium' :
                 mlRiskInfo.risk_index >= 0.20 ? 'mlr-low' : 'mlr-safe']"
             >
-              {{ mlRiskInfo.risk_index >= 0.70 ? '1인당 사고율 높음' :
-                 mlRiskInfo.risk_index >= 0.45 ? '주의 구간' :
-                 mlRiskInfo.risk_index >= 0.20 ? '보통' : '상대적 안전' }}
+              {{ mlRiskInfo.risk_index >= 0.70 ? '사고 위험 높음' :
+                 mlRiskInfo.risk_index >= 0.45 ? '주의' :
+                 mlRiskInfo.risk_index >= 0.20 ? '보통' : '안전' }}
             </span>
           </div>
-          <p class="ml-risk-warn">{{ mlRiskInfo.warning }}</p>
 
           <!-- 24시간 추이 그래프 -->
           <div v-if="mlRiskInfo.hourly_risks" class="ml-risk-chart-container">
-            <div class="ml-risk-chart-title">
-              <span>24시간 사고 위험도 추이</span>
-              <span style="color:#ef4444; font-weight:700">
-                {{ activePointer ? `${activePointer.hour}시: 위험 지수 ${(activePointer.risk_index * 100).toFixed(0)}` : '' }}
-              </span>
-            </div>
             <svg class="ml-risk-svg" viewBox="0 0 240 60">
               <defs>
                 <linearGradient id="mlRiskAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -148,19 +141,6 @@
               <text x="230" y="58" class="ml-chart-label" text-anchor="end">24시</text>
             </svg>
           </div>
-
-          <div class="ml-risk-types">
-            <span
-              v-for="(prob, type) in mlRiskInfo.type_proba"
-              :key="type"
-              class="ml-type-chip"
-              :class="type === mlRiskInfo.top_type ? 'ml-type-top' : ''"
-            >
-              {{ { '부상사고':'실족·추락', '조난수색':'길잃음·조난', '질환':'탈진·질환', '기타':'기타' }[type] }}
-              {{ Math.round(prob * 100) }}%
-            </span>
-          </div>
-          <p class="ml-risk-note">* {{ mlTrainingNote }} 기반 1인당 사고율 분석</p>
         </div>
       </section>
     </nav>
@@ -187,7 +167,6 @@ import {
   loadWeather,
   loading,
   mlRiskInfo,
-  mlTrainingNote,
   mountainSearch,
   selectedMountain,
   weatherData,

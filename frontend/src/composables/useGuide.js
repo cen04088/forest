@@ -293,20 +293,26 @@ function _isSelectedMountainCourse(course) {
 }
 
 export async function loadCourses() {
+  if (!publicCourses.value.length) publicCourses.value = fallbackCourses;
   try {
     const data = await fetchCourses();
-    publicCourses.value = data.courses?.length ? data.courses : fallbackCourses;
+    if (data.courses?.length) publicCourses.value = data.courses;
   } catch {
-    publicCourses.value = fallbackCourses;
+    // fallback already set
   }
 }
 
 export async function loadMountains() {
+  if (!publicMountains.value.length) {
+    publicMountains.value = withFallbackMountainDescriptions(fallbackMountains);
+  }
   try {
     const data = await fetchMountains();
-    publicMountains.value = withFallbackMountainDescriptions(data.mountains?.length ? data.mountains : fallbackMountains);
+    if (data.mountains?.length) {
+      publicMountains.value = withFallbackMountainDescriptions(data.mountains);
+    }
   } catch {
-    publicMountains.value = withFallbackMountainDescriptions(fallbackMountains);
+    // fallback already set
   }
 }
 
