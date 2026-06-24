@@ -2,12 +2,14 @@
   <section
     class="live-safety-hero"
     aria-label="라이브 안전현황과 테마별 산 추천"
-    @mouseenter="pause"
-    @mouseleave="resume"
-    @focusin="pause"
-    @focusout="resume"
   >
-    <div class="live-safety-strip">
+    <div
+      class="live-safety-strip"
+      @mouseenter="pause"
+      @mouseleave="resume"
+      @focusin="pause"
+      @focusout="resume"
+    >
       <span class="live-safety-label">
         <i aria-hidden="true"></i>
         LIVE 안전현황
