@@ -3510,6 +3510,16 @@ p {
   padding: 5px 8px;
   margin: 4px 0 0;
 }
+.ffc-loading {
+  font-size: 12px;
+  color: #6b7280;
+  padding: 4px 0;
+}
+.ffc-error {
+  font-size: 11px;
+  color: #9ca3af;
+  padding: 2px 0;
+}
 
 .course-step-form { padding-bottom: 4px; }
 

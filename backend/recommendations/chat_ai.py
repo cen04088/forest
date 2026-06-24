@@ -169,6 +169,15 @@ def _build_realtime_safety(context: dict) -> str:
     return "\n".join(parts)
 
 
+def _strip_markdown(text: str) -> str:
+    """마크다운 볼드(**text**), 이탤릭(*text*), 헤더(#) 제거."""
+    import re
+    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)   # **bold** → bold
+    text = re.sub(r'\*(.+?)\*', r'\1', text)        # *italic* → italic
+    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)  # # 헤더 → 텍스트
+    return text
+
+
 def _extract_response_text(response) -> str:
     """Gemini 응답에서 thinking 파트를 제외한 실제 텍스트만 추출."""
     # response.text가 있으면 바로 반환
@@ -254,10 +263,10 @@ def get_chat_response(messages: list, context: dict) -> str:
             config=gen_config,
         )
 
-        # thinking 파트를 제외한 실제 응답 텍스트만 추출
+        # thinking 파트를 제외한 실제 응답 텍스트만 추출 후 마크다운 볼드 제거
         text = _extract_response_text(response)
         if text:
-            return text
+            return _strip_markdown(text)
 
         return "응답을 생성하지 못했습니다. 다시 질문해 주세요."
 

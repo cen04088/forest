@@ -364,34 +364,38 @@
           </div>
 
           <!-- 산림 생태 현황 카드 -->
-          <div v-if="fluxData && fluxData.ok" class="forest-flux-card">
+          <div v-if="fluxLoading || fluxData" class="forest-flux-card">
             <div class="ffc-header">
               <span class="ffc-title">🌳 산림 생태 현황</span>
-              <span class="ffc-station">{{ fluxData.station_name }} 관측소</span>
+              <span class="ffc-station">{{ fluxData?.station_name ? fluxData.station_name + ' 관측소' : 'NIFOS 산림생태' }}</span>
             </div>
-            <div class="ffc-badges">
-              <span :class="['ffc-badge', 'ffc-carbon', fluxData.carbon_status === '강한탄소흡수' || fluxData.carbon_status === '탄소흡수' ? 'ffc-green' : fluxData.carbon_status === '탄소방출' ? 'ffc-red' : 'ffc-gray']">
-                {{ fluxData.carbon_status === '강한탄소흡수' ? '💚 강한 탄소흡수' : fluxData.carbon_status === '탄소흡수' ? '🌿 탄소흡수 중' : fluxData.carbon_status === '탄소방출' ? '⚠️ 탄소방출 중' : '⚖️ 탄소균형' }}
-              </span>
-              <span v-if="fluxData.uv_risk" :class="['ffc-badge', fluxData.uv_index >= 8 ? 'ffc-red' : fluxData.uv_index >= 6 ? 'ffc-orange' : fluxData.uv_index >= 3 ? 'ffc-yellow' : 'ffc-gray']">
-                ☀️ 자외선 {{ fluxData.uv_risk }} (UV {{ fluxData.uv_index }})
-              </span>
-              <span v-if="fluxData.discomfort_label" :class="['ffc-badge', fluxData.discomfort_index >= 80 ? 'ffc-red' : fluxData.discomfort_index >= 75 ? 'ffc-orange' : fluxData.discomfort_index >= 68 ? 'ffc-yellow' : 'ffc-green']">
-                🌡 불쾌지수 {{ fluxData.discomfort_index }} ({{ fluxData.discomfort_label }})
-              </span>
-              <span v-if="fluxData.humidity_level" class="ffc-badge ffc-blue">
-                💧 {{ fluxData.humidity_level }}
-              </span>
-              <span v-if="fluxData.soil_status" class="ffc-badge ffc-gray">
-                🪨 토양 {{ fluxData.soil_status }}
-              </span>
-            </div>
-            <p v-if="fluxData.carbon_footprint_msg" class="ffc-footprint">
-              {{ fluxData.carbon_footprint_msg }}
-            </p>
-            <p v-if="fluxData.uv_index >= 6 && fluxData.uv_advice" class="ffc-uv-advice">
-              {{ fluxData.uv_advice }}
-            </p>
+            <div v-if="fluxLoading" class="ffc-loading">데이터 조회 중...</div>
+            <template v-else-if="fluxData && fluxData.ok">
+              <div class="ffc-badges">
+                <span :class="['ffc-badge', 'ffc-carbon', fluxData.carbon_status === '강한탄소흡수' || fluxData.carbon_status === '탄소흡수' ? 'ffc-green' : fluxData.carbon_status === '탄소방출' ? 'ffc-red' : 'ffc-gray']">
+                  {{ fluxData.carbon_status === '강한탄소흡수' ? '💚 강한 탄소흡수' : fluxData.carbon_status === '탄소흡수' ? '🌿 탄소흡수 중' : fluxData.carbon_status === '탄소방출' ? '⚠️ 탄소방출 중' : '⚖️ 탄소균형' }}
+                </span>
+                <span v-if="fluxData.uv_risk" :class="['ffc-badge', fluxData.uv_index >= 8 ? 'ffc-red' : fluxData.uv_index >= 6 ? 'ffc-orange' : fluxData.uv_index >= 3 ? 'ffc-yellow' : 'ffc-gray']">
+                  ☀️ 자외선 {{ fluxData.uv_risk }} (UV {{ fluxData.uv_index }})
+                </span>
+                <span v-if="fluxData.discomfort_label" :class="['ffc-badge', fluxData.discomfort_index >= 80 ? 'ffc-red' : fluxData.discomfort_index >= 75 ? 'ffc-orange' : fluxData.discomfort_index >= 68 ? 'ffc-yellow' : 'ffc-green']">
+                  🌡 불쾌지수 {{ fluxData.discomfort_index }} ({{ fluxData.discomfort_label }})
+                </span>
+                <span v-if="fluxData.humidity_level" class="ffc-badge ffc-blue">
+                  💧 {{ fluxData.humidity_level }}
+                </span>
+                <span v-if="fluxData.soil_status" class="ffc-badge ffc-gray">
+                  🪨 토양 {{ fluxData.soil_status }}
+                </span>
+              </div>
+              <p v-if="fluxData.carbon_footprint_msg" class="ffc-footprint">
+                {{ fluxData.carbon_footprint_msg }}
+              </p>
+              <p v-if="fluxData.uv_index >= 6 && fluxData.uv_advice" class="ffc-uv-advice">
+                {{ fluxData.uv_advice }}
+              </p>
+            </template>
+            <div v-else class="ffc-error">국립산림과학원 관측소 데이터를 불러올 수 없습니다.</div>
           </div>
 
           <!-- ML 사고 위험 분석 -->
@@ -647,6 +651,7 @@ const mountainSafetyReports = ref([]);
 const storyExpanded = ref(false);
 const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
 const fluxData = ref(null);
+const fluxLoading = ref(false);
 
 // 중복 산 선택 방지 (빠른 연속 클릭 시 race condition 차단)
 let _courseStepToken = 0;
@@ -750,12 +755,15 @@ async function enterCourseStep(mountain) {
   landslideRisk.value = 'low';
   storyExpanded.value = false;
   fluxData.value = null;
+  fluxLoading.value = false;
 
   if (mountain?.lat && mountain?.lng) {
     loadWeather(mountain.lat, mountain.lng, mountain.name);
+    fluxLoading.value = true;
     fetchForestFlux({ mountain: mountain.name, lat: mountain.lat, lng: mountain.lng })
       .then(d => { fluxData.value = d; })
-      .catch(() => {});
+      .catch(() => { fluxData.value = { ok: false, error: '데이터 조회 실패' }; })
+      .finally(() => { fluxLoading.value = false; });
   }
   await nextTick();
   if (token !== _courseStepToken) return;
