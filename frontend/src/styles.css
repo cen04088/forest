@@ -3462,6 +3462,26 @@ p {
   line-height: 1.2;
 }
 
+.csh-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.csh-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #f0fdf4;
+  border: 1.5px solid #a7f3d0;
+  color: #065f46;
+  white-space: nowrap;
+}
+
 .mountain-detail-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

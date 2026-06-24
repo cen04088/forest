@@ -334,6 +334,11 @@
               <h2 class="csh-mountain-name">{{ selectedMountain.name }}</h2>
               <span v-if="selectedMountain.national_park" class="mc-np-badge">국립공원</span>
             </div>
+            <div v-if="(selectedMountain.tags || []).length" class="csh-tags">
+              <span v-for="tag in selectedMountain.tags" :key="tag" class="csh-tag">
+                {{ TAG_ICONS[tag] }} {{ tag }}
+              </span>
+            </div>
           </div>
 
           <!-- 오늘 산행 안전 등급 -->
