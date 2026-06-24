@@ -113,19 +113,13 @@
           </div>
           <p class="ml-risk-warn">{{ mlRiskInfo.warning }}</p>
 
-          <!-- 시간대별 사고 위험 분석 경보 -->
+          <!-- 시간대별 사고 위험 분석 경보 (간결 버전) -->
           <div v-if="mlRiskInfo.hourly_risks && peakHourInfo" class="ml-risk-alert-container">
-            <div class="ml-risk-alert-title">🚨 오늘 가장 주의해야 할 시간대</div>
-            <div class="ml-risk-alert-box">
-              <div class="ml-risk-alert-time">
-                ⏱️ <strong>{{ peakTimeRange }} (위험 최고조)</strong>
-              </div>
-              <p class="ml-risk-alert-desc">
-                {{ peakTimeReason }}
-              </p>
-              <div class="ml-risk-alert-tip">
-                💡 <strong>안전 행동 제안:</strong> {{ peakTimeTip }}
-              </div>
+            <div class="ml-risk-alert-title">🚨 최고 위험 시간대</div>
+            <div class="ml-risk-alert-time-large">{{ peakTimeRangeSimple }}</div>
+            <div class="ml-risk-alert-summary">
+              <strong>요인:</strong> {{ peakTimeReasonShort }}<br>
+              <strong>대응:</strong> {{ peakTimeTipShort }}
             </div>
           </div>
 
@@ -269,51 +263,42 @@ const peakHourInfo = computed(() => {
   return { hour: maxHour, riskIndex: maxRisk };
 });
 
-const peakTimeRange = computed(() => {
+const peakTimeRangeSimple = computed(() => {
   const info = peakHourInfo.value;
   if (!info) return '';
   const start = info.hour;
   const end = (info.hour + 2) % 24;
-  return `${String(start).padStart(2, '0')}:00 ~ ${String(end).padStart(2, '0')}:00`;
+  return `${start}시 ~ ${end}시`;
 });
 
-const peakTimeReason = computed(() => {
+const peakTimeReasonShort = computed(() => {
   const info = peakHourInfo.value;
   if (!info) return '';
-  
-  let reason = '';
+  let r = '';
   if (info.hour >= 12 && info.hour <= 16) {
-    reason = '점심 식사 이후 피로가 누적되고 본격적인 하산이 시작되는 시간대로, 신체의 긴장이 풀려 실족이나 추락 사고의 발생 확률이 매우 높습니다.';
+    r = '하산 시 피로 누적 및 긴장 풀림';
   } else if (info.hour >= 17 || info.hour <= 6) {
-    reason = '일몰 전후 및 야간 시간대로, 시야가 급격히 차단되고 산속 기온이 하강하여 조난, 저체온증 등 한랭 질환 사고 위험이 최고조에 달합니다.';
+    r = '일몰/야간 시야 제한, 기온 급강하';
   } else {
-    reason = '오전 시간대로, 체력 안배 실패나 충분하지 못한 사전 몸풀기로 인해 급작스러운 신체 이상 및 관절 부상 사고율이 상대적으로 높습니다.';
+    r = '초반 신체 미온상태 및 체력 조절 부족';
   }
 
   const w = weatherData.value;
-  if (w) {
-    const rainfall = w.rainfall_mm ?? 0;
-    const wind = w.wind_speed_ms ?? 0;
-    if (rainfall > 0 || wind >= 5) {
-      reason += ' 특히 현재 현장에 감지되는 비/강풍 등 불리한 기상 조건이 결합되어 평소보다 낙상 및 체온 저하 위험이 더욱 심각합니다.';
-    }
+  if (w && ((w.rainfall_mm ?? 0) > 0 || (w.wind_speed_ms ?? 0) >= 5)) {
+    r += ' (기상 악화 요인 결합)';
   }
-  return reason;
+  return r;
 });
 
-const peakTimeTip = computed(() => {
+const peakTimeTipShort = computed(() => {
   const info = peakHourInfo.value;
   if (!info) return '';
   const topType = mlRiskInfo.value?.top_type || '부상사고';
   
-  if (topType === '부상사고') {
-    return '하산 시 보폭을 좁혀 무릎 충격을 줄이고, 낙엽이나 젖은 돌을 디디지 않도록 등산 스틱을 양손에 꼭 쥐고 체중을 분산해 주세요.';
-  } else if (topType === '조난수색') {
-    return '지정된 등산로(탐방로)로만 보행하며, 일몰 2시간 전 조기 하산을 완수하시거나 여분의 랜턴/보조배터리를 꼭 휴대해 주세요.';
-  } else if (topType === '질환') {
-    return '페이스 조절에 유의하고 무리하게 속도를 내지 마세요. 이온음료나 따뜻한 음료를 마시고 에너지를 보충할 초콜릿류를 자주 드셔야 합니다.';
-  }
-  return '일기예보를 예의주시하고 급박한 비구름이나 기상 변화 조짐이 느껴질 경우 산행을 즉시 멈추고 대피소로 이동하세요.';
+  if (topType === '부상사고') return '스틱 적극 활용, 보폭 좁히기';
+  if (topType === '조난수색') return '지정 등산로 준수, 랜턴 준비';
+  if (topType === '질환') return '충분한 수분 섭취, 간식 보충';
+  return '안전 대피구역 조기 확보';
 });
 
 onMounted(async () => {

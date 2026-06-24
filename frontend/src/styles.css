@@ -5622,31 +5622,19 @@ p {
   color: #b91c1c;
   margin-bottom: 6px;
 }
-.ml-risk-alert-box {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.ml-risk-alert-time-large {
+  font-size: 20px;
+  font-weight: 800;
+  color: #b91c1c;
+  margin: 2px 0 6px 0;
+  letter-spacing: -0.5px;
 }
-.ml-risk-alert-time {
-  font-size: 12px;
-  color: #991b1b;
-}
-.ml-risk-alert-desc {
+.ml-risk-alert-summary {
   font-size: 11px;
   color: #4b5563;
-  line-height: 1.5;
-  margin: 0;
+  line-height: 1.45;
 }
-.ml-risk-alert-tip {
-  font-size: 10.5px;
-  background: #ffffff;
-  border: 1px dashed #fca5a5;
-  padding: 6px 8px;
-  border-radius: 6px;
-  color: #374151;
-  margin-top: 4px;
-  line-height: 1.4;
-}
+
 
 
 /* ── 재난위험지구 패널 ──────────────────────────────────────────────────── */
