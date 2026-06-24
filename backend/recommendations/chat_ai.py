@@ -243,19 +243,10 @@ def get_chat_response(messages: list, context: dict) -> str:
 
         system_prompt = _build_system(context, rag_context)
 
-        # gemini-2.5-pro는 thinking 모델 — thinking_budget 제한으로 응답 토큰 확보
-        try:
-            gen_config = types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                max_output_tokens=8192,
-                thinking_config=types.ThinkingConfig(thinking_budget=1024),
-            )
-        except Exception:
-            # 구버전 SDK는 thinking_config 미지원 → 일반 설정으로 폴백
-            gen_config = types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                max_output_tokens=8192,
-            )
+        gen_config = types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            max_output_tokens=1024,
+        )
 
         response = client.models.generate_content(
             model="gemini-2.5-pro",
