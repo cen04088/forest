@@ -8,14 +8,6 @@
         @select-theme="handleThemeSelect"
       />
 
-      <div class="hero-nav">
-        <div class="hero-nav-actions">
-          <button class="hero-login-btn" type="button" @click="showAuthModal = true">
-            {{ authUser ? authUser.nickname : '로그인' }}
-          </button>
-        </div>
-      </div>
-
     </header>
 
     <!-- ─── 에러 배너 ──────────────────────────────────────────────────── -->
