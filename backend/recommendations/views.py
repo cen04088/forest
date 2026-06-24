@@ -683,14 +683,41 @@ def safety_advice_view(request):
 
 @require_GET
 def forest_flux_view(request):
-    """산림생태플럭스 관측 데이터 + 도출 지표 반환."""
+    """산행 환경 지수 — 날씨·대기질·산불 실시간 조합."""
     mountain_name = request.GET.get("mountain", "")
     lat_str = request.GET.get("lat", "")
     lng_str = request.GET.get("lng", "")
     lat = float(lat_str) if lat_str else None
     lng = float(lng_str) if lng_str else None
+
     from .forest_flux_api import fetch_forest_flux
-    data = fetch_forest_flux(mountain_name=mountain_name, lat=lat, lng=lng)
+    from .weather_api import fetch_current_weather
+    from .airquality_api import fetch_air_quality
+    from .wildfire_api import fetch_wildfire_risk
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        f_weather = ex.submit(fetch_current_weather, lat, lng) if lat and lng else None
+        f_aq = ex.submit(fetch_air_quality, mountain_name, lat=lat, lng=lng)
+        f_wf = ex.submit(fetch_wildfire_risk)
+
+    try:
+        weather = f_weather.result() if f_weather else None
+    except Exception:
+        weather = None
+    try:
+        aq = f_aq.result()
+    except Exception:
+        aq = {}
+    try:
+        wf = f_wf.result()
+    except Exception:
+        wf = {}
+
+    data = fetch_forest_flux(
+        mountain_name=mountain_name, lat=lat, lng=lng,
+        weather=weather, air_quality=aq, wildfire=wf,
+    )
     return JsonResponse(data, json_dumps_params={"ensure_ascii": False})
 
 

@@ -370,35 +370,35 @@
             </div>
           </div>
 
-          <!-- 산림 생태 현황 카드 (날씨 카드 아래, 데이터 있을 때만 표시) -->
+          <!-- 산행 환경 지수 카드 -->
           <div v-if="fluxData && fluxData.ok" class="forest-flux-card">
             <div class="ffc-header">
-              <span class="ffc-title">🌳 산림 생태 현황</span>
-              <span class="ffc-station">
-                {{ fluxData.station_name }} 관측소
-                <span v-if="fluxData.source === 'forest_flux_seasonal'" class="ffc-seasonal-badge">계절 대표값</span>
-              </span>
+              <span class="ffc-title">🏔 산행 환경 지수</span>
+              <span class="ffc-station">실시간</span>
             </div>
             <div class="ffc-badges">
-              <span :class="['ffc-badge', 'ffc-carbon', fluxData.carbon_status === '강한탄소흡수' || fluxData.carbon_status === '탄소흡수' ? 'ffc-green' : fluxData.carbon_status === '탄소방출' ? 'ffc-red' : 'ffc-gray']">
-                {{ fluxData.carbon_status === '강한탄소흡수' ? '💚 강한 탄소흡수' : fluxData.carbon_status === '탄소흡수' ? '🌿 탄소흡수 중' : fluxData.carbon_status === '탄소방출' ? '⚠️ 탄소방출 중' : '⚖️ 탄소균형' }}
-              </span>
-              <span v-if="fluxData.uv_risk" :class="['ffc-badge', fluxData.uv_index >= 8 ? 'ffc-red' : fluxData.uv_index >= 6 ? 'ffc-orange' : fluxData.uv_index >= 3 ? 'ffc-yellow' : 'ffc-gray']">
-                ☀️ 자외선 {{ fluxData.uv_risk }} (UV {{ fluxData.uv_index }})
-              </span>
+              <!-- 불쾌지수 (실측 기온+습도) -->
               <span v-if="fluxData.discomfort_label" :class="['ffc-badge', fluxData.discomfort_index >= 80 ? 'ffc-red' : fluxData.discomfort_index >= 75 ? 'ffc-orange' : fluxData.discomfort_index >= 68 ? 'ffc-yellow' : 'ffc-green']">
                 🌡 불쾌지수 {{ fluxData.discomfort_index }} ({{ fluxData.discomfort_label }})
               </span>
-              <span v-if="fluxData.humidity_level" class="ffc-badge ffc-blue">
-                💧 {{ fluxData.humidity_level }}
+              <!-- 자외선 -->
+              <span v-if="fluxData.uv_risk" :class="['ffc-badge', fluxData.uv_index >= 8 ? 'ffc-red' : fluxData.uv_index >= 6 ? 'ffc-orange' : fluxData.uv_index >= 3 ? 'ffc-yellow' : 'ffc-gray']">
+                ☀️ 자외선 {{ fluxData.uv_risk }} (UV {{ fluxData.uv_index }})
               </span>
-              <span v-if="fluxData.soil_status" class="ffc-badge ffc-gray">
-                🪨 토양 {{ fluxData.soil_status }}
+              <!-- 미세먼지 -->
+              <span v-if="fluxData.pm25_ugm3 != null" :class="['ffc-badge', fluxData.grade_pm25 === '나쁨' || fluxData.grade_pm25 === '매우나쁨' ? 'ffc-red' : fluxData.grade_pm25 === '보통' ? 'ffc-yellow' : 'ffc-green']">
+                💨 PM2.5 {{ fluxData.pm25_ugm3 }}㎍ ({{ fluxData.grade_pm25 }})
+              </span>
+              <!-- 산불 위험 -->
+              <span v-if="fluxData.wildfire_risk" :class="['ffc-badge', fluxData.wildfire_risk === 'very_high' || fluxData.wildfire_risk === 'high' ? 'ffc-red' : fluxData.wildfire_risk === 'medium' ? 'ffc-orange' : 'ffc-green']">
+                🔥 산불 {{ fluxData.wildfire_label }}
+              </span>
+              <!-- 탄소 상태 (계절 추정) -->
+              <span :class="['ffc-badge', 'ffc-carbon', fluxData.carbon_status?.includes('흡수') ? 'ffc-green' : 'ffc-gray']">
+                {{ fluxData.carbon_status?.includes('강한') ? '💚 강한 탄소흡수' : fluxData.carbon_status?.includes('흡수') ? '🌿 탄소흡수' : '⚖️ 탄소균형' }}
+                <span class="ffc-sub">계절추정</span>
               </span>
             </div>
-            <p v-if="fluxData.carbon_footprint_msg" class="ffc-footprint">
-              {{ fluxData.carbon_footprint_msg }}
-            </p>
             <p v-if="fluxData.uv_index >= 6 && fluxData.uv_advice" class="ffc-uv-advice">
               {{ fluxData.uv_advice }}
             </p>

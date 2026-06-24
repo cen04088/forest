@@ -147,24 +147,23 @@ def _build_realtime_safety(context: dict) -> str:
 
     flux = context.get("forest_flux") or {}
     if flux.get("ok"):
-        fl = []
-        fl.append(f"산림생태플럭스 ({flux.get('station_name', '관측소')})")
-        if flux.get("nee_umol") is not None:
-            fl.append(f"탄소상태: {flux['carbon_status']} (NEE {flux['nee_umol']} μmol/m²/s)")
-        if flux.get("temp_c") is not None:
-            fl.append(f"산림기온: {flux['temp_c']}°C")
-        if flux.get("soil_temp_c") is not None:
-            fl.append(f"토양온도: {flux['soil_temp_c']}°C ({flux.get('soil_status', '')})")
-        if flux.get("rg_wm2") is not None:
-            fl.append(f"태양복사: {flux['rg_wm2']} W/m² → 자외선 {flux.get('uv_risk', '')} (UV {flux.get('uv_index', '')})")
+        fl = [f"산행환경지수 ({flux.get('station_name', '관측소')})"]
         if flux.get("discomfort_index") is not None:
-            fl.append(f"불쾌지수: {flux['discomfort_index']} ({flux.get('discomfort_label', '')}), 추정습도 {flux.get('rh_estimate_pct', '-')}%")
-        if flux.get("humidity_level"):
-            fl.append(f"산림습윤도: {flux['humidity_level']}")
-        if flux.get("carbon_footprint_msg"):
-            fl.append(f"탄소발자국: {flux['carbon_footprint_msg']}")
-        if flux.get("uv_advice"):
-            fl.append(f"자외선 조언: {flux['uv_advice']}")
+            fl.append(
+                f"불쾌지수: {flux['discomfort_index']} ({flux.get('discomfort_label', '')})"
+                + (f", 기온 {flux.get('temp_c')}°C 습도 {flux.get('humidity_pct')}%" if flux.get("temp_c") else "")
+            )
+        if flux.get("uv_index") is not None:
+            fl.append(f"자외선: UV {flux['uv_index']} ({flux.get('uv_risk', '')})")
+        if flux.get("wildfire_risk"):
+            fl.append(f"산불위험: {flux.get('wildfire_label', flux['wildfire_risk'])}")
+        if flux.get("pm25_ugm3") is not None:
+            fl.append(
+                f"대기질 PM2.5 {flux['pm25_ugm3']}㎍/m³ ({flux.get('grade_pm25', '')})"
+                + (f", PM10 {flux['pm10_ugm3']}㎍/m³" if flux.get("pm10_ugm3") is not None else "")
+            )
+        if flux.get("carbon_status"):
+            fl.append(f"탄소상태: {flux['carbon_status']} (계절 추정)")
         parts.append("\n  ".join(fl))
 
     return "\n".join(parts)
