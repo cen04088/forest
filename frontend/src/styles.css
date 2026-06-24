@@ -5664,6 +5664,109 @@ p {
 
 
 
+/* ── 소방청 예측 패널 (browse phase) ─────────────────────────────────────── */
+.ml-predict-panel {
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  margin-top: 0;
+}
+
+/* 로딩 스켈레톤 */
+.ml-skel-wrap {
+  background: linear-gradient(135deg, #f0f4ff 0%, #f5f7ff 100%);
+  border: 1px solid #e0e7ff;
+  border-radius: 14px;
+  padding: 16px;
+}
+.ml-skel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.ml-skel-bar {
+  background: linear-gradient(90deg, #e0e7ff 25%, #c7d2fe 50%, #e0e7ff 75%);
+  background-size: 200% 100%;
+  animation: mlShimmer 1.4s infinite;
+  border-radius: 6px;
+}
+@keyframes mlShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.ml-skel-title  { width: 60%; height: 14px; }
+.ml-skel-badge  { width: 18%; height: 20px; border-radius: 10px; }
+.ml-skel-body   { display: flex; gap: 12px; margin-bottom: 12px; }
+.ml-skel-gauge  { width: 90px; height: 58px; border-radius: 8px; flex-shrink: 0; }
+.ml-skel-right  { flex: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.ml-skel-line1  { height: 12px; width: 80%; }
+.ml-skel-line2  { height: 10px; width: 55%; }
+.ml-skel-line3  { height: 8px;  width: 65%; }
+.ml-skel-chart  { height: 56px; width: 100%; border-radius: 8px; }
+.ml-skel-msg {
+  font-size: 11px;
+  color: #6366f1;
+  text-align: center;
+  margin: 6px 0 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* 실제 카드 */
+.ml-predict-card {
+  background: linear-gradient(135deg, #f0f4ff 0%, #f5f7ff 100%);
+  border: 1px solid #e0e7ff;
+  border-radius: 14px;
+  padding: 16px;
+}
+.ml-card-body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 12px 0 10px;
+}
+
+/* 게이지 */
+.ml-gauge-wrap { flex-shrink: 0; width: 100px; }
+.ml-gauge-svg  { width: 100%; height: auto; overflow: visible; }
+.ml-gauge-num  { font-size: 18px; font-weight: 800; }
+.ml-gauge-unit { font-size: 8px; fill: #6b7280; }
+
+/* 메타 영역 */
+.ml-card-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.ml-top-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ml-type-icon-lg { font-size: 24px; line-height: 1; }
+.ml-type-sub  { font-size: 10px; color: #6b7280; margin-bottom: 2px; }
+.ml-type-name { font-size: 13px; font-weight: 700; color: #1e1b4b; }
+
+/* 기여도 바 */
+.ml-breakdown { display: flex; flex-direction: column; gap: 5px; }
+.ml-bd-row    { display: flex; align-items: center; gap: 6px; }
+.ml-bd-label  { font-size: 10px; color: #6b7280; width: 30px; flex-shrink: 0; }
+.ml-bd-track  { flex: 1; height: 5px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.ml-bd-fill   { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+.ml-data-note { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+.ml-chart-sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+.ml-ptr-pulse { animation: mlPulse 2s infinite ease-in-out; }
+
 /* ── 재난위험지구 패널 ──────────────────────────────────────────────────── */
 .disaster-zone-panel {
   border: 1px solid var(--red-soft);

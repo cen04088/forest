@@ -217,6 +217,108 @@
           </div>
         </section>
 
+        <!-- ── 소방청 데이터 기반 예측 카드 ── -->
+        <section class="panel ml-predict-panel">
+          <div v-if="browseRiskLoading" class="ml-skel-wrap">
+            <div class="ml-skel-header">
+              <div class="ml-skel-bar ml-skel-title"></div>
+              <div class="ml-skel-bar ml-skel-badge"></div>
+            </div>
+            <div class="ml-skel-body">
+              <div class="ml-skel-gauge"></div>
+              <div class="ml-skel-right">
+                <div class="ml-skel-bar ml-skel-line1"></div>
+                <div class="ml-skel-bar ml-skel-line2"></div>
+                <div class="ml-skel-bar ml-skel-line3"></div>
+              </div>
+            </div>
+            <p class="ml-skel-msg">{{ mlLoadingMsg }}</p>
+            <div class="ml-skel-bar ml-skel-chart"></div>
+          </div>
+
+          <div v-else-if="browseRisk" class="ml-predict-card">
+            <!-- 헤더 -->
+            <div class="ml-risk-header">
+              <span class="ml-risk-title">📊 소방청 데이터 기반 예측</span>
+              <span :class="['ml-risk-badge', mlBadgeClass]">{{ mlBadgeLabel }}</span>
+            </div>
+
+            <!-- 게이지 + 사고 유형 -->
+            <div class="ml-card-body">
+              <div class="ml-gauge-wrap">
+                <svg viewBox="0 0 100 58" class="ml-gauge-svg">
+                  <path d="M 12 54 A 38 38 0 0 1 88 54"
+                        fill="none" stroke="#e5e7eb" stroke-width="8" stroke-linecap="round"/>
+                  <path d="M 12 54 A 38 38 0 0 1 88 54"
+                        fill="none"
+                        :stroke="mlGaugeColor"
+                        stroke-width="8"
+                        stroke-linecap="round"
+                        :stroke-dasharray="`${browseRisk.risk_index * 119} 119`"/>
+                  <text x="50" y="47" text-anchor="middle" class="ml-gauge-num" :fill="mlGaugeColor">
+                    {{ Math.round(browseRisk.risk_index * 100) }}
+                  </text>
+                  <text x="50" y="56" text-anchor="middle" class="ml-gauge-unit">위험지수</text>
+                </svg>
+              </div>
+
+              <div class="ml-card-meta">
+                <div class="ml-top-type">
+                  <span class="ml-type-icon-lg">{{ mlTopType.icon }}</span>
+                  <div>
+                    <p class="ml-type-sub">주요 위험 유형</p>
+                    <p class="ml-type-name">{{ mlTopType.name }}</p>
+                  </div>
+                </div>
+                <!-- 기여도 바 -->
+                <div class="ml-breakdown">
+                  <div v-for="(item, i) in [
+                    { label: '시간대', val: browseRisk.risk_breakdown?.hourly_risk },
+                    { label: '계절',  val: browseRisk.risk_breakdown?.monthly_risk },
+                    { label: '요일',  val: browseRisk.risk_breakdown?.weekday_risk },
+                  ]" :key="i" class="ml-bd-row">
+                    <span class="ml-bd-label">{{ item.label }}</span>
+                    <div class="ml-bd-track">
+                      <div class="ml-bd-fill"
+                           :style="{ width: ((item.val || 0) * 100) + '%', background: mlBarColor(item.val || 0) }"></div>
+                    </div>
+                  </div>
+                </div>
+                <p class="ml-data-note">날씨·사고 112,902건 반영</p>
+              </div>
+            </div>
+
+            <!-- 24시간 차트 -->
+            <div v-if="browseRisk.hourly_risks" class="ml-risk-chart-container">
+              <p class="ml-chart-sub">24시간 위험 추이</p>
+              <svg class="ml-risk-svg" viewBox="0 0 240 64">
+                <defs>
+                  <linearGradient id="mlBrowseGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" :stop-color="mlGaugeColor" stop-opacity="0.30"/>
+                    <stop offset="100%" :stop-color="mlGaugeColor" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="10" y1="50" x2="230" y2="50" stroke="rgba(75,85,99,0.2)" stroke-width="0.5" stroke-dasharray="2 2"/>
+                <line x1="10" y1="28" x2="230" y2="28" stroke="rgba(75,85,99,0.2)" stroke-width="0.5" stroke-dasharray="2 2"/>
+                <line x1="10" y1="8"  x2="230" y2="8"  stroke="rgba(75,85,99,0.2)" stroke-width="0.5" stroke-dasharray="2 2"/>
+                <path :d="mlAreaPath" fill="url(#mlBrowseGrad)"/>
+                <path :d="mlLinePath" fill="none" :stroke="mlGaugeColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <g v-if="mlActivePointer">
+                  <line :x1="mlActivePointer.x" y1="8" :x2="mlActivePointer.x" y2="50"
+                        :stroke="mlGaugeColor" stroke-width="1" stroke-dasharray="2 2"/>
+                  <circle :cx="mlActivePointer.x" :cy="mlActivePointer.y" r="8" :fill="mlGaugeColor" opacity="0.18" class="ml-ptr-pulse"/>
+                  <circle :cx="mlActivePointer.x" :cy="mlActivePointer.y" r="3.5" :fill="mlGaugeColor" stroke="#fff" stroke-width="1.5"/>
+                </g>
+                <text x="10"  y="62" class="ml-chart-label" text-anchor="start">00시</text>
+                <text x="67"  y="62" class="ml-chart-label" text-anchor="middle">06시</text>
+                <text x="124" y="62" class="ml-chart-label" text-anchor="middle">12시</text>
+                <text x="182" y="62" class="ml-chart-label" text-anchor="middle">18시</text>
+                <text x="230" y="62" class="ml-chart-label" text-anchor="end">24시</text>
+              </svg>
+            </div>
+          </div>
+        </section>
+
         <!-- ── 분석 중 로딩 카드 ── -->
         <section v-if="loading" class="panel rec-loading-panel">
           <div class="rec-loading-inner">
@@ -515,6 +617,9 @@ import {
   TAG_ICONS,
   loadLocalMlRiskIfNeeded,
   resetLocalMlRisk,
+  browseRisk,
+  browseRiskLoading,
+  loadBrowseRisk,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
 import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux } from '../api.js';
@@ -1029,6 +1134,101 @@ watch(selectedMountain, (mountain) => {
 });
 watch(() => [profile.maxDistanceKm, location.value, customStartLocation.value, mapDifficultyFilter.value], _debouncedMapRefresh);
 
+// ── ML 위험 카드 computed ─────────────────────────────────────────────────────
+const ML_LOADING_MSGS = [
+  '📂 소방청 2010-2024 사고 데이터 분석 중…',
+  '🌡 날씨·사고 상관관계 계산 중…',
+  '🤖 랜덤포레스트 모델 예측 중…',
+  '📊 24시간 위험 곡선 생성 중…',
+];
+const mlLoadingMsgIdx = ref(0);
+let _mlMsgTimer = null;
+
+watch(browseRiskLoading, (v) => {
+  if (v) {
+    mlLoadingMsgIdx.value = 0;
+    _mlMsgTimer = setInterval(() => {
+      mlLoadingMsgIdx.value = (mlLoadingMsgIdx.value + 1) % ML_LOADING_MSGS.length;
+    }, 1100);
+  } else {
+    clearInterval(_mlMsgTimer);
+  }
+});
+
+const mlLoadingMsg = computed(() => ML_LOADING_MSGS[mlLoadingMsgIdx.value]);
+
+const ML_TYPE_MAP = {
+  '부상사고': { icon: '🩹', name: '실족·추락 부상' },
+  '조난수색': { icon: '🧭', name: '길잃음·수색' },
+  '질환':    { icon: '💊', name: '탈진·신체 이상' },
+  '기타':    { icon: '⚠️', name: '기타 산악 사고' },
+};
+
+const mlBadgeClass = computed(() => {
+  const r = browseRisk.value?.risk_index ?? 0;
+  if (r >= 0.70) return 'mlr-high';
+  if (r >= 0.45) return 'mlr-medium';
+  if (r >= 0.20) return 'mlr-low';
+  return 'mlr-safe';
+});
+
+const mlBadgeLabel = computed(() => {
+  const r = browseRisk.value?.risk_index ?? 0;
+  if (r >= 0.70) return '위험';
+  if (r >= 0.45) return '주의';
+  if (r >= 0.20) return '보통';
+  return '안전';
+});
+
+const mlGaugeColor = computed(() => {
+  const r = browseRisk.value?.risk_index ?? 0;
+  if (r >= 0.70) return '#ef4444';
+  if (r >= 0.45) return '#f97316';
+  if (r >= 0.20) return '#eab308';
+  return '#22c55e';
+});
+
+const mlTopType = computed(() => {
+  const t = browseRisk.value?.top_type ?? '기타';
+  return ML_TYPE_MAP[t] ?? ML_TYPE_MAP['기타'];
+});
+
+function mlBarColor(v) {
+  if (v >= 0.70) return '#ef4444';
+  if (v >= 0.45) return '#f97316';
+  if (v >= 0.20) return '#eab308';
+  return '#22c55e';
+}
+
+const mlChartPoints = computed(() => {
+  const risks = browseRisk.value?.hourly_risks;
+  if (!risks?.length) return [];
+  return risks.map((r) => {
+    const x = 10 + (r.hour * 220) / 23;
+    const y = 50 - r.risk_index * 42;
+    return { ...r, x, y };
+  });
+});
+
+const mlLinePath = computed(() => {
+  const pts = mlChartPoints.value;
+  if (!pts.length) return '';
+  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+});
+
+const mlAreaPath = computed(() => {
+  const pts = mlChartPoints.value;
+  if (!pts.length) return '';
+  return `${mlLinePath.value} L ${pts[pts.length - 1].x.toFixed(1)} 50 L ${pts[0].x.toFixed(1)} 50 Z`;
+});
+
+const mlActivePointer = computed(() => {
+  const pts = mlChartPoints.value;
+  if (!pts.length) return null;
+  const h = parseInt((profile.departureTime || '08:00').split(':')[0], 10);
+  return pts.find(p => p.hour === h) ?? pts[8] ?? pts[0];
+});
+
 onMounted(async () => {
   // 데이터 로드 전에 먼저 지도 컨테이너 초기화 (배포 환경에서 빠른 지도 표시)
   await nextTick();
@@ -1037,6 +1237,7 @@ onMounted(async () => {
   // 데이터 로드 (산 목록, 코스)
   await Promise.all([loadCourses(), loadMountains()]);
   loadWeather();
+  loadBrowseRisk();
 
   if (guideStep.value === 'courses' && selectedMountain.value) {
     await enterCourseStep(selectedMountain.value);

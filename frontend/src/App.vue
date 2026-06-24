@@ -97,51 +97,6 @@
           </button>
         </div>
 
-        <div v-if="mlRiskInfo" class="ml-risk-card sidebar-ml-risk-card">
-          <div class="ml-risk-header">
-            <span class="ml-risk-title">📊 소방청 데이터 기반 예측</span>
-            <span
-              :class="['ml-risk-badge',
-                mlRiskInfo.risk_index >= 0.70 ? 'mlr-high' :
-                mlRiskInfo.risk_index >= 0.45 ? 'mlr-medium' :
-                mlRiskInfo.risk_index >= 0.20 ? 'mlr-low' : 'mlr-safe']"
-            >
-              {{ mlRiskInfo.risk_index >= 0.70 ? '사고 위험 높음' :
-                 mlRiskInfo.risk_index >= 0.45 ? '주의' :
-                 mlRiskInfo.risk_index >= 0.20 ? '보통' : '안전' }}
-            </span>
-          </div>
-
-          <!-- 24시간 추이 그래프 -->
-          <div v-if="mlRiskInfo.hourly_risks" class="ml-risk-chart-container">
-            <svg class="ml-risk-svg" viewBox="0 0 240 60">
-              <defs>
-                <linearGradient id="mlRiskAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#ef4444" stop-opacity="0.35" />
-                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0" />
-                </linearGradient>
-              </defs>
-              <line x1="10" y1="50" x2="230" y2="50" stroke="rgba(75, 85, 99, 0.3)" stroke-width="0.5" stroke-dasharray="2 2" />
-              <line x1="10" y1="27.5" x2="230" y2="27.5" stroke="rgba(75, 85, 99, 0.3)" stroke-width="0.5" stroke-dasharray="2 2" />
-              <line x1="10" y1="5" x2="230" y2="5" stroke="rgba(75, 85, 99, 0.3)" stroke-width="0.5" stroke-dasharray="2 2" />
-
-              <path :d="mlRiskAreaPath" fill="url(#mlRiskAreaGrad)" />
-              <path :d="mlRiskLinePath" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-
-              <g v-if="activePointer">
-                <line :x1="activePointer.x" y1="5" :x2="activePointer.x" y2="50" stroke="#ef4444" stroke-width="1" stroke-dasharray="2 2" />
-                <circle :cx="activePointer.x" :cy="activePointer.y" r="8" class="ml-pointer-pulse" />
-                <circle :cx="activePointer.x" :cy="activePointer.y" r="4.5" class="ml-pointer-dot" />
-              </g>
-
-              <text x="10" y="58" class="ml-chart-label" text-anchor="start">00시</text>
-              <text x="67.4" y="58" class="ml-chart-label" text-anchor="middle">06시</text>
-              <text x="124.8" y="58" class="ml-chart-label" text-anchor="middle">12시</text>
-              <text x="182.2" y="58" class="ml-chart-label" text-anchor="middle">18시</text>
-              <text x="230" y="58" class="ml-chart-label" text-anchor="end">24시</text>
-            </svg>
-          </div>
-        </div>
       </section>
     </nav>
 
@@ -166,11 +121,9 @@ import {
   loadMountains,
   loadWeather,
   loading,
-  mlRiskInfo,
   mountainSearch,
   selectedMountain,
   weatherData,
-  profile,
 } from './composables/useGuide.js';
 import AuthModal from './components/AuthModal.vue';
 import LiveSafetyHero from './components/LiveSafetyHero.vue';
@@ -254,63 +207,6 @@ const globalError = computed({
   },
 });
 
-const peakHourInfo = computed(() => {
-  const risks = mlRiskInfo.value?.hourly_risks;
-  if (!risks || risks.length === 0) return null;
-  let maxRisk = -1;
-  let maxHour = 12;
-  for (const r of risks) {
-    if (r.risk_index > maxRisk) {
-      maxRisk = r.risk_index;
-      maxHour = r.hour;
-    }
-  }
-  return { hour: maxHour, riskIndex: maxRisk };
-});
-
-const selectedHour = computed(() => {
-  if (!profile.departureTime) return 12;
-  const parts = profile.departureTime.split(':');
-  return parseInt(parts[0], 10) || 0;
-});
-
-const mlRiskChartPoints = computed(() => {
-  const risks = mlRiskInfo.value?.hourly_risks;
-  if (!risks || risks.length === 0) return [];
-  
-  const width = 220;
-  const height = 45;
-  const paddingX = 10;
-  const paddingY = 5;
-  
-  return risks.map((r) => {
-    const x = paddingX + (r.hour * width) / 23;
-    const y = (paddingY + height) - (r.risk_index * height);
-    return { hour: r.hour, risk_index: r.risk_index, x, y };
-  });
-});
-
-const mlRiskLinePath = computed(() => {
-  const pts = mlRiskChartPoints.value;
-  if (pts.length === 0) return '';
-  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-});
-
-const mlRiskAreaPath = computed(() => {
-  const pts = mlRiskChartPoints.value;
-  if (pts.length === 0) return '';
-  const first = pts[0];
-  const last = pts[pts.length - 1];
-  const linePath = mlRiskLinePath.value;
-  return `${linePath} L ${last.x.toFixed(1)} 50 L ${first.x.toFixed(1)} 50 Z`;
-});
-
-const activePointer = computed(() => {
-  const h = selectedHour.value;
-  const pts = mlRiskChartPoints.value;
-  if (pts.length === 0) return null;
-  return pts.find(p => p.hour === h) || pts[h] || pts[0];
-});
 
 onMounted(async () => {
   await loadMe();

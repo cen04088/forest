@@ -241,6 +241,30 @@ watch(
   { immediate: false }
 );
 
+// ── Browse-phase ML risk (사용자 위치 or Seoul 기본값) ────────────────────────
+export const browseRisk = ref(null);
+export const browseRiskLoading = ref(false);
+
+export async function loadBrowseRisk() {
+  browseRiskLoading.value = true;
+  try {
+    const lat = location.value?.lat ?? 37.5665;
+    const lng = location.value?.lng ?? 126.9780;
+    const d = await fetchMlRisk(profile.departureDate, profile.departureTime, lat, lng, '');
+    browseRisk.value = d;
+  } catch {
+    // silent
+  } finally {
+    browseRiskLoading.value = false;
+  }
+}
+
+watch(
+  [() => profile.departureDate, () => profile.departureTime],
+  () => { loadBrowseRisk(); },
+  { immediate: false }
+);
+
 function searchRank(mountain, normalizedSearch) {
   const name = (mountain.name || '').toLowerCase().replace(/\s/g, '');
   const region = (mountain.region || '').toLowerCase().replace(/\s/g, '');
