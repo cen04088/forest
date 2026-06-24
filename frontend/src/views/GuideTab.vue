@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="screen-stack guide-layout">
 
     <!-- ── 지도 (왼쪽, 양 단계 공통) ── -->
@@ -1017,12 +1017,23 @@ watch(selectedMountain, (mountain) => {
 watch(() => [profile.maxDistanceKm, location.value, customStartLocation.value, mapDifficultyFilter.value], _debouncedMapRefresh);
 
 onMounted(async () => {
-  await Promise.all([loadCourses(), loadMountains()]);
-  loadWeather();
-  if (guideStep.value === 'courses' && selectedMountain.value) {
-    await enterCourseStep(selectedMountain.value);
-  }
+  // 데이터 로드 전에 먼저 지도 컨테이너 초기화 (배포 환경에서 빠른 지도 표시)
   await nextTick();
   refreshOverviewMap();
+
+  // 데이터 로드 (산 목록, 코스)
+  await Promise.all([loadCourses(), loadMountains()]);
+  loadWeather();
+
+  if (guideStep.value === 'courses' && selectedMountain.value) {
+    await enterCourseStep(selectedMountain.value);
+  } else {
+    // 데이터 로드 후 지도 마커 갱신
+    await nextTick();
+    refreshOverviewMap();
+  }
+
+  // 배포 환경에서 레이아웃 재계산 후 추가 갱신 (CSS 렌더링 딜레이 대응)
+  setTimeout(refreshOverviewMap, 500);
 });
 </script>

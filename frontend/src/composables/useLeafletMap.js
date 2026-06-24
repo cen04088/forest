@@ -34,11 +34,16 @@ function _getOrCreateMap(el, center, zoom) {
     // 레이어 전부 제거 (타일 제외)
     m.eachLayer((layer) => { if (!(layer instanceof L.TileLayer)) m.removeLayer(layer); });
     m.setView(center, zoom);
+    // 배포 환경에서 컨테이너 크기 재측정
+    setTimeout(() => { try { m.invalidateSize(); } catch {} }, 0);
     return m;
   }
   const map = L.map(el, { center, zoom, zoomControl: true, attributionControl: true });
   _osmTile().addTo(map);
   _instances.set(el, map);
+  // 배포 환경에서 DOM 렌더 후 크기 재측정 (지도 타일이 안 보이는 버그 방지)
+  setTimeout(() => { try { map.invalidateSize(); } catch {} }, 0);
+  setTimeout(() => { try { map.invalidateSize(); } catch {} }, 300);
   return map;
 }
 
@@ -407,6 +412,12 @@ export function useLeafletMap() {
       _overviewMapInst = L.map(el, { center: [37.55, 127.02], zoom: 11 });
       _osmTile().addTo(_overviewMapInst);
       _overviewMapEl = el;
+      // 배포 환경에서 컨테이너 크기 재측정 (Leaflet 지도 안 보임 버그 방지)
+      setTimeout(() => { try { _overviewMapInst.invalidateSize(); } catch {} }, 0);
+      setTimeout(() => { try { _overviewMapInst.invalidateSize(); } catch {} }, 300);
+    } else {
+      // 기존 인스턴스 재사용 시에도 크기 재측정
+      setTimeout(() => { try { _overviewMapInst.invalidateSize(); } catch {} }, 0);
     }
 
     const validCourses = (courses || []).filter((c) => c.lat && c.lng);
