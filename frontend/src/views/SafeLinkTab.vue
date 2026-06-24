@@ -123,6 +123,10 @@
           <div class="share-code-display">
             <span v-for="ch in shareCode" :key="ch + Math.random()" class="share-code-char">{{ ch }}</span>
           </div>
+          <button class="copy-code-btn" type="button" @click="copyShareCode">
+            <span v-if="codeCopied">✓ 복사됨</span>
+            <span v-else>코드 복사</span>
+          </button>
           <p class="share-code-hint">보호자는 앱에서 <strong>보호자 연결</strong>을 눌러 코드를 입력합니다</p>
         </div>
 
@@ -208,6 +212,23 @@ import { getSafeLinkByCode } from '../api.js';
 
 const router = useRouter();
 const shareStatus = ref('');
+const codeCopied = ref(false);
+
+async function copyShareCode() {
+  if (!shareCode.value) return;
+  try {
+    await navigator.clipboard.writeText(shareCode.value);
+  } catch {
+    const el = document.createElement('textarea');
+    el.value = shareCode.value;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  }
+  codeCopied.value = true;
+  setTimeout(() => { codeCopied.value = false; }, 2000);
+}
 
 // ── 보호자 코드 입력 ──────────────────────────────────────────────────────────
 const hiddenInput = ref(null);
