@@ -69,7 +69,7 @@
             </div>
             <div class="bubble-col">
               <div :class="['chat-bubble', msg.role === 'user' ? 'bubble-user' : 'bubble-ai']">
-                {{ msg.content }}
+                {{ msg.role === 'assistant' && streamingIdx === i ? streamingText : msg.content }}<span v-if="streamingIdx === i" class="typewriter-cursor">|</span>
               </div>
               <span class="bubble-time">{{ formatTime(msg.ts) }}</span>
             </div>
@@ -130,6 +130,29 @@ const input = ref('');
 const scrollEl = ref(null);
 const inputEl = ref(null);
 
+// ── 타이프라이터 효과 ────────────────────────────────────────────────────────
+const streamingIdx = ref(-1);
+const streamingText = ref('');
+let _typeTimer = null;
+
+function startTypewriter(idx, fullText) {
+  clearInterval(_typeTimer);
+  streamingIdx.value = idx;
+  streamingText.value = '';
+  let pos = 0;
+  _typeTimer = setInterval(async () => {
+    // 한 번에 3글자씩 — 약 200자/초로 자연스러운 타이핑 속도
+    pos = Math.min(pos + 3, fullText.length);
+    streamingText.value = fullText.slice(0, pos);
+    await nextTick();
+    if (scrollEl.value) scrollEl.value.scrollTop = scrollEl.value.scrollHeight;
+    if (pos >= fullText.length) {
+      clearInterval(_typeTimer);
+      streamingIdx.value = -1;
+    }
+  }, 15);
+}
+
 const SUGGESTIONS = [
   { icon: '🌤', text: '지금 이 산 가도 괜찮을까요?',        color: '#3b82f6' },
   { icon: '🗺', text: '초보자가 가기 좋은 코스는?',          color: '#8b5cf6' },
@@ -163,8 +186,14 @@ function autoResize() {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
-watch(chatMessages, async () => {
+watch(chatMessages, async (msgs, prev) => {
   await nextTick();
   if (scrollEl.value) scrollEl.value.scrollTop = scrollEl.value.scrollHeight;
+
+  // 새 AI 메시지가 추가됐을 때 타이프라이터 시작
+  const lastMsg = msgs[msgs.length - 1];
+  if (lastMsg?.role === 'assistant' && msgs.length > (prev?.length ?? 0)) {
+    startTypewriter(msgs.length - 1, lastMsg.content);
+  }
 }, { deep: true });
 </script>
