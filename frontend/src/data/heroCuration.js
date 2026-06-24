@@ -5,7 +5,7 @@ export const heroThemeSlides = [
     label: 'BEFORE THE RAIN',
     title: '장마 오기 전, 지금 아니면 못 가는 산',
     subtitle: '비 시작되면 통제되는 암릉·계곡 코스만 추렸어요',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=90',
     chips: [
       { label: '북한산', meta: '백운대' },
       { label: '도봉산', meta: '포대능선' },
@@ -37,7 +37,7 @@ export const heroThemeSlides = [
     label: 'COOL VALLEY',
     title: '발 담그고 걷는, 시원한 계곡 산행',
     subtitle: '물길 끼고 그늘 깊은 코스 · 한낮에도 체감 시원',
-    image: 'https://images.unsplash.com/photo-1511884642898-4c92249e20b6?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1511884642898-4c92249e20b6?auto=format&fit=crop&w=1600&q=90',
     chips: [
       { label: '수락산', meta: '옥류동천' },
       { label: '명지산', meta: '명지계곡' },
@@ -69,7 +69,7 @@ export const heroThemeSlides = [
     label: 'BUCKET LIST',
     title: '한 번은 올라야 할, 인생명산',
     subtitle: '정상에서의 한 컷이 남는 국내 대표 명산',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=90',
     chips: [
       { label: '설악산', meta: '공룡능선' },
       { label: '지리산', meta: '천왕봉' },

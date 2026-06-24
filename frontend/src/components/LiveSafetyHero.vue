@@ -48,24 +48,6 @@
           </span>
         </button>
 
-        <!-- 데스크탑 사이드바 썸네일 -->
-        <nav class="theme-sidebar" aria-label="슬라이드 목록">
-          <button
-            v-for="(slide, i) in slides"
-            :key="slide.id"
-            class="theme-sidebar-item"
-            :class="{ 'is-active': i === activeIndex }"
-            :style="slide.image ? {
-              backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 100%), url('${slide.image}')`
-            } : undefined"
-            type="button"
-            @click="setSlide(i)"
-          >
-            <span class="sidebar-num">{{ String(i + 1).padStart(2, '0') }}</span>
-            <span class="sidebar-eyebrow">{{ slide.label }}</span>
-            <strong class="sidebar-title">{{ slide.title }}</strong>
-          </button>
-        </nav>
       </div>
     </div>
 
