@@ -629,7 +629,7 @@ import {
   location, customStartLocation, guideStep,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux, fetchNifosFineDust, fetchMlRisk } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux, fetchMlRisk } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 import MountainCard from '../components/MountainCard.vue';
@@ -790,7 +790,19 @@ const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
 const selectedTrailCourse = ref(null);
 const fluxData = ref(null);
 const fluxLoading = ref(false);
-const dustData = ref(null);
+
+// 미세먼지: weatherData에 에어코리아 실시간값이 포함돼 있음
+const dustData = computed(() => {
+  const w = weatherData.value;
+  if (!w || w.pm25_ugm3 == null) return null;
+  return {
+    pm10_ugm3: w.pm10_ugm3,
+    pm25_ugm3: w.pm25_ugm3,
+    grade_pm10: w.grade_pm10 || '알수없음',
+    grade_pm25: w.grade_pm25 || '알수없음',
+    station: w.air_station || '',
+  };
+});
 const localMlRisk = ref(null);
 
 // ── 추천 분석 로딩 메시지 ────────────────────────────────────────────────────
@@ -1036,7 +1048,6 @@ async function enterCourseStep(mountain) {
   weatherData.value = null;
   fluxData.value = null;
   fluxLoading.value = false;
-  dustData.value = null;
   localMlRisk.value = null;
 
   // 추천 결과에 포함되지 않은 산을 직접 클릭했을 때 ML 위험도 별도 조회
@@ -1056,9 +1067,6 @@ async function enterCourseStep(mountain) {
       .then(d => { fluxData.value = d; })
       .catch(() => { fluxData.value = { ok: false, error: '데이터 조회 실패' }; })
       .finally(() => { fluxLoading.value = false; });
-    fetchNifosFineDust()
-      .then(d => { if (d?.ok) dustData.value = d; })
-      .catch(() => {});
   }
   await nextTick();
   if (token !== _courseStepToken) return;
