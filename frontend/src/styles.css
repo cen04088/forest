@@ -3458,7 +3458,83 @@ p {
   padding: 3px 8px;
 }
 
-/* ── 산림 생태 현황 카드 ──────────────────────────────────────── */
+/* ── 카드 등장 트랜지션 ──────────────────────────────────────── */
+.card-reveal-enter-active {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.card-reveal-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.card-reveal-leave-active {
+  transition: opacity 0.15s ease;
+}
+.card-reveal-leave-to {
+  opacity: 0;
+}
+
+/* ── 스켈레톤 카드 ───────────────────────────────────────────── */
+@keyframes sk-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.card-skeleton {
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.card-skeleton-green { background: #f0fdf4; border-color: #bbf7d0; }
+.card-skeleton-plain { background: #ffffff; border-color: #e5e7eb; }
+
+.sk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.sk-line {
+  height: 11px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s infinite linear;
+}
+.sk-small  { height: 9px; }
+.sk-w15    { width: 15%; }
+.sk-w20    { width: 20%; }
+.sk-w35    { width: 35%; }
+.sk-w40    { width: 40%; }
+.sk-w50    { width: 50%; }
+.sk-w60    { width: 60%; }
+.sk-w75    { width: 75%; }
+.sk-w80    { width: 80%; }
+.sk-w90    { width: 90%; }
+.sk-mt8    { margin-top: 8px; }
+
+.sk-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.sk-pill {
+  height: 24px;
+  width: 90px;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s infinite linear;
+}
+.sk-pill:nth-child(2) { width: 110px; animation-delay: 0.1s; }
+.sk-pill:nth-child(3) { width: 80px;  animation-delay: 0.2s; }
+.sk-pill:nth-child(4) { width: 100px; animation-delay: 0.3s; }
+.sk-pill:nth-child(5) { width: 85px;  animation-delay: 0.4s; }
+
+/* ── 산행 환경 지수 카드 (구: 산림 생태 현황 카드) ──────────── */
 .forest-flux-card {
   background: #f0fdf4;
   border: 1.5px solid #86efac;
