@@ -459,16 +459,18 @@ def recommend_mountains_view(request):
 
     result = recommend_mountains(payload)
 
-    # MountainIntro DB에서 설명을 일괄 조회해 각 산에 주입
+    # 산 소개: 시드 파일(최신) 우선, 없으면 MountainIntro DB 폴백
     from .models import MountainIntro
-    intros = {obj.mountain_name: obj.intro for obj in MountainIntro.objects.all()}
+    db_intros = {obj.mountain_name: obj.intro for obj in MountainIntro.objects.all()}
     for m in result.get("mountains", []) + result.get("alternatives", []):
-        intro = intros.get(m["name"], "")
-        m["intro"] = intro if _seed_intro_matches_mountain(
-            intro,
-            m.get("region", ""),
-            m.get("elevation_m"),
-        ) else ""
+        seed = _seeded_intro_for_mountain(m["name"], m.get("region", ""), m.get("elevation_m"))
+        if seed:
+            m["intro"] = seed
+        else:
+            db_intro = db_intros.get(m["name"], "")
+            m["intro"] = db_intro if _seed_intro_matches_mountain(
+                db_intro, m.get("region", ""), m.get("elevation_m"),
+            ) else ""
 
     return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
 
@@ -679,6 +681,16 @@ def safety_advice_view(request):
     from .safety_advice_ai import generate_safety_advice
     advice = generate_safety_advice(mountain, weather, profile, sun_data)
     return JsonResponse({"advice": advice or ""})
+
+
+@require_GET
+def ml_risk_view(request):
+    """현재 시각 기반 소방청 사고 ML 위험 예측 (산 무관, 시간 기반)."""
+    import datetime
+    from .accident_model import predict_accident_risk
+    now = datetime.datetime.now()
+    result = predict_accident_risk(month=now.month, hour=now.hour, weekday=now.weekday())
+    return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
 
 
 @require_GET

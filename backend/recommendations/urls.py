@@ -54,6 +54,7 @@ urlpatterns = [
     path("nifos-mountain-weather/", views.nifos_mountain_weather),
     path("nifos-fine-dust/", views.nifos_fine_dust),
     path("forest-flux/", views.forest_flux_view),
+    path("ml-risk/", views.ml_risk_view),
     # AI
     path("chat/", views.chat_view),
     path("safety-advice/", views.safety_advice_view),

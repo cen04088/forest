@@ -561,7 +561,7 @@ import {
   location, customStartLocation, guideStep,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux, fetchNifosFineDust } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux, fetchNifosFineDust, fetchMlRisk } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 import MountainCard from '../components/MountainCard.vue';
@@ -705,6 +705,7 @@ const selectedTrailCourse = ref(null);
 const fluxData = ref(null);
 const fluxLoading = ref(false);
 const dustData = ref(null);
+const localMlRisk = ref(null);
 
 // ── 추천 분석 로딩 메시지 ────────────────────────────────────────────────────
 const _recLoadingSteps = [
@@ -712,7 +713,7 @@ const _recLoadingSteps = [
   { icon: '🔥', text: '전국 산불 위험도를 확인하는 중이에요' },
   { icon: '🌊', text: '산사태 예측 모델을 돌리고 있어요' },
   { icon: '💨', text: '산림 미세먼지 농도를 체크하는 중이에요' },
-  { icon: '🌿', text: '산림 생태 환경 지표를 분석하는 중이에요' },
+  { icon: '🌿', text: '산행 환경 지수(불쾌지수·UV·대기질)를 계산하는 중이에요' },
   { icon: '🗻', text: '3,000개 등산로 빅데이터를 조회하는 중이에요' },
   { icon: '📏', text: '거리·난이도·체력 조건을 맞춰보는 중이에요' },
   { icon: '🤖', text: 'AI가 최적의 산을 최종 선별하는 중이에요' },
@@ -943,6 +944,17 @@ async function enterCourseStep(mountain) {
   fluxData.value = null;
   fluxLoading.value = false;
   dustData.value = null;
+  localMlRisk.value = null;
+
+  // 추천 결과에 포함되지 않은 산을 직접 클릭했을 때 ML 위험도 별도 조회
+  const alreadyScored = [...recommendedMountains.value, ...alternativeMountains.value].find(
+    (r) => r.id === mountain?.id,
+  );
+  if (!alreadyScored) {
+    fetchMlRisk()
+      .then(d => { localMlRisk.value = d; })
+      .catch(() => {});
+  }
 
   if (mountain?.lat && mountain?.lng) {
     loadWeather(mountain.lat, mountain.lng, mountain.name);
@@ -1033,7 +1045,7 @@ const mlRiskInfo = computed(() => {
   const m = selectedMountain.value;
   if (!m) return null;
   const scored = [...recommendedMountains.value, ...alternativeMountains.value].find((r) => r.id === m.id);
-  return scored?.ml_risk_info || null;
+  return scored?.ml_risk_info || localMlRisk.value || null;
 });
 
 const mlTrainingNote = computed(() => {

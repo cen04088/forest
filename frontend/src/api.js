@@ -134,6 +134,10 @@ export async function fetchNifosFineDust() {
   return request(`/nifos-fine-dust/`);
 }
 
+export async function fetchMlRisk() {
+  return request(`/ml-risk/`);
+}
+
 export async function fetchRecommendations(payload) {
   return request("/recommendations/", {
     method: "POST",
