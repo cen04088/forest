@@ -200,6 +200,10 @@ export async function followUser(userId, token) {
   });
 }
 
+export async function fetchFollowingList(token) {
+  return request("/following/", { headers: authHeaders(token) });
+}
+
 export async function fetchFollowingPosts(token, page = 1) {
   return request(`/following-posts/?page=${page}`, { headers: authHeaders(token) });
 }

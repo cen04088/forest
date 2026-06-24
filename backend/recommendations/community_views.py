@@ -517,6 +517,26 @@ def follow_user(request, user_id):
 
 
 @require_http_methods(["GET"])
+def following_list(request):
+    user = get_auth_user(request)
+    if not user:
+        return JsonResponse({"error": "로그인이 필요합니다."}, status=401)
+
+    follows = Follow.objects.filter(follower=user).select_related("following").order_by("-created_at")
+    return JsonResponse({
+        "following": [
+            {
+                "id": f.following.id,
+                "nickname": f.following.first_name or f.following.username,
+                "username": f.following.username,
+                "since": f.created_at.isoformat(),
+            }
+            for f in follows
+        ]
+    })
+
+
+@require_http_methods(["GET"])
 def following_posts(request):
     user = get_auth_user(request)
     if not user:

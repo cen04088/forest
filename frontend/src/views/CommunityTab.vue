@@ -74,8 +74,40 @@
             <p class="eyebrow">Community</p>
             <h2>동반 산행 커뮤니티</h2>
           </div>
-          <button v-if="authUser" class="primary-btn" type="button" @click="openWrite">글쓰기</button>
-          <button v-else class="outline-btn" type="button" @click="showAuthModal = true">로그인 후 글쓰기</button>
+          <div class="community-header-actions">
+            <!-- 팔로잉 목록 -->
+            <div v-if="authUser" class="following-menu-wrap" v-click-outside="() => followingMenuOpen = false">
+              <button
+                type="button"
+                class="following-menu-btn"
+                @click="toggleFollowingMenu"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                팔로잉
+                <span class="following-count-badge">{{ followingList.length }}</span>
+              </button>
+              <div v-if="followingMenuOpen" class="following-dropdown">
+                <p class="following-dropdown-title">팔로잉 목록</p>
+                <div v-if="followingList.length === 0" class="following-empty">팔로우한 사람이 없습니다.</div>
+                <ul v-else class="following-list">
+                  <li v-for="user in followingList" :key="user.id" class="following-item">
+                    <div class="following-avatar">{{ user.nickname[0] }}</div>
+                    <span class="following-name">{{ user.nickname }}</span>
+                    <button class="unfollow-btn" type="button" @click="handleUnfollow(user.id)">언팔로우</button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- 글쓰기 버튼 -->
+            <button v-if="authUser" class="write-btn" type="button" @click="openWrite">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              글쓰기
+            </button>
+            <button v-else class="write-btn write-btn-ghost" type="button" @click="showAuthModal = true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              글쓰기
+            </button>
+          </div>
         </div>
 
         <div class="community-search-row">
@@ -303,10 +335,26 @@ import {
   openPost, openWrite, removeComment, removePost, submitComment, submitWrite,
   toggleLike, writeError, writeForm, writeLoading,
   followingPosts, followingPostsLoading, followingPostsTotal, loadFollowingPosts, toggleFollow,
+  followingList, loadFollowingList,
 } from '../composables/useCommunity.js';
 import { heroThemeSlides } from '../data/heroCuration.js';
 
 const followingPage = ref(1);
+const followingMenuOpen = ref(false);
+
+// v-click-outside 디렉티브
+const vClickOutside = {
+  mounted(el, binding) {
+    el._clickOutside = (e) => { if (!el.contains(e.target)) binding.value(e); };
+    document.addEventListener('click', el._clickOutside);
+  },
+  unmounted(el) { document.removeEventListener('click', el._clickOutside); },
+};
+
+async function toggleFollowingMenu() {
+  followingMenuOpen.value = !followingMenuOpen.value;
+  if (followingMenuOpen.value) await loadFollowingList();
+}
 
 async function handleToggleFollow(authorId) {
   const data = await toggleFollow(authorId);
@@ -315,7 +363,12 @@ async function handleToggleFollow(authorId) {
   }
 }
 
+async function handleUnfollow(userId) {
+  await toggleFollow(userId);
+}
+
 onMounted(() => {
   if (communityPosts.value.length === 0) loadPosts();
+  if (authUser.value) loadFollowingList();
 });
 </script>

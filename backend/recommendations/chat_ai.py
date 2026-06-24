@@ -256,7 +256,7 @@ def get_chat_response(messages: list, context: dict) -> str:
             )
 
         response = client.models.generate_content(
-            model="gemini-3.5-flash",
+            model="gemini-2.5-flash-lite",
             contents=contents,
             config=gen_config,
         )

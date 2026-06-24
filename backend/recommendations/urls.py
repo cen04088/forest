@@ -41,6 +41,7 @@ urlpatterns = [
     path("liked-posts/", cv.liked_posts),
     # 팔로우
     path("users/<int:user_id>/follow/", cv.follow_user),
+    path("following/", cv.following_list),
     path("following-posts/", cv.following_posts),
     # 산행 기록
     path("hiking-records/", cv.hiking_records),

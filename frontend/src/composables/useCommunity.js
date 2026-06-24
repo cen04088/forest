@@ -2,7 +2,7 @@ import { reactive, ref } from 'vue';
 import {
   createComment, createPost, deleteComment, deletePost,
   fetchPost, fetchPosts, likePost, updatePost, fetchMyPosts, fetchLikedPosts,
-  followUser, fetchFollowingPosts,
+  followUser, fetchFollowingPosts, fetchFollowingList,
 } from '../api.js';
 import { authToken, authUser, showAuthModal } from './useAuth.js';
 
@@ -29,6 +29,15 @@ export const likedPostsLoading = ref(false);
 export const followingPosts = ref([]);
 export const followingPostsLoading = ref(false);
 export const followingPostsTotal = ref(0);
+export const followingList = ref([]);
+
+export async function loadFollowingList() {
+  if (!authToken.value) return;
+  try {
+    const data = await fetchFollowingList(authToken.value);
+    followingList.value = data.following || [];
+  } catch {}
+}
 
 export async function loadPosts(page = 1) {
   communityLoading.value = true;
@@ -197,6 +206,11 @@ export async function toggleFollow(authorId) {
       if (p.author_id === authorId) p.is_following_author = data.is_following;
     });
     followingPosts.value = followingPosts.value.filter(p => p.author_id !== authorId || data.is_following);
+    if (data.is_following) {
+      await loadFollowingList();
+    } else {
+      followingList.value = followingList.value.filter(u => u.id !== authorId);
+    }
     return data;
   } catch (err) {
     communityError.value = err.message || '팔로우 처리에 실패했습니다.';
