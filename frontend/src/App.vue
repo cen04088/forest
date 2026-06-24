@@ -113,14 +113,40 @@
           </div>
           <p class="ml-risk-warn">{{ mlRiskInfo.warning }}</p>
 
-          <!-- 시간대별 사고 위험 분석 경보 (간결 버전) -->
-          <div v-if="mlRiskInfo.hourly_risks && peakHourInfo" class="ml-risk-alert-container">
-            <div class="ml-risk-alert-title">🚨 최고 위험 시간대</div>
-            <div class="ml-risk-alert-time-large">{{ peakTimeRangeSimple }}</div>
-            <div class="ml-risk-alert-summary">
-              <strong>요인:</strong> {{ peakTimeReasonShort }}<br>
-              <strong>대응:</strong> {{ peakTimeTipShort }}
+          <!-- 24시간 추이 그래프 -->
+          <div v-if="mlRiskInfo.hourly_risks" class="ml-risk-chart-container">
+            <div class="ml-risk-chart-title">
+              <span>24시간 사고 위험도 추이</span>
+              <span style="color:#ef4444; font-weight:700">
+                {{ activePointer ? `${activePointer.hour}시: 위험 지수 ${(activePointer.risk_index * 100).toFixed(0)}` : '' }}
+              </span>
             </div>
+            <svg class="ml-risk-svg" viewBox="0 0 240 60">
+              <defs>
+                <linearGradient id="mlRiskAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#ef4444" stop-opacity="0.35" />
+                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0" />
+                </linearGradient>
+              </defs>
+              <line x1="10" y1="50" x2="230" y2="50" stroke="rgba(75, 85, 99, 0.3)" stroke-width="0.5" stroke-dasharray="2 2" />
+              <line x1="10" y1="27.5" x2="230" y2="27.5" stroke="rgba(75, 85, 99, 0.3)" stroke-width="0.5" stroke-dasharray="2 2" />
+              <line x1="10" y1="5" x2="230" y2="5" stroke="rgba(75, 85, 99, 0.3)" stroke-width="0.5" stroke-dasharray="2 2" />
+
+              <path :d="mlRiskAreaPath" fill="url(#mlRiskAreaGrad)" />
+              <path :d="mlRiskLinePath" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+
+              <g v-if="activePointer">
+                <line :x1="activePointer.x" y1="5" :x2="activePointer.x" y2="50" stroke="#ef4444" stroke-width="1" stroke-dasharray="2 2" />
+                <circle :cx="activePointer.x" :cy="activePointer.y" r="8" class="ml-pointer-pulse" />
+                <circle :cx="activePointer.x" :cy="activePointer.y" r="4.5" class="ml-pointer-dot" />
+              </g>
+
+              <text x="10" y="58" class="ml-chart-label" text-anchor="start">00시</text>
+              <text x="67.4" y="58" class="ml-chart-label" text-anchor="middle">06시</text>
+              <text x="124.8" y="58" class="ml-chart-label" text-anchor="middle">12시</text>
+              <text x="182.2" y="58" class="ml-chart-label" text-anchor="middle">18시</text>
+              <text x="230" y="58" class="ml-chart-label" text-anchor="end">24시</text>
+            </svg>
           </div>
 
           <div class="ml-risk-types">
@@ -263,42 +289,48 @@ const peakHourInfo = computed(() => {
   return { hour: maxHour, riskIndex: maxRisk };
 });
 
-const peakTimeRangeSimple = computed(() => {
-  const info = peakHourInfo.value;
-  if (!info) return '';
-  const start = info.hour;
-  const end = (info.hour + 2) % 24;
-  return `${start}시 ~ ${end}시`;
+const selectedHour = computed(() => {
+  if (!profile.departureTime) return 12;
+  const parts = profile.departureTime.split(':');
+  return parseInt(parts[0], 10) || 0;
 });
 
-const peakTimeReasonShort = computed(() => {
-  const info = peakHourInfo.value;
-  if (!info) return '';
-  let r = '';
-  if (info.hour >= 12 && info.hour <= 16) {
-    r = '하산 시 피로 누적 및 긴장 풀림';
-  } else if (info.hour >= 17 || info.hour <= 6) {
-    r = '일몰/야간 시야 제한, 기온 급강하';
-  } else {
-    r = '초반 신체 미온상태 및 체력 조절 부족';
-  }
-
-  const w = weatherData.value;
-  if (w && ((w.rainfall_mm ?? 0) > 0 || (w.wind_speed_ms ?? 0) >= 5)) {
-    r += ' (기상 악화 요인 결합)';
-  }
-  return r;
-});
-
-const peakTimeTipShort = computed(() => {
-  const info = peakHourInfo.value;
-  if (!info) return '';
-  const topType = mlRiskInfo.value?.top_type || '부상사고';
+const mlRiskChartPoints = computed(() => {
+  const risks = mlRiskInfo.value?.hourly_risks;
+  if (!risks || risks.length === 0) return [];
   
-  if (topType === '부상사고') return '스틱 적극 활용, 보폭 좁히기';
-  if (topType === '조난수색') return '지정 등산로 준수, 랜턴 준비';
-  if (topType === '질환') return '충분한 수분 섭취, 간식 보충';
-  return '안전 대피구역 조기 확보';
+  const width = 220;
+  const height = 45;
+  const paddingX = 10;
+  const paddingY = 5;
+  
+  return risks.map((r) => {
+    const x = paddingX + (r.hour * width) / 23;
+    const y = (paddingY + height) - (r.risk_index * height);
+    return { hour: r.hour, risk_index: r.risk_index, x, y };
+  });
+});
+
+const mlRiskLinePath = computed(() => {
+  const pts = mlRiskChartPoints.value;
+  if (pts.length === 0) return '';
+  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+});
+
+const mlRiskAreaPath = computed(() => {
+  const pts = mlRiskChartPoints.value;
+  if (pts.length === 0) return '';
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  const linePath = mlRiskLinePath.value;
+  return `${linePath} L ${last.x.toFixed(1)} 50 L ${first.x.toFixed(1)} 50 Z`;
+});
+
+const activePointer = computed(() => {
+  const h = selectedHour.value;
+  const pts = mlRiskChartPoints.value;
+  if (pts.length === 0) return null;
+  return pts.find(p => p.hour === h) || pts[h] || pts[0];
 });
 
 onMounted(async () => {
