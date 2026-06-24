@@ -44,98 +44,32 @@
       </div>
     </section>
 
-    <!-- ② 산행 기록 (통계 추가) -->
+    <!-- ② 챌린지 배지 -->
     <section class="panel mypage-col-1">
       <div class="section-title compact">
-        <div><p class="eyebrow">History</p><h2>산행 기록</h2></div>
-        <span class="mini-status">{{ hikingRecords.length }}회</span>
+        <div><p class="eyebrow">Challenges</p><h2>챌린지 배지</h2></div>
+        <span class="mini-status">{{ authUser ? earnedCount + '/8' : '0/8' }}</span>
       </div>
       <div v-if="!authUser" class="mypage-login-needed">로그인 후 이용 가능합니다.</div>
-      <template v-else>
-        <div v-if="hikingRecords.length > 0" class="hiking-stats">
-          <div class="hstat">
-            <span class="hstat-n">{{ hikingRecords.length }}</span>
-            <span class="hstat-l">총 산행</span>
-          </div>
-          <div class="hstat">
-            <span class="hstat-n">{{ thisMonthCount }}</span>
-            <span class="hstat-l">이번 달</span>
-          </div>
-          <div v-if="favMountain" class="hstat hstat-wide">
-            <span class="hstat-n hstat-mountain">{{ favMountain }}</span>
-            <span class="hstat-l">가장 많이</span>
-          </div>
+      <div v-else class="badge-grid">
+        <div
+          v-for="badge in badges"
+          :key="badge.id"
+          :class="['badge-card', badge.achieved ? 'badge-achieved' : 'badge-locked']"
+          :title="badge.desc"
+        >
+          <span class="badge-icon">{{ badge.icon }}</span>
+          <span class="badge-name">{{ badge.name }}</span>
+          <span class="badge-desc">{{ badge.desc }}</span>
         </div>
-        <div v-if="hikingRecords.length === 0" class="community-empty"><p>아직 산행 기록이 없습니다.<br>산행 종료 시 자동으로 저장됩니다.</p></div>
-        <div v-else class="hiking-record-list">
-          <div v-for="rec in hikingRecords" :key="rec.id" class="hiking-record-item">
-            <div class="record-info">
-              <strong>{{ rec.mountain ? rec.mountain + ' ' : '' }}{{ rec.course_name }}</strong>
-              <small>{{ rec.hiked_date }} · {{ rec.duration_min ? durationLabel(rec.duration_min) : '-' }}</small>
-              <span v-if="rec.safety_label" :class="['safety-badge', rec.safety_label === '추천' ? 'green' : rec.safety_label === '주의' ? 'yellow' : 'gray']" style="font-size:11px">{{ rec.safety_label }}</span>
-            </div>
-            <button class="fav-remove-btn" type="button" @click="removeRecord(rec.id)">✕</button>
-          </div>
-        </div>
-      </template>
-    </section>
-
-    <!-- ③ 나의 등산 프로필 -->
-    <section class="panel mypage-col-1">
-      <div class="section-title compact">
-        <div><p class="eyebrow">My Profile</p><h2>나의 등산 프로필</h2></div>
-        <span v-if="profileSavedMsg" class="mini-status hpf-saved-ok">저장됨 ✓</span>
-      </div>
-      <div v-if="!authUser" class="mypage-login-needed">로그인 후 이용 가능합니다.</div>
-      <div v-else class="hiking-profile-form">
-        <label class="hpf-row">
-          <span class="hpf-label">경험</span>
-          <select v-model="editProfile.experience" class="hpf-select">
-            <option value="beginner">초보</option>
-            <option value="intermediate">중급</option>
-            <option value="expert">숙련</option>
-          </select>
-        </label>
-        <label class="hpf-row">
-          <span class="hpf-label">동반자</span>
-          <select v-model="editProfile.companion" class="hpf-select">
-            <option value="solo">혼자</option>
-            <option value="family">가족</option>
-            <option value="vulnerable">어린이·노약자</option>
-          </select>
-        </label>
-        <label class="hpf-row">
-          <span class="hpf-label">산행 강도</span>
-          <select v-model="editProfile.intensity" class="hpf-select">
-            <option value="light">가볍게</option>
-            <option value="moderate">보통</option>
-            <option value="hard">강하게</option>
-          </select>
-        </label>
-        <label class="hpf-row">
-          <span class="hpf-label">가능 시간</span>
-          <div class="hpf-input-row">
-            <input type="number" v-model.number="editProfile.availableMinutes" min="60" max="720" step="30" class="hpf-number" />
-            <span class="hpf-unit">분</span>
-          </div>
-        </label>
-        <label class="hpf-row">
-          <span class="hpf-label">최대 거리</span>
-          <div class="hpf-input-row">
-            <input type="number" v-model.number="editProfile.maxDistanceKm" min="10" max="200" step="10" class="hpf-number" />
-            <span class="hpf-unit">km</span>
-          </div>
-        </label>
-        <button class="primary-btn hpf-save-btn" type="button" @click="saveProfile">저장</button>
-        <p class="hpf-hint">저장한 정보는 코스 추천과 AI 도우미에 자동 반영됩니다.</p>
       </div>
     </section>
 
     <!-- ④ 내 활동 (탭) -->
-    <section v-if="authUser" class="panel mypage-col-full">
+    <section class="panel mypage-col-1">
       <div class="section-title compact">
         <div><p class="eyebrow">Activity</p><h2>내 활동</h2></div>
-        <div class="activity-tabs">
+        <div v-if="authUser" class="activity-tabs">
           <button :class="['act-tab', activityTab === 'posts' ? 'active' : '']" type="button" @click="activityTab = 'posts'">
             내가 쓴 글<span v-if="myPostsTotal" class="act-count">{{ myPostsTotal }}</span>
           </button>
@@ -144,34 +78,35 @@
           </button>
         </div>
       </div>
-
-      <template v-if="activityTab === 'posts'">
-        <div v-if="myPostsLoading" class="community-loading">불러오는 중…</div>
-        <div v-else-if="myPosts.length === 0" class="community-empty"><p>아직 작성한 글이 없습니다.</p></div>
-        <div v-else class="mypost-grid">
-          <div v-for="post in myPosts" :key="post.id" class="mypost-item" @click="goToPost(post.id)">
-            <span class="category-tag">{{ post.category_label }}</span>
-            <strong>{{ post.title }}</strong>
-            <small>{{ formatRelativeTime(post.created_at) }} · 👍 {{ post.like_count }} · 💬 {{ post.comment_count }}</small>
-          </div>
-        </div>
-      </template>
-
+      <div v-if="!authUser" class="mypage-login-needed">로그인 후 이용 가능합니다.</div>
       <template v-else>
-        <div v-if="likedPostsLoading" class="community-loading">불러오는 중…</div>
-        <div v-else-if="likedPosts.length === 0" class="community-empty"><p>아직 좋아요한 글이 없습니다.</p></div>
-        <div v-else class="mypost-grid">
-          <div v-for="post in likedPosts" :key="post.id" class="mypost-item" @click="goToPost(post.id)">
-            <span class="category-tag">{{ post.category_label }}</span>
-            <strong>{{ post.title }}</strong>
-            <small>{{ formatRelativeTime(post.created_at) }} · 👍 {{ post.like_count }} · 💬 {{ post.comment_count }}</small>
+        <template v-if="activityTab === 'posts'">
+          <div v-if="myPostsLoading" class="community-loading">불러오는 중…</div>
+          <div v-else-if="myPosts.length === 0" class="community-empty"><p>아직 작성한 글이 없습니다.</p></div>
+          <div v-else class="mypost-grid">
+            <div v-for="post in myPosts" :key="post.id" class="mypost-item" @click="goToPost(post.id)">
+              <span class="category-tag">{{ post.category_label }}</span>
+              <strong>{{ post.title }}</strong>
+              <small>{{ formatRelativeTime(post.created_at) }} · 👍 {{ post.like_count }} · 💬 {{ post.comment_count }}</small>
+            </div>
           </div>
-        </div>
+        </template>
+        <template v-else>
+          <div v-if="likedPostsLoading" class="community-loading">불러오는 중…</div>
+          <div v-else-if="likedPosts.length === 0" class="community-empty"><p>아직 좋아요한 글이 없습니다.</p></div>
+          <div v-else class="mypost-grid">
+            <div v-for="post in likedPosts" :key="post.id" class="mypost-item" @click="goToPost(post.id)">
+              <span class="category-tag">{{ post.category_label }}</span>
+              <strong>{{ post.title }}</strong>
+              <small>{{ formatRelativeTime(post.created_at) }} · 👍 {{ post.like_count }} · 💬 {{ post.comment_count }}</small>
+            </div>
+          </div>
+        </template>
       </template>
     </section>
 
     <!-- ⑤ 긴급 연락처 -->
-    <section class="panel mypage-col-full">
+    <section class="panel mypage-col-1">
       <div class="section-title compact">
         <div><p class="eyebrow">Emergency</p><h2>긴급 연락처</h2></div>
         <span class="mini-status">{{ emergencyContacts.length }}명</span>
@@ -266,6 +201,36 @@ function saveProfile() {
   clearTimeout(_profileSaveTimer);
   _profileSaveTimer = setTimeout(() => { profileSavedMsg.value = false; }, 2500);
 }
+
+// ── 챌린지 배지 ──────────────────────────────────────────────────────────────
+const badges = computed(() => {
+  const recs = hikingRecords.value;
+  const uniqueMountains = new Set(recs.map(r => r.mountain).filter(Boolean));
+  const recommendedCount = recs.filter(r => r.safety_label === '추천').length;
+  const longHike = recs.some(r => (r.duration_min || 0) >= 240);
+  const winterHike = recs.some(r => {
+    const m = new Date(r.hiked_date).getMonth() + 1;
+    return m === 12 || m === 1 || m === 2;
+  });
+  const weekendHikes = recs.filter(r => {
+    const d = new Date(r.hiked_date).getDay();
+    return d === 0 || d === 6;
+  }).length;
+  const hardCourse = recs.some(r => r.difficulty === 'hard');
+
+  return [
+    { id: 1, icon: '🥾', name: '첫 걸음',      desc: '첫 번째 산행 기록',          achieved: recs.length >= 1 },
+    { id: 2, icon: '📅', name: '꾸준한 등산러', desc: '총 5회 이상 산행',            achieved: recs.length >= 5 },
+    { id: 3, icon: '🏔️', name: '산악 마니아',  desc: '총 10회 이상 산행',           achieved: recs.length >= 10 },
+    { id: 4, icon: '🗺️', name: '탐험가',       desc: '3개 이상 다른 산 방문',       achieved: uniqueMountains.size >= 3 },
+    { id: 5, icon: '🛡️', name: '안전 우선',    desc: '추천 코스로 3회 산행',        achieved: recommendedCount >= 3 },
+    { id: 6, icon: '⏱️', name: '장거리 등반',  desc: '4시간 이상 코스 완주',        achieved: longHike },
+    { id: 7, icon: '❄️', name: '겨울 전사',    desc: '겨울(12~2월) 산행 완료',     achieved: winterHike },
+    { id: 8, icon: '🌿', name: '주말 등산러',  desc: '주말에 3회 이상 산행',        achieved: weekendHikes >= 3 },
+  ];
+});
+
+const earnedCount = computed(() => badges.value.filter(b => b.achieved).length);
 
 // ── 내 활동 탭 ───────────────────────────────────────────────────────────────
 const activityTab = ref('posts');

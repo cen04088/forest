@@ -76,40 +76,14 @@
             <p v-else-if="gpsStatus === 'error'" class="bfp-error">⚠️ {{ gpsError }}</p>
           </div>
 
-          <!-- 출발 시간 -->
-          <div class="bfp-field">
-            <span class="bfp-label">출발 시간</span>
-            <!-- 구간 버튼 -->
-            <div class="chips">
-              <button type="button" class="chip chip-now" @click="setTimeNow">지금</button>
-              <button v-for="seg in TIME_SEGMENTS" :key="seg.key" type="button"
-                :class="['chip time-seg-chip', activeTimeSegment === seg.key ? 'active' : '']"
-                @click="selectTimeSegment(seg.key)">{{ seg.label }}</button>
-            </div>
-            <!-- 타임바 -->
-            <div class="time-bar-wrap">
-              <div class="time-bar-header">
-                <span class="time-bar-val">{{ profile.departureTime || '--:--' }} 출발</span>
-              </div>
-              <input
-                type="range"
-                class="time-bar-input"
-                :min="TIME_MIN"
-                :max="TIME_MAX"
-                step="30"
-                :value="departureMinutes"
-                @input="onTimeBarInput"
-              />
-              <div class="time-bar-ticks">
-                <span v-for="(tick, i) in TIME_TICKS" :key="tick.h"
-                  class="time-bar-tick"
-                  :class="{ 'tick-first': i === 0, 'tick-last': i === TIME_TICKS.length - 1 }"
-                  :style="{ left: timeTickPct(tick.h) + '%' }">{{ tick.label }}</span>
-              </div>
-            </div>
-          </div>
-
+          <!-- 2×2 폼 그리드 -->
           <div class="recommend-form-grid">
+            <!-- 출발 시간 -->
+            <div class="bfp-field">
+              <span class="bfp-label">출발 시간</span>
+              <input type="time" class="time-direct-input" v-model="profile.departureTime" />
+            </div>
+
             <!-- 산행 강도 -->
             <div class="bfp-field">
               <span class="bfp-label">산행 강도</span>
@@ -121,7 +95,7 @@
               </div>
             </div>
 
-            <!-- 등산 가능 시간 스텝퍼 -->
+            <!-- 등산 가능 시간 -->
             <div class="bfp-field">
               <span class="bfp-label">등산 가능 시간</span>
               <div class="stepper-card">
@@ -142,7 +116,7 @@
               </div>
             </div>
 
-            <!-- 이동 거리 스텝퍼 -->
+            <!-- 이동 거리 -->
             <div class="bfp-field">
               <span class="bfp-label">이동 거리</span>
               <div class="stepper-card">
@@ -162,6 +136,27 @@
                 </button>
               </div>
             </div>
+          </div>
+
+          <!-- 선호 태그 (선택, 접기/펼치기) -->
+          <div class="bfp-field">
+            <button type="button" class="tag-toggle-btn" @click="tagsOpen = !tagsOpen">
+              <span class="bfp-label">선호 태그</span>
+              <span v-if="selectedTags.length" class="tag-count-badge">{{ selectedTags.length }}개 선택됨</span>
+              <span class="tag-toggle-pill">{{ tagsOpen ? '접기 ▲' : '선택하기 ▼' }}</span>
+            </button>
+            <template v-if="tagsOpen">
+              <div class="tag-filter-wrap tag-filter-compact" style="margin-top:8px">
+                <button
+                  v-for="tag in ALL_TAGS"
+                  :key="tag"
+                  type="button"
+                  :class="['tag-filter-chip', selectedTags.includes(tag) ? 'active' : '']"
+                  @click="toggleTag(tag)"
+                ><span class="tfc-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}</button>
+              </div>
+              <button v-if="selectedTags.length" class="clear-tag-btn" type="button" @click="selectedTags = []">선택 초기화</button>
+            </template>
           </div>
 
           <!-- 선택 요약 -->
@@ -677,6 +672,8 @@ const hasRecommendationResult = ref(false);
 const directBrowseOpen = ref(false);
 
 // ── 태그 필터 ─────────────────────────────────────────────────────────────────
+const QUICK_TIMES = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00'];
+
 const ALL_TAGS = [
   '조망', '계곡', '단풍', '야생화', '역사문화', '암릉', '숲치유',
   '일출·일몰', '설경', '호수·강뷰', '억새', '철쭉', '야경', '능선종주', '100대명산',
@@ -688,6 +685,7 @@ const TAG_ICONS = {
   '야경': '🌃', '능선종주': '🏔', '100대명산': '🏆',
 };
 const selectedTags = ref([]);
+const tagsOpen = ref(false);
 function toggleTag(tag) {
   const idx = selectedTags.value.indexOf(tag);
   if (idx === -1) selectedTags.value.push(tag);

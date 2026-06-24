@@ -193,6 +193,17 @@ export async function fetchLikedPosts(token) {
   return request("/liked-posts/", { headers: authHeaders(token) });
 }
 
+export async function followUser(userId, token) {
+  return request(`/users/${userId}/follow/`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+}
+
+export async function fetchFollowingPosts(token, page = 1) {
+  return request(`/following-posts/?page=${page}`, { headers: authHeaders(token) });
+}
+
 export async function fetchDisasterZones(mountainName) {
   const params = new URLSearchParams({ mountain: mountainName || "" });
   return request(`/disaster-zones/?${params.toString()}`);

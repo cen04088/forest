@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .models import AuthToken, Comment, EmergencyContact, FavoriteCourse, HikingRecord, Post, PostLike
+from .models import AuthToken, Comment, EmergencyContact, FavoriteCourse, Follow, HikingRecord, Post, PostLike
 
 
 # ── 인증 헬퍼 ─────────────────────────────────────────────────────────────────
@@ -38,6 +38,10 @@ def _user_dict(user):
 
 def _post_dict(post, user=None):
     is_liked = bool(user and PostLike.objects.filter(post=post, user=user).exists())
+    is_following = bool(
+        user and user.id != post.author_id
+        and Follow.objects.filter(follower=user, following_id=post.author_id).exists()
+    )
     return {
         "id": post.id,
         "title": post.title,
@@ -55,6 +59,7 @@ def _post_dict(post, user=None):
         "comment_count": post.comments.count(),
         "is_liked": is_liked,
         "is_owner": user is not None and user.id == post.author_id,
+        "is_following_author": is_following,
     }
 
 
@@ -480,6 +485,57 @@ def emergency_contacts(request):
         relation=(body.get("relation") or "").strip(),
     )
     return JsonResponse(_contact_dict(contact), status=201)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def follow_user(request, user_id):
+    user = get_auth_user(request)
+    if not user:
+        return JsonResponse({"error": "로그인이 필요합니다."}, status=401)
+
+    try:
+        target = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "사용자를 찾을 수 없습니다."}, status=404)
+
+    if target.id == user.id:
+        return JsonResponse({"error": "자신을 팔로우할 수 없습니다."}, status=400)
+
+    existing = Follow.objects.filter(follower=user, following=target)
+    if existing.exists():
+        existing.delete()
+        is_following = False
+    else:
+        Follow.objects.create(follower=user, following=target)
+        is_following = True
+
+    return JsonResponse({
+        "is_following": is_following,
+        "followers_count": Follow.objects.filter(following=target).count(),
+    })
+
+
+@require_http_methods(["GET"])
+def following_posts(request):
+    user = get_auth_user(request)
+    if not user:
+        return JsonResponse({"error": "로그인이 필요합니다."}, status=401)
+
+    following_ids = Follow.objects.filter(follower=user).values_list("following_id", flat=True)
+    qs = (
+        Post.objects.filter(author_id__in=following_ids)
+        .select_related("author")
+        .prefetch_related("likes", "comments")
+    )
+    paginator = Paginator(qs, 15)
+    page = paginator.get_page(request.GET.get("page", 1))
+    return JsonResponse({
+        "posts": [_post_dict(p, user) for p in page.object_list],
+        "total": paginator.count,
+        "page": page.number,
+        "pages": paginator.num_pages,
+    })
 
 
 @require_http_methods(["GET"])

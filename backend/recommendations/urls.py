@@ -39,6 +39,9 @@ urlpatterns = [
     # 내 활동
     path("my-posts/", cv.my_posts),
     path("liked-posts/", cv.liked_posts),
+    # 팔로우
+    path("users/<int:user_id>/follow/", cv.follow_user),
+    path("following-posts/", cv.following_posts),
     # 산행 기록
     path("hiking-records/", cv.hiking_records),
     path("hiking-records/<int:record_id>/", cv.hiking_record_detail),
