@@ -113,40 +113,20 @@
           </div>
           <p class="ml-risk-warn">{{ mlRiskInfo.warning }}</p>
 
-          <!-- 24시간 추이 그래프 -->
-          <div v-if="mlRiskInfo.hourly_risks" class="ml-risk-chart-container">
-            <div class="ml-risk-chart-title">
-              <span>24시간 사고 위험도 추이</span>
-              <span style="color:#ef4444; font-weight:700">
-                {{ activePointer ? `${activePointer.hour}시: ${(activePointer.risk_index * 100).toFixed(0)}%` : '' }}
-              </span>
+          <!-- 시간대별 사고 위험 분석 경보 -->
+          <div v-if="mlRiskInfo.hourly_risks && peakHourInfo" class="ml-risk-alert-container">
+            <div class="ml-risk-alert-title">🚨 오늘 가장 주의해야 할 시간대</div>
+            <div class="ml-risk-alert-box">
+              <div class="ml-risk-alert-time">
+                ⏱️ <strong>{{ peakTimeRange }} (위험 최고조)</strong>
+              </div>
+              <p class="ml-risk-alert-desc">
+                {{ peakTimeReason }}
+              </p>
+              <div class="ml-risk-alert-tip">
+                💡 <strong>안전 행동 제안:</strong> {{ peakTimeTip }}
+              </div>
             </div>
-            <svg class="ml-risk-svg" viewBox="0 0 240 60">
-              <defs>
-                <linearGradient id="mlRiskAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#ef4444" stop-opacity="0.35" />
-                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0" />
-                </linearGradient>
-              </defs>
-              <line x1="10" y1="50" x2="230" y2="50" stroke="rgba(75, 85, 99, 0.3)" stroke-width="0.5" stroke-dasharray="2 2" />
-              <line x1="10" y1="27.5" x2="230" y2="27.5" stroke="rgba(75, 85, 99, 0.3)" stroke-width="0.5" stroke-dasharray="2 2" />
-              <line x1="10" y1="5" x2="230" y2="5" stroke="rgba(75, 85, 99, 0.3)" stroke-width="0.5" stroke-dasharray="2 2" />
-
-              <path :d="mlRiskAreaPath" fill="url(#mlRiskAreaGrad)" />
-              <path :d="mlRiskLinePath" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-
-              <g v-if="activePointer">
-                <line :x1="activePointer.x" y1="5" :x2="activePointer.x" y2="50" stroke="#ef4444" stroke-width="1" stroke-dasharray="2 2" />
-                <circle :cx="activePointer.x" :cy="activePointer.y" r="8" class="ml-pointer-pulse" />
-                <circle :cx="activePointer.x" :cy="activePointer.y" r="4.5" class="ml-pointer-dot" />
-              </g>
-
-              <text x="10" y="58" class="ml-chart-label" text-anchor="start">00시</text>
-              <text x="67.4" y="58" class="ml-chart-label" text-anchor="middle">06시</text>
-              <text x="124.8" y="58" class="ml-chart-label" text-anchor="middle">12시</text>
-              <text x="182.2" y="58" class="ml-chart-label" text-anchor="middle">18시</text>
-              <text x="230" y="58" class="ml-chart-label" text-anchor="end">24시</text>
-            </svg>
           </div>
 
           <div class="ml-risk-types">
@@ -275,48 +255,65 @@ const globalError = computed({
   },
 });
 
-const selectedHour = computed(() => {
-  if (!profile.departureTime) return 12;
-  const parts = profile.departureTime.split(':');
-  return parseInt(parts[0], 10) || 0;
-});
-
-const mlRiskChartPoints = computed(() => {
+const peakHourInfo = computed(() => {
   const risks = mlRiskInfo.value?.hourly_risks;
-  if (!risks || risks.length === 0) return [];
+  if (!risks || risks.length === 0) return null;
+  let maxRisk = -1;
+  let maxHour = 12;
+  for (const r of risks) {
+    if (r.risk_index > maxRisk) {
+      maxRisk = r.risk_index;
+      maxHour = r.hour;
+    }
+  }
+  return { hour: maxHour, riskIndex: maxRisk };
+});
+
+const peakTimeRange = computed(() => {
+  const info = peakHourInfo.value;
+  if (!info) return '';
+  const start = info.hour;
+  const end = (info.hour + 2) % 24;
+  return `${String(start).padStart(2, '0')}:00 ~ ${String(end).padStart(2, '0')}:00`;
+});
+
+const peakTimeReason = computed(() => {
+  const info = peakHourInfo.value;
+  if (!info) return '';
   
-  const width = 220;
-  const height = 45;
-  const paddingX = 10;
-  const paddingY = 5;
+  let reason = '';
+  if (info.hour >= 12 && info.hour <= 16) {
+    reason = '점심 식사 이후 피로가 누적되고 본격적인 하산이 시작되는 시간대로, 신체의 긴장이 풀려 실족이나 추락 사고의 발생 확률이 매우 높습니다.';
+  } else if (info.hour >= 17 || info.hour <= 6) {
+    reason = '일몰 전후 및 야간 시간대로, 시야가 급격히 차단되고 산속 기온이 하강하여 조난, 저체온증 등 한랭 질환 사고 위험이 최고조에 달합니다.';
+  } else {
+    reason = '오전 시간대로, 체력 안배 실패나 충분하지 못한 사전 몸풀기로 인해 급작스러운 신체 이상 및 관절 부상 사고율이 상대적으로 높습니다.';
+  }
+
+  const w = weatherData.value;
+  if (w) {
+    const rainfall = w.rainfall_mm ?? 0;
+    const wind = w.wind_speed_ms ?? 0;
+    if (rainfall > 0 || wind >= 5) {
+      reason += ' 특히 현재 현장에 감지되는 비/강풍 등 불리한 기상 조건이 결합되어 평소보다 낙상 및 체온 저하 위험이 더욱 심각합니다.';
+    }
+  }
+  return reason;
+});
+
+const peakTimeTip = computed(() => {
+  const info = peakHourInfo.value;
+  if (!info) return '';
+  const topType = mlRiskInfo.value?.top_type || '부상사고';
   
-  return risks.map((r) => {
-    const x = paddingX + (r.hour * width) / 23;
-    const y = (paddingY + height) - (r.risk_index * height);
-    return { hour: r.hour, risk_index: r.risk_index, x, y };
-  });
-});
-
-const mlRiskLinePath = computed(() => {
-  const pts = mlRiskChartPoints.value;
-  if (pts.length === 0) return '';
-  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-});
-
-const mlRiskAreaPath = computed(() => {
-  const pts = mlRiskChartPoints.value;
-  if (pts.length === 0) return '';
-  const first = pts[0];
-  const last = pts[pts.length - 1];
-  const linePath = mlRiskLinePath.value;
-  return `${linePath} L ${last.x.toFixed(1)} 50 L ${first.x.toFixed(1)} 50 Z`;
-});
-
-const activePointer = computed(() => {
-  const h = selectedHour.value;
-  const pts = mlRiskChartPoints.value;
-  if (pts.length === 0) return null;
-  return pts.find(p => p.hour === h) || pts[h] || pts[0];
+  if (topType === '부상사고') {
+    return '하산 시 보폭을 좁혀 무릎 충격을 줄이고, 낙엽이나 젖은 돌을 디디지 않도록 등산 스틱을 양손에 꼭 쥐고 체중을 분산해 주세요.';
+  } else if (topType === '조난수색') {
+    return '지정된 등산로(탐방로)로만 보행하며, 일몰 2시간 전 조기 하산을 완수하시거나 여분의 랜턴/보조배터리를 꼭 휴대해 주세요.';
+  } else if (topType === '질환') {
+    return '페이스 조절에 유의하고 무리하게 속도를 내지 마세요. 이온음료나 따뜻한 음료를 마시고 에너지를 보충할 초콜릿류를 자주 드셔야 합니다.';
+  }
+  return '일기예보를 예의주시하고 급박한 비구름이나 기상 변화 조짐이 느껴질 경우 산행을 즉시 멈추고 대피소로 이동하세요.';
 });
 
 onMounted(async () => {

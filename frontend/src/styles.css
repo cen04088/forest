@@ -5608,56 +5608,46 @@ p {
   margin-top: 4px;
 }
 
-/* ── ML 사고 위험도 그래프 ── */
-.ml-risk-chart-container {
-  background: rgba(255, 255, 255, 0.65);
+/* ── ML 사고 위험도 경보 카드 ── */
+.ml-risk-alert-container {
+  background: #fff5f5;
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   margin: 8px 0 12px 0;
-  border: 1px solid rgba(224, 231, 255, 0.8);
+  border: 1px solid #fee2e2;
 }
-.ml-risk-chart-title {
+.ml-risk-alert-title {
   font-size: 11px;
   font-weight: 700;
-  color: #4b5563;
+  color: #b91c1c;
   margin-bottom: 6px;
+}
+.ml-risk-alert-box {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
 }
-.ml-risk-svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  overflow: visible;
+.ml-risk-alert-time {
+  font-size: 12px;
+  color: #991b1b;
 }
-.ml-chart-label {
-  font-size: 8px;
-  fill: #6b7280;
-  font-weight: 500;
+.ml-risk-alert-desc {
+  font-size: 11px;
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
 }
-.ml-pointer-pulse {
-  fill: #ef4444;
-  animation: mlPulse 2s infinite ease-in-out;
+.ml-risk-alert-tip {
+  font-size: 10.5px;
+  background: #ffffff;
+  border: 1px dashed #fca5a5;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: #374151;
+  margin-top: 4px;
+  line-height: 1.4;
 }
-.ml-pointer-dot {
-  fill: #ef4444;
-  stroke: #ffffff;
-  stroke-width: 1.5px;
-}
-@keyframes mlPulse {
-  0% {
-    r: 4px;
-    opacity: 0.7;
-  }
-  50% {
-    r: 9px;
-    opacity: 0.2;
-  }
-  100% {
-    r: 4px;
-    opacity: 0.7;
-  }
-}
+
 
 /* ── 재난위험지구 패널 ──────────────────────────────────────────────────── */
 .disaster-zone-panel {
