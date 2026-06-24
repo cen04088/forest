@@ -245,7 +245,7 @@ def get_chat_response(messages: list, context: dict) -> str:
 
         gen_config = types.GenerateContentConfig(
             system_instruction=system_prompt,
-            max_output_tokens=1024,
+            max_output_tokens=2048,
         )
 
         response = client.models.generate_content(
