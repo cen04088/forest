@@ -3302,6 +3302,80 @@ p {
   flex-shrink: 0;
 }
 
+/* ── 산 목록 행 태그 ── */
+.mbr-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+.mbr-tag {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.mbr-tag.active {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #065f46;
+  font-weight: 600;
+}
+
+/* ── 태그 필터 칩 줄 ── */
+.tag-filter-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0 10px;
+}
+.tag-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 11px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.tag-filter-chip:hover {
+  border-color: #34d399;
+  color: #065f46;
+}
+.tag-filter-chip.active {
+  background: #d1fae5;
+  border-color: #34d399;
+  color: #065f46;
+  font-weight: 700;
+}
+.tfc-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+.tag-filter-empty {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 24px 0 8px;
+}
+
+/* ── MountainCard 매력 태그 ── */
+.mc-tag-appeal {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 11px;
+}
+
 .browse-weather-panel {
   background: #f0fdf4;
   border: 1.5px solid #bbf7d0;

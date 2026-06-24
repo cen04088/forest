@@ -236,12 +236,26 @@
         </section>
 
         <!-- ── 직접 찾기 ── -->
-        <section v-if="directBrowseOpen || mountainSearch" class="panel mountain-list-panel">
+        <section v-if="directBrowseOpen || mountainSearch || selectedTags.length" class="panel mountain-list-panel">
           <div class="section-title compact">
             <div>
               <p class="eyebrow">Manual Search</p>
               <h2>직접 산 찾기<span class="mini-status" style="margin-left:6px">{{ filteredMountains.length }}</span></h2>
             </div>
+            <button v-if="selectedTags.length" class="clear-rec-btn" type="button" @click="selectedTags = []">태그 초기화</button>
+          </div>
+
+          <!-- 태그 필터 -->
+          <div class="tag-filter-wrap">
+            <button
+              v-for="tag in ALL_TAGS"
+              :key="tag"
+              :class="['tag-filter-chip', selectedTags.includes(tag) ? 'active' : '']"
+              type="button"
+              @click="toggleTag(tag)"
+            >
+              <span class="tfc-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}
+            </button>
           </div>
 
           <div class="bfp-search-row">
@@ -256,6 +270,9 @@
           </div>
 
           <div v-if="loading && !filteredMountains.length" class="community-loading">분석 중…</div>
+          <p v-else-if="!filteredMountains.length && (selectedTags.length || mountainSearch)" class="tag-filter-empty">
+            조건에 맞는 산이 없어요. 태그를 줄여보세요.
+          </p>
 
           <div class="mountain-browse-list">
             <button
@@ -269,8 +286,14 @@
               <div class="mbr-body">
                 <strong class="mbr-name">{{ mountain.name }}</strong>
                 <span class="mbr-meta">{{ mountain.region }}&nbsp;·&nbsp;{{ mountain.elevation_m }}m</span>
+                <div v-if="(mountain.tags || []).length" class="mbr-tags">
+                  <span
+                    v-for="tag in (mountain.tags || []).slice(0, 4)"
+                    :key="tag"
+                    :class="['mbr-tag', selectedTags.includes(tag) ? 'active' : '']"
+                  >{{ TAG_ICONS[tag] }} {{ tag }}</span>
+                </div>
               </div>
-              <span v-if="mountain.national_park" class="mc-np-badge" style="flex-shrink:0">국립공원</span>
               <svg class="mbr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           </div>
@@ -661,6 +684,24 @@ const mountainSearch = ref('');
 const hasRecommendationResult = ref(false);
 const directBrowseOpen = ref(false);
 
+// ── 태그 필터 ─────────────────────────────────────────────────────────────────
+const ALL_TAGS = [
+  '조망', '계곡', '단풍', '야생화', '역사문화', '암릉', '숲치유',
+  '일출·일몰', '설경', '호수·강뷰', '억새', '철쭉', '야경', '능선종주', '100대명산',
+];
+const TAG_ICONS = {
+  '조망': '🗻', '계곡': '💧', '단풍': '🍂', '야생화': '🌸',
+  '역사문화': '🏯', '암릉': '🪨', '숲치유': '🌲', '일출·일몰': '🌅',
+  '설경': '❄️', '호수·강뷰': '🌊', '억새': '🌾', '철쭉': '🌺',
+  '야경': '🌃', '능선종주': '🏔', '100대명산': '🏆',
+};
+const selectedTags = ref([]);
+function toggleTag(tag) {
+  const idx = selectedTags.value.indexOf(tag);
+  if (idx === -1) selectedTags.value.push(tag);
+  else selectedTags.value.splice(idx, 1);
+}
+
 // ── 출발지 선택 ───────────────────────────────────────────────────────────────
 const pickingLocation = ref(false);
 
@@ -839,6 +880,12 @@ const filteredMountains = computed(() => {
       (m) =>
         m.name.toLowerCase().replace(/\s/g, '').includes(normalizedSearch) ||
         (m.region || '').toLowerCase().replace(/\s/g, '').includes(normalizedSearch),
+    );
+  }
+
+  if (selectedTags.value.length > 0) {
+    base = base.filter((m) =>
+      selectedTags.value.every((tag) => (m.tags || []).includes(tag)),
     );
   }
 

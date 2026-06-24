@@ -368,8 +368,10 @@ def _infer_highlights(name, summary):
 
 
 def _get_mountains():
-    from .models import MountainKnowledge
+    from .models import MountainKnowledge, MountainTags
     from .mountain_data import MOUNTAINS as _STATIC
+
+    tags_map = {t.mountain_name: t.tags for t in MountainTags.objects.all()}
 
     static_mountains = []
     for mountain in _STATIC:
@@ -385,6 +387,7 @@ def _get_mountains():
             if seed_intro
             else ("mountain_data" if intro else "")
         )
+        item["tags"] = tags_map.get(name, [])
 
         static_mountains.append(item)
 
@@ -434,6 +437,7 @@ def _get_mountains():
                 if seed_intro
                 else (mk.source if intro else "")
             ),
+            "tags": tags_map.get(name, []),
         }))
 
     return static_mountains + db_mountains
@@ -460,8 +464,9 @@ def recommend_mountains_view(request):
     result = recommend_mountains(payload)
 
     # 산 소개: 시드 파일(최신) 우선, 없으면 MountainIntro DB 폴백
-    from .models import MountainIntro
+    from .models import MountainIntro, MountainTags
     db_intros = {obj.mountain_name: obj.intro for obj in MountainIntro.objects.all()}
+    tags_map = {t.mountain_name: t.tags for t in MountainTags.objects.all()}
     for m in result.get("mountains", []) + result.get("alternatives", []):
         seed = _seeded_intro_for_mountain(m["name"], m.get("region", ""), m.get("elevation_m"))
         if seed:
@@ -471,6 +476,7 @@ def recommend_mountains_view(request):
             m["intro"] = db_intro if _seed_intro_matches_mountain(
                 db_intro, m.get("region", ""), m.get("elevation_m"),
             ) else ""
+        m["tags"] = tags_map.get(m["name"], [])
 
     return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
 
