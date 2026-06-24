@@ -29,7 +29,7 @@
             <span class="hero-stat-label">올라 추천 산</span>
           </div>
           <div class="hero-stat">
-            <span class="hero-stat-num">631<span class="hero-stat-unit">개</span></span>
+            <span class="hero-stat-num">302<span class="hero-stat-unit">개</span></span>
             <span class="hero-stat-label">실시간 분석 탐방로</span>
           </div>
           <div class="hero-stat">
