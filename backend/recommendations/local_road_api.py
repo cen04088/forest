@@ -5,6 +5,7 @@ from functools import lru_cache
 from django.conf import settings
 
 from .loaders import clean_course_name
+from .mountain_zip_api import fetch_mountain_zip_trails
 from .vworld_api import route_length_km
 
 
@@ -14,8 +15,13 @@ ROAD_DBF_PATH = ROAD_DIR / "WG_MT_WAY.dbf"
 
 
 def fetch_local_road_trails(lat=None, lng=None, mountain_name="", radius_km=8, size=30):
+    archive_result = fetch_mountain_zip_trails(lat, lng, mountain_name, radius_km, size)
+    archive_items = archive_result.get("items") or []
+    if archive_items:
+        return archive_result
+
     records = load_local_road_trails()
-    if not records:
+    if not records and not archive_items:
         return {"ok": False, "source": "local_road_shp", "items": [], "error": "Local road shapefile not found"}
 
     candidates = records
@@ -42,11 +48,12 @@ def fetch_local_road_trails(lat=None, lng=None, mountain_name="", radius_km=8, s
             if haversine_km(lat, lng, record["lat"], record["lng"]) <= float(radius_km)
         ] or candidates
 
+    items = archive_items + [item for item in candidates if item.get("id") not in {a.get("id") for a in archive_items}]
     return {
         "ok": True,
-        "source": "local_road_shp",
-        "total_count": len(candidates),
-        "items": candidates[: int(size)],
+        "source": "forest_mountain_zip+local_road_shp" if archive_items else "local_road_shp",
+        "total_count": len(items),
+        "items": items[: int(size)],
     }
 
 

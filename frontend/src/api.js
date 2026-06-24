@@ -182,11 +182,6 @@ export async function fetchDisasterZones(mountainName) {
   return request(`/disaster-zones/?${params.toString()}`);
 }
 
-export async function fetchLandslide(region) {
-  const params = new URLSearchParams({ sgg: region || "" });
-  return request(`/landslide-prediction/?${params.toString()}`);
-}
-
 export async function createSafeLink(course) {
   return request("/safe-links/", {
     method: "POST",
@@ -301,4 +296,9 @@ export async function fetchMountainIntro({ name, summary, selectionReason }) {
     method: "POST",
     body: JSON.stringify({ name, summary, selection_reason: selectionReason }),
   });
+}
+
+export async function fetchLandslide(region) {
+  const params = new URLSearchParams({ sgg: region || "" });
+  return request(`/landslide-prediction/?${params.toString()}`);
 }

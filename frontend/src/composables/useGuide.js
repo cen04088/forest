@@ -98,15 +98,13 @@ export const profile = reactive({
   intensity: 'moderate',
   difficultyFilter: 'all',
   transport: 'public',
-  maxDistanceKm: 50,
+  maxDistanceKm: 30,
   companion: 'solo',
 });
 
-// 마이페이지에서 사용자가 직접 저장한 프로필 여부
 const _PROFILE_FIELDS = ['experience', 'companion', 'intensity', 'maxDistanceKm', 'availableMinutes'];
 export const profileIsExplicitlySet = ref(localStorage.getItem('olla_profile_saved') === 'true');
 
-// 앱 시작 시 저장된 프로필 반영
 try {
   const _saved = JSON.parse(localStorage.getItem('olla_user_profile') || '{}');
   for (const k of _PROFILE_FIELDS) {

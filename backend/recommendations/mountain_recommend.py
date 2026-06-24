@@ -1,6 +1,7 @@
 import math
 from datetime import datetime
 from .mountain_data import MOUNTAINS
+from .mountain_identity import with_mountain_identity
 from .accident_model import predict_accident_risk
 from .landslide_api import fetch_landslide_prediction
 
@@ -284,7 +285,7 @@ def recommend_mountains(payload):
                 h, mn = divmod(over, 60)
                 sunset_note = f"⚠️ 일몰 후 {h}시간 {mn}분 초과 예상" if h else f"⚠️ 일몰 {mn}분 후 하산 완료 예상"
 
-        results.append({
+        results.append(with_mountain_identity({
             **m,
             "safety_score": safety_score,
             "safety_label": safety_label,
@@ -302,7 +303,7 @@ def recommend_mountains(payload):
                 "landslide":  round(ls_mult, 2),
             },
             "ml_risk_info": ml_risk,
-        })
+        }))
 
     results.sort(key=lambda x: x["safety_score"], reverse=True)
 
