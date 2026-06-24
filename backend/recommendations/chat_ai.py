@@ -196,15 +196,33 @@ def get_chat_response(messages: list, context: dict) -> str:
             role = "model" if msg.get("role") == "assistant" else "user"
             contents.append(types.Content(role=role, parts=[types.Part(text=msg.get("content", ""))]))
 
-        response = client.models.generate_content(
-            model="gemini-2.5-pro",
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=_build_system(context, rag_context),
-                max_output_tokens=1200,
-            ),
+        gen_config = types.GenerateContentConfig(
+            system_instruction=_build_system(context, rag_context),
+            max_output_tokens=1200,
         )
-        return response.text.strip()
+
+        # GMS 프록시는 pro를 미지원할 수 있으므로 flash로 자동 폴백
+        for model in ("gemini-2.5-pro", "gemini-2.5-flash"):
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=gen_config,
+                )
+            except Exception:
+                continue
+
+            text = response.text
+            if not text:
+                try:
+                    text = response.candidates[0].content.parts[0].text or ""
+                except Exception:
+                    text = ""
+
+            if text.strip():
+                return text.strip()
+
+        return "응답을 생성하지 못했습니다. 다시 질문해 주세요."
 
     except Exception as e:
         msg = str(e)
