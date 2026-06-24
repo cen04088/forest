@@ -595,53 +595,40 @@ def chat_view(request):
 
 
 def _enrich_chat_context(context: dict) -> dict:
-    """실시간 안전 데이터(산불·산사태·NIFOS 기상·미세먼지)를 컨텍스트에 주입."""
+    """실시간 안전 데이터 5종을 ThreadPoolExecutor로 병렬 조회 (직렬 대비 ~5배 단축)."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from .nifos_api import fetch_nifos_mountain_weather, fetch_nifos_fine_dust
+    from .airquality_api import fetch_air_quality
+    from .forest_flux_api import fetch_forest_flux
+
     context = dict(context)
+    mountain = context.get("mountain") or {}
+    mountain_name = mountain.get("name", "")
+    region = (mountain.get("region") or "").replace("국립공원", "").strip()
+    m_lat = mountain.get("lat") or mountain.get("course_lat")
+    m_lng = mountain.get("lng") or mountain.get("course_lng")
+    lat = float(m_lat) if m_lat else None
+    lng = float(m_lng) if m_lng else None
 
-    try:
-        context["wildfire"] = fetch_wildfire_risk()
-    except Exception:
-        pass
+    tasks = {
+        "wildfire":    lambda: fetch_wildfire_risk(),
+        "landslide":   lambda: fetch_landslide_prediction(region, "", 1, 5) if region else None,
+        "nifos_weather": lambda: fetch_nifos_mountain_weather(mountain_name),
+        "nifos_dust":  lambda: fetch_nifos_fine_dust(),
+        "air_quality": lambda: fetch_air_quality(mountain_name, lat=m_lat, lng=m_lng),
+        "forest_flux": lambda: fetch_forest_flux(mountain_name=mountain_name, lat=lat, lng=lng),
+    }
 
-    try:
-        mountain = context.get("mountain") or {}
-        region = (mountain.get("region") or "").replace("국립공원", "").strip()
-        if region:
-            context["landslide"] = fetch_landslide_prediction(region, "", 1, 5)
-    except Exception:
-        pass
-
-    try:
-        from .nifos_api import fetch_nifos_mountain_weather, fetch_nifos_fine_dust
-        mountain_name = (context.get("mountain") or {}).get("name", "")
-        context["nifos_weather"] = fetch_nifos_mountain_weather(mountain_name)
-        context["nifos_dust"] = fetch_nifos_fine_dust()
-    except Exception:
-        pass
-
-    try:
-        from .airquality_api import fetch_air_quality
-        mountain = context.get("mountain") or {}
-        mountain_name = mountain.get("name", "")
-        m_lat = mountain.get("lat") or mountain.get("course_lat")
-        m_lng = mountain.get("lng") or mountain.get("course_lng")
-        context["air_quality"] = fetch_air_quality(mountain_name, lat=m_lat, lng=m_lng)
-    except Exception:
-        pass
-
-    try:
-        from .forest_flux_api import fetch_forest_flux
-        mountain = context.get("mountain") or {}
-        mountain_name = mountain.get("name", "")
-        m_lat = mountain.get("lat") or mountain.get("course_lat")
-        m_lng = mountain.get("lng") or mountain.get("course_lng")
-        context["forest_flux"] = fetch_forest_flux(
-            mountain_name=mountain_name,
-            lat=float(m_lat) if m_lat else None,
-            lng=float(m_lng) if m_lng else None,
-        )
-    except Exception:
-        pass
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        futures = {ex.submit(fn): key for key, fn in tasks.items()}
+        for future in as_completed(futures):
+            key = futures[future]
+            try:
+                result = future.result()
+                if result is not None:
+                    context[key] = result
+            except Exception:
+                pass
 
     return context
 

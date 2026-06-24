@@ -30,7 +30,7 @@ _TTL = 1800  # 30분 캐시
 _cache: dict = {}  # {station_code: (timestamp, result)}
 
 
-def fetch_forest_flux(mountain_name: str = "", lat: float = None, lng: float = None, timeout: int = 8) -> dict:
+def fetch_forest_flux(mountain_name: str = "", lat: float = None, lng: float = None, timeout: int = 4) -> dict:
     """산림생태플럭스 실시간 관측 데이터 조회 (30분 TTL 캐시).
 
     산 이름 또는 위경도로 가장 가까운 플럭스 관측소 데이터를 반환합니다.
@@ -226,3 +226,18 @@ def _f(value) -> float | None:
         return float(str(value).strip())
     except (TypeError, ValueError, AttributeError):
         return None
+
+
+def warm_flux_cache() -> None:
+    """서버 시작 시 5개 관측소 데이터를 백그라운드로 미리 조회."""
+    import threading
+    service_key = load_public_service_key()
+    if not service_key:
+        return
+    def _warm():
+        for station in FLUX_STATIONS:
+            try:
+                _fetch_with_ttl(station, service_key, timeout=4)
+            except Exception:
+                pass
+    threading.Thread(target=_warm, daemon=True).start()
