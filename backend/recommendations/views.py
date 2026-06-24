@@ -629,6 +629,20 @@ def _enrich_chat_context(context: dict) -> dict:
     except Exception:
         pass
 
+    try:
+        from .forest_flux_api import fetch_forest_flux
+        mountain = context.get("mountain") or {}
+        mountain_name = mountain.get("name", "")
+        m_lat = mountain.get("lat") or mountain.get("course_lat")
+        m_lng = mountain.get("lng") or mountain.get("course_lng")
+        context["forest_flux"] = fetch_forest_flux(
+            mountain_name=mountain_name,
+            lat=float(m_lat) if m_lat else None,
+            lng=float(m_lng) if m_lng else None,
+        )
+    except Exception:
+        pass
+
     return context
 
 
@@ -678,6 +692,19 @@ def safety_advice_view(request):
     from .safety_advice_ai import generate_safety_advice
     advice = generate_safety_advice(mountain, weather, profile, sun_data)
     return JsonResponse({"advice": advice or ""})
+
+
+@require_GET
+def forest_flux_view(request):
+    """산림생태플럭스 관측 데이터 + 도출 지표 반환."""
+    mountain_name = request.GET.get("mountain", "")
+    lat_str = request.GET.get("lat", "")
+    lng_str = request.GET.get("lng", "")
+    lat = float(lat_str) if lat_str else None
+    lng = float(lng_str) if lng_str else None
+    from .forest_flux_api import fetch_forest_flux
+    data = fetch_forest_flux(mountain_name=mountain_name, lat=lat, lng=lng)
+    return JsonResponse(data, json_dumps_params={"ensure_ascii": False})
 
 
 @csrf_exempt

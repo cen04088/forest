@@ -122,6 +122,14 @@ export async function fetchWeather(location) {
   return request(`/weather/?${params.toString()}`);
 }
 
+export async function fetchForestFlux({ mountain = "", lat, lng } = {}) {
+  const params = new URLSearchParams();
+  if (mountain) params.set("mountain", mountain);
+  if (lat != null) params.set("lat", lat);
+  if (lng != null) params.set("lng", lng);
+  return request(`/forest-flux/?${params.toString()}`);
+}
+
 export async function fetchRecommendations(payload) {
   return request("/recommendations/", {
     method: "POST",

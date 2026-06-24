@@ -144,7 +144,55 @@ def _build_realtime_safety(context: dict) -> str:
             f"PM10 {aq.get('pm10_ugm3')}㎍/m³ ({aq.get('grade_pm10', '')})"
         )
 
+    flux = context.get("forest_flux") or {}
+    if flux.get("ok"):
+        fl = []
+        fl.append(f"산림생태플럭스 ({flux.get('station_name', '관측소')})")
+        if flux.get("nee_umol") is not None:
+            fl.append(f"탄소상태: {flux['carbon_status']} (NEE {flux['nee_umol']} μmol/m²/s)")
+        if flux.get("temp_c") is not None:
+            fl.append(f"산림기온: {flux['temp_c']}°C")
+        if flux.get("soil_temp_c") is not None:
+            fl.append(f"토양온도: {flux['soil_temp_c']}°C ({flux.get('soil_status', '')})")
+        if flux.get("rg_wm2") is not None:
+            fl.append(f"태양복사: {flux['rg_wm2']} W/m² → 자외선 {flux.get('uv_risk', '')} (UV {flux.get('uv_index', '')})")
+        if flux.get("discomfort_index") is not None:
+            fl.append(f"불쾌지수: {flux['discomfort_index']} ({flux.get('discomfort_label', '')}), 추정습도 {flux.get('rh_estimate_pct', '-')}%")
+        if flux.get("humidity_level"):
+            fl.append(f"산림습윤도: {flux['humidity_level']}")
+        if flux.get("carbon_footprint_msg"):
+            fl.append(f"탄소발자국: {flux['carbon_footprint_msg']}")
+        if flux.get("uv_advice"):
+            fl.append(f"자외선 조언: {flux['uv_advice']}")
+        parts.append("\n  ".join(fl))
+
     return "\n".join(parts)
+
+
+def _extract_response_text(response) -> str:
+    """Gemini 응답에서 thinking 파트를 제외한 실제 텍스트만 추출."""
+    # response.text가 있으면 바로 반환
+    if response.text:
+        return response.text.strip()
+
+    # candidates에서 직접 추출 (thinking 파트 제외)
+    try:
+        for candidate in (response.candidates or []):
+            parts = (candidate.content or {}).parts or []
+            text_parts = []
+            for part in parts:
+                # thinking 파트는 thought=True 속성을 가짐
+                if getattr(part, "thought", False):
+                    continue
+                if getattr(part, "text", None):
+                    text_parts.append(part.text)
+            result = "".join(text_parts).strip()
+            if result:
+                return result
+    except Exception:
+        pass
+
+    return ""
 
 
 def get_chat_response(messages: list, context: dict) -> str:
@@ -184,15 +232,34 @@ def get_chat_response(messages: list, context: dict) -> str:
             role = "model" if msg.get("role") == "assistant" else "user"
             contents.append(types.Content(role=role, parts=[types.Part(text=msg.get("content", ""))]))
 
+        system_prompt = _build_system(context, rag_context)
+
+        # gemini-2.5-pro는 thinking 모델 — thinking_budget 제한으로 응답 토큰 확보
+        try:
+            gen_config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                max_output_tokens=8192,
+                thinking_config=types.ThinkingConfig(thinking_budget=1024),
+            )
+        except Exception:
+            # 구버전 SDK는 thinking_config 미지원 → 일반 설정으로 폴백
+            gen_config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                max_output_tokens=8192,
+            )
+
         response = client.models.generate_content(
             model="gemini-2.5-pro",
             contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=_build_system(context, rag_context),
-                max_output_tokens=1200,
-            ),
+            config=gen_config,
         )
-        return response.text.strip()
+
+        # thinking 파트를 제외한 실제 응답 텍스트만 추출
+        text = _extract_response_text(response)
+        if text:
+            return text
+
+        return "응답을 생성하지 못했습니다. 다시 질문해 주세요."
 
     except Exception as e:
         msg = str(e)
