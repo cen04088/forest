@@ -101,10 +101,9 @@ export const profile = reactive({
   difficultyFilter: 'all',
   transport: 'public',
   maxDistanceKm: 30,
-  purpose: 'balanced',
 });
 
-const _PROFILE_FIELDS = ['experience', 'maxDistanceKm', 'availableMinutes', 'purpose'];
+const _PROFILE_FIELDS = ['experience', 'maxDistanceKm', 'availableMinutes'];
 export const profileIsExplicitlySet = ref(localStorage.getItem('olla_profile_saved') === 'true');
 
 try {

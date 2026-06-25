@@ -159,17 +159,6 @@
             </div>
           </div>
 
-          <!-- 목적 -->
-          <div class="bfp-field">
-            <span class="bfp-label">목적</span>
-            <div class="chips">
-              <button type="button" :class="['chip', profile.purpose === 'balanced' ? 'active' : '']" @click="profile.purpose = 'balanced'">균형</button>
-              <button type="button" :class="['chip', profile.purpose === 'healing'  ? 'active' : '']" @click="profile.purpose = 'healing'">힐링</button>
-              <button type="button" :class="['chip', profile.purpose === 'workout'  ? 'active' : '']" @click="profile.purpose = 'workout'">운동</button>
-              <button type="button" :class="['chip', profile.purpose === 'view'     ? 'active' : '']" @click="profile.purpose = 'view'">전망</button>
-            </div>
-          </div>
-
           <!-- 선호 태그 (선택, 접기/펼치기) -->
           <div class="bfp-field">
             <button type="button" class="tag-toggle-btn" @click="tagsOpen = !tagsOpen">
