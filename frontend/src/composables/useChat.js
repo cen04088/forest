@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { fetchChatResponse } from '../api.js';
-import { selectedMountain, weatherData, recommendations, profile, disasterZones } from './useGuide.js';
+import { selectedMountain, weatherData, recommendations, profile, disasterZones, profileIsExplicitlySet } from './useGuide.js';
 
 export const chatMessages = ref([]); // { role: 'user'|'assistant', content: string }
 export const chatLoading = ref(false);
@@ -36,11 +36,13 @@ export async function sendMessage(text) {
     recommendedCourses: recommendations.value?.slice(0, 3) || [],
     now: `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${DAYS[now.getDay()]}) ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
     userProfile: {
+      experience: p.experience,
       availableMinutes: p.availableMinutes,
       desiredHikingMinutes: p.desiredHikingMinutes,
       departureTime: p.departureTime,
       departureDate: p.departureDate,
       maxDistanceKm: p.maxDistanceKm,
+      isDefault: !profileIsExplicitlySet.value,
     },
     disasterZones: (disasterZones.value || []).slice(0, 5).map((z) => ({
       district: z.district,

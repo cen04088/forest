@@ -52,10 +52,6 @@
     </router-link>
 
     <section class="sidebar-search-panel" aria-label="산 검색하기">
-      <div class="sidebar-search-head">
-        <h2>산 검색하기</h2>
-      </div>
-
       <label class="bfp-search-row sidebar-search-row">
         <svg class="bfp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input
@@ -103,24 +99,26 @@
         </button>
       </div>
 
+      <div class="sidebar-fire-stats">
+        <div class="sfs-head">
+          <span class="sfs-title">소방청 사고 데이터 분석</span>
+          <span class="sfs-badge">1만건 사고를 분석</span>
+        </div>
+        <p class="sfs-sub">이 시간대·요일·추락 사고 주의</p>
+        <div class="sfs-grid">
+          <span class="sfs-pill sfs-pill-1">길잃음·조난 59%</span>
+          <span class="sfs-pill sfs-pill-2">실족·추락 8%</span>
+          <span class="sfs-pill sfs-pill-3">탈진·질환 13%</span>
+          <span class="sfs-pill sfs-pill-4">기타 20%</span>
+        </div>
+        <p class="sfs-note">* 2010-2024년 산악사고 112,902건 기준</p>
+      </div>
     </section>
-
-    <div class="sidebar-fire-stats">
-      <div class="sfs-head">
-        <span class="sfs-title">산행 안전 예측</span>
-        <span class="sfs-badge">{{ riskBadgeText }}</span>
-      </div>
-      <p class="sfs-sub">{{ riskWarning }}</p>
-      <div class="sfs-grid">
-        <span v-for="pill in riskPills" :key="pill.label" class="sfs-pill" :class="pill.cls">{{ pill.label }}</span>
-      </div>
-      <p class="sfs-note">* 2010-2024년 산악사고 112,902건 기준</p>
-    </div>
   </nav>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authMode, authUser, showAuthModal } from '../composables/useAuth.js';
 import {
@@ -131,52 +129,9 @@ import {
   mountainSearch,
   selectedMountain,
 } from '../composables/useGuide.js';
-import { fetchMlRisk } from '../api.js';
 
 const router = useRouter();
 const sidebarDifficultyFilter = ref('all');
-
-// 산행 안전 예측 (실시간 ML)
-const riskData = ref(null);
-
-const riskBadgeText = computed(() => {
-  if (!riskData.value) return '분석 중';
-  const r = riskData.value.risk_index;
-  if (r >= 0.70) return '고위험 구간';
-  if (r >= 0.45) return '사고 주의';
-  if (r >= 0.20) return '낮은 위험';
-  return '안전 구간';
-});
-
-const riskWarning = computed(() => {
-  if (!riskData.value) return '이 시간대·요일·계절 사고 분석 중';
-  return riskData.value.warning || '이 시간대 상대적 안전 구간입니다';
-});
-
-const riskPills = computed(() => {
-  if (!riskData.value?.type_proba) {
-    return [
-      { label: '길잃음·조난 59%', cls: 'sfs-pill-1' },
-      { label: '실족·추락 8%',   cls: 'sfs-pill-2' },
-      { label: '탈진·질환 13%',  cls: 'sfs-pill-3' },
-      { label: '기타 20%',       cls: 'sfs-pill-4' },
-    ];
-  }
-  const map = { '조난수색': '길잃음·조난', '부상사고': '실족·추락', '질환': '탈진·질환', '기타': '기타' };
-  const cls = ['sfs-pill-1', 'sfs-pill-2', 'sfs-pill-3', 'sfs-pill-4'];
-  return Object.entries(riskData.value.type_proba)
-    .sort((a, b) => b[1] - a[1])
-    .map(([key, val], i) => ({
-      label: `${map[key] || key} ${Math.round(val * 100)}%`,
-      cls: cls[i] || 'sfs-pill-4',
-    }));
-});
-
-onMounted(async () => {
-  try {
-    riskData.value = await fetchMlRisk();
-  } catch {}
-});
 
 const difficultyFilters = [
   { value: 'all', label: '전체', color: '#7fb069' },
