@@ -36,68 +36,106 @@
 
     <!-- 즐겨찾기 패널 -->
     <section v-if="activeSection === 'favorites'" class="mypage-inline-panel">
-      <h3 class="inline-panel-title">즐겨찾기 코스</h3>
+      <h3 class="inline-panel-title">즐겨찾기 <span class="panel-count">{{ favorites.length }}</span></h3>
       <div v-if="favorites.length === 0" class="inline-panel-empty">저장된 즐겨찾기가 없습니다.</div>
-      <ul v-else class="inline-fav-list">
-        <li v-for="fav in favorites" :key="fav.course_id" class="inline-fav-item">
-          <div class="fav-info">
-            <strong>{{ fav.course_name }}</strong>
-            <span class="fav-meta">{{ fav.mountain }}</span>
-            <span v-if="fav.distance_km" class="fav-meta">{{ fav.distance_km }}km · {{ fav.duration_min }}분</span>
-          </div>
-          <button class="fav-remove-btn" type="button" @click="removeFav(fav.course_id)" aria-label="삭제">✕</button>
-        </li>
-      </ul>
+      <div v-else class="fav-card-grid">
+        <div v-for="fav in favorites" :key="fav.course_id" class="fav-card">
+          <button class="fav-card-remove" type="button" @click="removeFav(fav.course_id)" aria-label="삭제">✕</button>
+          <div class="fav-card-icon">⛰️</div>
+          <strong class="fav-card-name">{{ fav.mountain }}</strong>
+          <span v-if="fav.course_name && fav.course_name !== fav.mountain" class="fav-card-course">{{ fav.course_name }}</span>
+          <div v-if="fav.distance_km" class="fav-card-meta">{{ fav.distance_km }}km · {{ fav.duration_min }}분</div>
+          <button class="fav-card-goto" type="button" @click="goToMountain(fav)">산 정보 보기 →</button>
+        </div>
+      </div>
     </section>
 
     <!-- 챌린지 배지 패널 -->
     <section v-if="activeSection === 'challenges'" class="mypage-inline-panel">
-      <h3 class="inline-panel-title">챌린지 배지 <span class="badge-count">{{ earnedBadgeCount }}/8</span></h3>
-      <ul class="inline-badge-list">
-        <li
+      <h3 class="inline-panel-title">챌린지 배지 <span class="panel-count">{{ earnedBadgeCount }}/8</span></h3>
+      <div class="badge-card-grid">
+        <div
           v-for="badge in allBadges"
           :key="badge.key"
-          class="inline-badge-item"
+          class="badge-card"
           :class="{ earned: badge.earned }"
         >
-          <span class="badge-icon">{{ badge.icon }}</span>
-          <span class="badge-text">
-            <span class="badge-name">{{ badge.name }}</span>
-            <span class="badge-cond">{{ badge.condition }}</span>
-          </span>
-        </li>
-      </ul>
+          <span class="badge-card-icon">{{ badge.icon }}</span>
+          <span class="badge-card-name">{{ badge.name }}</span>
+          <span class="badge-card-cond">{{ badge.condition }}</span>
+          <span v-if="badge.earned" class="badge-earned-mark">획득</span>
+        </div>
+      </div>
     </section>
 
     <!-- 내 활동 패널 -->
     <section v-if="activeSection === 'activity'" class="mypage-inline-panel">
       <h3 class="inline-panel-title">내 활동</h3>
-      <p v-if="myPostsLoading" class="inline-panel-empty">불러오는 중…</p>
-      <div v-else-if="myPosts.length === 0" class="inline-panel-empty">작성한 게시글이 없습니다.</div>
-      <ul v-else class="inline-posts-list">
-        <li v-for="post in myPosts" :key="post.id" class="inline-post-item">
-          <div class="post-info">
-            <span class="post-category">{{ post.category_label || post.category }}</span>
-            <strong class="post-title">{{ post.title }}</strong>
-            <span class="post-meta">{{ post.created_at?.slice(0, 10) }} · 댓글 {{ post.comment_count ?? 0 }}</span>
+      <div class="activity-tab-row">
+        <button :class="['activity-tab', activityTab === 'posts' ? 'active' : '']" type="button" @click="switchActivityTab('posts')">
+          작성글 <span class="tab-count">{{ myPosts.length }}</span>
+        </button>
+        <button :class="['activity-tab', activityTab === 'liked' ? 'active' : '']" type="button" @click="switchActivityTab('liked')">
+          좋아요 <span class="tab-count">{{ likedPosts.length }}</span>
+        </button>
+        <button :class="['activity-tab', activityTab === 'comments' ? 'active' : '']" type="button" @click="switchActivityTab('comments')">
+          댓글 <span class="tab-count">{{ myComments.length }}</span>
+        </button>
+      </div>
+
+      <!-- 작성글 -->
+      <template v-if="activityTab === 'posts'">
+        <p v-if="myPostsLoading" class="inline-panel-empty">불러오는 중…</p>
+        <div v-else-if="myPosts.length === 0" class="inline-panel-empty">작성한 게시글이 없습니다.</div>
+        <div v-else class="activity-post-list">
+          <div v-for="post in myPosts" :key="post.id" class="activity-post-item">
+            <span class="post-cat-badge">{{ post.category_label || post.category }}</span>
+            <strong class="activity-post-title">{{ post.title }}</strong>
+            <span class="activity-post-meta">{{ post.created_at?.slice(0, 10) }} · 💬 {{ post.comment_count ?? 0 }} · ♥ {{ post.like_count ?? 0 }}</span>
           </div>
-        </li>
-      </ul>
+        </div>
+      </template>
+
+      <!-- 좋아요한 글 -->
+      <template v-else-if="activityTab === 'liked'">
+        <p v-if="likedPostsLoading" class="inline-panel-empty">불러오는 중…</p>
+        <div v-else-if="likedPosts.length === 0" class="inline-panel-empty">좋아요한 게시글이 없습니다.</div>
+        <div v-else class="activity-post-list">
+          <div v-for="post in likedPosts" :key="post.id" class="activity-post-item">
+            <span class="post-cat-badge">{{ post.category_label || post.category }}</span>
+            <strong class="activity-post-title">{{ post.title }}</strong>
+            <span class="activity-post-meta">{{ post.author }} · {{ post.created_at?.slice(0, 10) }}</span>
+          </div>
+        </div>
+      </template>
+
+      <!-- 댓글 -->
+      <template v-else-if="activityTab === 'comments'">
+        <p v-if="myCommentsLoading" class="inline-panel-empty">불러오는 중…</p>
+        <div v-else-if="myComments.length === 0" class="inline-panel-empty">작성한 댓글이 없습니다.</div>
+        <div v-else class="activity-post-list">
+          <div v-for="comment in myComments" :key="comment.id" class="activity-post-item">
+            <span class="post-cat-badge comment-badge">댓글</span>
+            <strong class="activity-post-title">{{ comment.post_title }}</strong>
+            <span class="activity-comment-body">{{ comment.content }}</span>
+            <span class="activity-post-meta">{{ comment.created_at?.slice(0, 10) }}</span>
+          </div>
+        </div>
+      </template>
     </section>
 
     <!-- 긴급 연락처 패널 -->
     <section v-if="activeSection === 'emergency'" class="mypage-inline-panel">
-      <h3 class="inline-panel-title">긴급 연락처</h3>
-      <ul v-if="emergencyContacts.length > 0" class="inline-contact-list">
-        <li v-for="contact in emergencyContacts" :key="contact.id" class="inline-contact-item">
-          <div class="contact-info">
-            <strong>{{ contact.name }}</strong>
-            <span v-if="contact.relation" class="contact-meta">{{ contact.relation }}</span>
-            <span class="contact-phone">{{ contact.phone }}</span>
-          </div>
-          <button class="fav-remove-btn" type="button" @click="removeContact(contact.id)" aria-label="삭제">✕</button>
-        </li>
-      </ul>
+      <h3 class="inline-panel-title">긴급 연락처 <span class="panel-count">{{ emergencyContacts.length }}</span></h3>
+      <div v-if="emergencyContacts.length > 0" class="contact-card-grid">
+        <div v-for="contact in emergencyContacts" :key="contact.id" class="contact-card">
+          <button class="fav-card-remove" type="button" @click="removeContact(contact.id)" aria-label="삭제">✕</button>
+          <span class="contact-card-icon">📞</span>
+          <strong class="contact-card-name">{{ contact.name }}</strong>
+          <span v-if="contact.relation" class="contact-card-rel">{{ contact.relation }}</span>
+          <a :href="`tel:${contact.phone}`" class="contact-card-phone">{{ contact.phone }}</a>
+        </div>
+      </div>
       <div v-else class="inline-panel-empty">등록된 긴급 연락처가 없습니다.</div>
 
       <form class="inline-contact-form" @submit.prevent="submitContact">
@@ -142,11 +180,34 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { authUser, logout, showAuthModal } from '../composables/useAuth.js';
 import { favorites, hikingRecords, emergencyContacts, loadMyPageData, removeFav, addContact, removeContact } from '../composables/useUserData.js';
-import { myPostsTotal, myPosts, myPostsLoading, loadMyPosts } from '../composables/useCommunity.js';
+import { myPostsTotal, myPosts, myPostsLoading, loadMyPosts, likedPosts, likedPostsLoading, loadLikedPosts, myComments, myCommentsLoading, loadMyComments } from '../composables/useCommunity.js';
+import { publicMountains, selectedMountain, guideStep } from '../composables/useGuide.js';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const activeSection = ref(null);
+const activityTab = ref('posts');
+
+function switchActivityTab(tab) {
+  activityTab.value = tab;
+  if (tab === 'liked' && likedPosts.value.length === 0) loadLikedPosts();
+  if (tab === 'comments' && myComments.value.length === 0) loadMyComments();
+}
+
+function goToMountain(fav) {
+  const isMountainKey = typeof fav.course_id === 'string' && fav.course_id.startsWith('mountain_');
+  if (isMountainKey) {
+    const mountainId = parseInt(fav.course_id.replace('mountain_', ''));
+    const mountain = publicMountains.value.find((m) => m.id === mountainId);
+    if (mountain) {
+      selectedMountain.value = mountain;
+      guideStep.value = 'course';
+      router.push('/guide');
+      return;
+    }
+  }
+  router.push('/guide');
+}
 
 const displayName = computed(() => authUser.value?.nickname || authUser.value?.username || '회원');
 
@@ -232,7 +293,10 @@ const featureCards = computed(() => [
     icon: icons.activity,
     onClick: () => {
       if (!requireLogin()) return;
-      if (activeSection.value !== 'activity' && myPosts.value.length === 0) loadMyPosts();
+      if (activeSection.value !== 'activity') {
+        activityTab.value = 'posts';
+        if (myPosts.value.length === 0) loadMyPosts();
+      }
       activeSection.value = activeSection.value === 'activity' ? null : 'activity';
     },
   },

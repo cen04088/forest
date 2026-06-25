@@ -40,6 +40,7 @@ urlpatterns = [
     # 내 활동
     path("my-posts/", cv.my_posts),
     path("liked-posts/", cv.liked_posts),
+    path("my-comments/", cv.my_comments),
     # 팔로우
     path("users/<int:user_id>/follow/", cv.follow_user),
     path("following/", cv.following_list),
