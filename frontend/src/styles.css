@@ -5782,10 +5782,6 @@ p {
 .guardian-status-chip.red    { background: #fee2e2; color: #b91c1c; }
 .guardian-status-chip.gray   { background: #f3f4f6; color: #6b7280; }
 
-@media (min-width: 1024px) {
-  .guardian-shell { left: 244px; }
-}
-
 /* 맵 래퍼 (flex-grow로 남은 공간 채움, 상대 위치 기준) */
 .guardian-map-wrap {
   flex: 1;

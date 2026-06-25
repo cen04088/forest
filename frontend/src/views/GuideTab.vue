@@ -58,152 +58,197 @@
           <div class="recommend-hero">
             <p class="eyebrow">Today Match</p>
             <h2 class="bfp-title">오늘 어떤 산이 좋을까요?</h2>
-            <p class="recommend-copy">산 이름을 몰라도 괜찮아요. 오늘의 시간, 산행 강도, 이동 거리를 알려주면 지금 가기 좋은 산을 먼저 골라드릴게요.</p>
+            <p v-if="!hasRecommendationResult" class="recommend-copy">산 이름을 몰라도 괜찮아요. 오늘의 시간, 산행 강도, 이동 거리를 알려주면 지금 가기 좋은 산을 먼저 골라드릴게요.</p>
           </div>
 
-          <!-- 출발지 -->
-          <div class="bfp-field">
-            <span class="bfp-label">출발지</span>
-            <div class="bfp-loc-row">
-              <div class="bfp-loc-status" :class="{ active: !!location || !!customStartLocation }">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>{{ locationLabel }}</span>
-              </div>
-              <div class="bfp-loc-actions">
-                <button
-                  type="button"
-                  class="bfp-loc-btn"
-                  :class="{ loading: gpsStatus === 'loading', error: gpsStatus === 'error' }"
-                  :disabled="gpsStatus === 'loading'"
-                  @click="handleGPS"
-                  title="현재 위치 감지"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" :class="gpsStatus === 'loading' ? 'spin' : ''"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
-                  현재 위치 감지
-                </button>
-                <button
-                  type="button"
-                  class="bfp-loc-btn"
-                  :class="{ active: pickingLocation }"
-                  @click="toggleLocationPick"
-                  title="지도에서 출발지 선택"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {{ pickingLocation ? '취소' : '지도 선택' }}
-                </button>
-              </div>
-            </div>
-            <p v-if="pickingLocation" class="bfp-error" style="color:var(--accent)">🗺 지도를 클릭해 출발지를 선택하세요</p>
-            <p v-else-if="gpsStatus === 'error'" class="bfp-error">⚠️ {{ gpsError }}</p>
-          </div>
-
-          <!-- 2×2 폼 그리드 -->
-          <div class="recommend-form-grid">
-            <!-- 출발 시간 -->
+          <!-- ── 폼 (추천 결과 없을 때) ── -->
+          <template v-if="!hasRecommendationResult">
+            <!-- 출발지 -->
             <div class="bfp-field">
-              <span class="bfp-label">출발 시간</span>
-              <input type="time" class="time-direct-input" v-model="profile.departureTime" />
-            </div>
-
-            <!-- 산행 강도 -->
-            <div class="bfp-field">
-              <span class="bfp-label">산행 강도</span>
-              <div class="chips">
-                <button type="button" :class="['chip diff-all', profile.difficultyFilter === 'all' ? 'active' : '']" @click="setDifficulty('all')">전체</button>
-                <button type="button" :class="['chip diff-easy', profile.difficultyFilter === 'easy' ? 'active' : '']" @click="setDifficulty('easy')">초급</button>
-                <button type="button" :class="['chip diff-medium', profile.difficultyFilter === 'medium' ? 'active' : '']" @click="setDifficulty('medium')">중급</button>
-                <button type="button" :class="['chip diff-hard', profile.difficultyFilter === 'hard' ? 'active' : '']" @click="setDifficulty('hard')">고급</button>
-              </div>
-            </div>
-
-            <!-- 등산 가능 시간 -->
-            <div class="bfp-field">
-              <span class="bfp-label">등산 가능 시간</span>
-              <div class="stepper-card">
-                <button type="button" class="stepper-btn"
-                  :disabled="profile.desiredHikingMinutes <= 60"
-                  @click="profile.desiredHikingMinutes = Math.max(60, profile.desiredHikingMinutes - 60)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
-                <div class="stepper-display">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="stepper-icon" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  <span class="stepper-val">{{ profile.desiredHikingMinutes / 60 }}시간</span>
+              <span class="bfp-label">출발지</span>
+              <div class="bfp-loc-row">
+                <div class="bfp-loc-status" :class="{ active: !!location || !!customStartLocation }">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>{{ locationLabel }}</span>
                 </div>
-                <button type="button" class="stepper-btn"
-                  :disabled="profile.desiredHikingMinutes >= 480"
-                  @click="profile.desiredHikingMinutes = Math.min(480, profile.desiredHikingMinutes + 60)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- 이동 거리 -->
-            <div class="bfp-field">
-              <span class="bfp-label">이동 거리</span>
-              <div class="stepper-card">
-                <button type="button" class="stepper-btn"
-                  :disabled="profile.maxDistanceKm <= 50"
-                  @click="profile.maxDistanceKm = Math.max(50, profile.maxDistanceKm - 50)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
-                <div class="stepper-display">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="stepper-icon" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  <span class="stepper-val">{{ profile.maxDistanceKm }}km</span>
+                <div class="bfp-loc-actions">
+                  <button
+                    type="button"
+                    class="bfp-loc-btn"
+                    :class="{ loading: gpsStatus === 'loading', error: gpsStatus === 'error' }"
+                    :disabled="gpsStatus === 'loading'"
+                    @click="handleGPS"
+                    title="현재 위치 감지"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" :class="gpsStatus === 'loading' ? 'spin' : ''"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+                    현재 위치 감지
+                  </button>
+                  <button
+                    type="button"
+                    class="bfp-loc-btn"
+                    :class="{ active: pickingLocation }"
+                    @click="toggleLocationPick"
+                    title="지도에서 출발지 선택"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {{ pickingLocation ? '취소' : '지도 선택' }}
+                  </button>
                 </div>
-                <button type="button" class="stepper-btn"
-                  :disabled="profile.maxDistanceKm >= 500"
-                  @click="profile.maxDistanceKm = Math.min(500, profile.maxDistanceKm + 50)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
+              </div>
+              <p v-if="pickingLocation" class="bfp-error" style="color:var(--accent)">🗺 지도를 클릭해 출발지를 선택하세요</p>
+              <p v-else-if="gpsStatus === 'error'" class="bfp-error">⚠️ {{ gpsError }}</p>
+            </div>
+
+            <!-- 2×2 폼 그리드 -->
+            <div class="recommend-form-grid">
+              <!-- 출발 시간 -->
+              <div class="bfp-field">
+                <span class="bfp-label">출발 시간</span>
+                <input type="time" class="time-direct-input" v-model="profile.departureTime" />
+              </div>
+
+              <!-- 산행 강도 -->
+              <div class="bfp-field">
+                <span class="bfp-label">산행 강도</span>
+                <div class="chips">
+                  <button type="button" :class="['chip diff-all', profile.difficultyFilter === 'all' ? 'active' : '']" @click="setDifficulty('all')">전체</button>
+                  <button type="button" :class="['chip diff-easy', profile.difficultyFilter === 'easy' ? 'active' : '']" @click="setDifficulty('easy')">초급</button>
+                  <button type="button" :class="['chip diff-medium', profile.difficultyFilter === 'medium' ? 'active' : '']" @click="setDifficulty('medium')">중급</button>
+                  <button type="button" :class="['chip diff-hard', profile.difficultyFilter === 'hard' ? 'active' : '']" @click="setDifficulty('hard')">고급</button>
+                </div>
+              </div>
+
+              <!-- 등산 가능 시간 -->
+              <div class="bfp-field">
+                <span class="bfp-label">등산 가능 시간</span>
+                <div class="stepper-card">
+                  <button type="button" class="stepper-btn"
+                    :disabled="profile.desiredHikingMinutes <= 60"
+                    @click="profile.desiredHikingMinutes = Math.max(60, profile.desiredHikingMinutes - 60)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                  <div class="stepper-display">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="stepper-icon" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span class="stepper-val">{{ profile.desiredHikingMinutes / 60 }}시간</span>
+                  </div>
+                  <button type="button" class="stepper-btn"
+                    :disabled="profile.desiredHikingMinutes >= 480"
+                    @click="profile.desiredHikingMinutes = Math.min(480, profile.desiredHikingMinutes + 60)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 이동 거리 -->
+              <div class="bfp-field">
+                <span class="bfp-label">이동 거리</span>
+                <div class="stepper-card">
+                  <button type="button" class="stepper-btn"
+                    :disabled="profile.maxDistanceKm <= 50"
+                    @click="profile.maxDistanceKm = Math.max(50, profile.maxDistanceKm - 50)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                  <div class="stepper-display">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="stepper-icon" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span class="stepper-val">{{ profile.maxDistanceKm }}km</span>
+                  </div>
+                  <button type="button" class="stepper-btn"
+                    :disabled="profile.maxDistanceKm >= 500"
+                    @click="profile.maxDistanceKm = Math.min(500, profile.maxDistanceKm + 50)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- 선호 태그 (선택, 접기/펼치기) -->
-          <div class="bfp-field">
-            <button type="button" class="tag-toggle-btn" @click="tagsOpen = !tagsOpen">
-              <span class="bfp-label">선호 태그</span>
-              <span v-if="selectedTags.length" class="tag-count-badge">{{ selectedTags.length }}개 선택됨</span>
-              <span class="tag-toggle-pill">{{ tagsOpen ? '접기 ▲' : '선택하기 ▼' }}</span>
-            </button>
-            <template v-if="tagsOpen">
-              <div class="tag-filter-wrap tag-filter-compact" style="margin-top:8px">
-                <button
-                  v-for="tag in ALL_TAGS"
-                  :key="tag"
-                  type="button"
-                  :class="['tag-filter-chip', selectedTags.includes(tag) ? 'active' : '']"
-                  @click="toggleTag(tag)"
-                ><span class="tfc-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}</button>
-              </div>
-              <button v-if="selectedTags.length" class="clear-tag-btn" type="button" @click="selectedTags = []">선택 초기화</button>
+            <!-- 선호 태그 (선택, 접기/펼치기) -->
+            <div class="bfp-field">
+              <button type="button" class="tag-toggle-btn" @click="tagsOpen = !tagsOpen">
+                <span class="bfp-label">선호 태그</span>
+                <span v-if="selectedTags.length" class="tag-count-badge">{{ selectedTags.length }}개 선택됨</span>
+                <span class="tag-toggle-pill">{{ tagsOpen ? '접기 ▲' : '선택하기 ▼' }}</span>
+              </button>
+              <template v-if="tagsOpen">
+                <div class="tag-filter-wrap tag-filter-compact" style="margin-top:8px">
+                  <button
+                    v-for="tag in ALL_TAGS"
+                    :key="tag"
+                    type="button"
+                    :class="['tag-filter-chip', selectedTags.includes(tag) ? 'active' : '']"
+                    @click="toggleTag(tag)"
+                  ><span class="tfc-icon">{{ TAG_ICONS[tag] }}</span>{{ tag }}</button>
+                </div>
+                <button v-if="selectedTags.length" class="clear-tag-btn" type="button" @click="selectedTags = []">선택 초기화</button>
+              </template>
+            </div>
+            <!-- 선택 요약 -->
+            <div class="selection-summary">
+              <span class="ss-pill" :class="`ss-diff-${profile.difficultyFilter}`">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/></svg>
+                {{ difficultyLabel }}
+              </span>
+              <span v-if="profile.departureTime" class="ss-pill ss-depart">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                출발 {{ profile.departureTime }}
+              </span>
+              <span class="ss-pill ss-time">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                {{ profile.desiredHikingMinutes / 60 }}시간
+              </span>
+              <span class="ss-pill ss-distance">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ profile.maxDistanceKm }}km 이내
+              </span>
+            </div>
+
+            <div class="recommend-actions">
+              <button class="primary-btn wide-field" type="button" :disabled="loading" @click="handleMountainRecommend">
+                {{ loading ? '분석 중…' : '오늘의 산 추천받기' }}
+              </button>
+            </div>
+          </template>
+
+          <!-- ── 추천 결과 (Today Match 내부) ── -->
+          <template v-else>
+            <!-- 태그 필터 결과 없음 -->
+            <template v-if="selectedTags.length && !recommendedMountains.length && !alternativeMountains.length">
+              <p class="rec-summary" style="color:var(--text-muted, #888); margin-top:8px">
+                선택한 태그({{ selectedTags.join(', ') }})를 가진 산이 현재 조건에서 없습니다.
+              </p>
+              <button class="clear-rec-btn" type="button" style="margin-top:8px" @click="selectedTags = []; handleMountainRecommend()">태그 초기화 후 다시 추천</button>
             </template>
-          </div>
-          <!-- 선택 요약 -->
-          <div class="selection-summary">
-            <span class="ss-pill" :class="`ss-diff-${profile.difficultyFilter}`">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/></svg>
-              {{ difficultyLabel }}
-            </span>
-            <span v-if="profile.departureTime" class="ss-pill ss-depart">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              출발 {{ profile.departureTime }}
-            </span>
-            <span class="ss-pill ss-time">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              {{ profile.desiredHikingMinutes / 60 }}시간
-            </span>
-            <span class="ss-pill ss-distance">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              {{ profile.maxDistanceKm }}km 이내
-            </span>
-          </div>
 
-          <div class="recommend-actions">
-            <button class="primary-btn wide-field" type="button" :disabled="loading" @click="handleMountainRecommend">
-              {{ loading ? '분석 중…' : '오늘의 산 추천받기' }}
-            </button>
-          </div>
+            <!-- 산 목록 -->
+            <template v-else-if="recommendedMountains.length || alternativeMountains.length">
+              <div class="section-title compact ai-picks-title">
+                <div>
+                  <p class="eyebrow">OLA PICKS</p>
+                  <h2>{{ recommendedMountains.length ? '오늘의 추천 산' : '오늘의 대안 산' }} <span aria-hidden="true">⛰️</span></h2>
+                </div>
+                <button class="clear-rec-btn" type="button" @click="hasRecommendationResult = false">조건 변경</button>
+              </div>
+              <div class="ai-picks-notices">
+                <p v-if="!recommendedMountains.length && alternativeMountains.length" class="rec-summary">
+                  <span aria-hidden="true">🌱</span> 현재 조건에 맞는 추천 산이 없습니다.
+                </p>
+                <p v-else class="rec-summary">
+                  <span aria-hidden="true">🌱</span> 현재 조건에서 가기 좋은 산을 우선 정렬했어요.
+                </p>
+              </div>
+              <div class="mountain-card-list">
+                <MountainCard
+                  v-for="(mountain, idx) in (recommendedMountains.length ? recommendedMountains.slice(0, 4) : alternativeMountains.slice(0, 4))"
+                  :key="mountain.mountain_key || mountain.id"
+                  :mountain="mountain"
+                  :rank="idx + 1"
+                  :is-selected="false"
+                  :is-favorite="isMountainFavorite(mountain.id)"
+                  @select="enterCourseStep"
+                  @toggle-favorite="toggleMountainFavorite"
+                />
+              </div>
+            </template>
+          </template>
         </section>
 
         <!-- ── 소방청 데이터 기반 예측 카드 ── -->
@@ -312,53 +357,6 @@
           </div>
         </section>
 
-        <!-- ── 태그 필터 결과 없음 ── -->
-        <section v-if="hasRecommendationResult && selectedTags.length && !recommendedMountains.length && !alternativeMountains.length" class="panel">
-          <p class="rec-summary" style="color:var(--text-muted, #888)">
-            선택한 태그({{ selectedTags.join(', ') }})를 가진 산이 현재 조건에서 없습니다. 태그를 초기화하거나 다른 조건으로 다시 시도해 보세요.
-          </p>
-          <button class="clear-rec-btn" type="button" style="margin-top:8px" @click="selectedTags = []; handleMountainRecommend()">태그 초기화 후 다시 추천</button>
-        </section>
-
-        <!-- ── AI 추천 결과 ── -->
-        <section v-if="hasRecommendationResult && (recommendedMountains.length || alternativeMountains.length)" class="panel ai-picks-panel">
-          <div class="section-title compact ai-picks-title">
-            <div>
-              <p class="eyebrow">OLA PICKS</p>
-              <h2>{{ recommendedMountains.length ? '오늘의 추천 산' : '오늘의 대안 산' }} <span aria-hidden="true">⛰️</span></h2>
-            </div>
-            <button class="clear-rec-btn" type="button" @click="handleRetryRecommendation">🔄 다시 추천</button>
-          </div>
-
-          <div class="ai-picks-notices">
-            <p v-if="!recommendedMountains.length && alternativeMountains.length" class="rec-summary">
-              <span aria-hidden="true">🌱</span>
-              현재 조건에 맞는 추천 산이 없습니다.
-            </p>
-            <p v-else class="rec-summary">
-              <span aria-hidden="true">🌱</span>
-              현재 조건에서 가기 좋은 산을 우선 정렬했어요.
-            </p>
-            <p class="rec-summary">
-              <span aria-hidden="true">💡</span>
-              {{ recommendedMountains.length ? '산행 시간과 이동 거리 조건에 가까운 산부터 보여드려요.' : '조건에 가장 가까운 대안을 먼저 보여드려요.' }}
-            </p>
-          </div>
-
-          <div class="mountain-card-list">
-            <MountainCard
-              v-for="(mountain, idx) in (recommendedMountains.length ? recommendedMountains.slice(0, 4) : alternativeMountains.slice(0, 4))"
-              :key="mountain.mountain_key || mountain.id"
-              :mountain="mountain"
-              :rank="idx + 1"
-              :is-selected="false"
-              :is-favorite="isMountainFavorite(mountain.id)"
-              @select="enterCourseStep"
-              @toggle-favorite="toggleMountainFavorite"
-            />
-          </div>
-
-        </section>
 
       </template>
 

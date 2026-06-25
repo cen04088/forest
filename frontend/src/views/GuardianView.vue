@@ -1,4 +1,5 @@
 <template>
+  <Teleport to="body">
   <main class="guardian-shell">
 
     <!-- 위치 미수신 / 시뮬레이션 경고 배너 -->
@@ -104,6 +105,7 @@
     </Transition>
 
   </main>
+  </Teleport>
 </template>
 
 <script setup>
