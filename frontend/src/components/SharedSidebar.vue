@@ -52,10 +52,6 @@
     </router-link>
 
     <section class="sidebar-search-panel" aria-label="산 검색하기">
-      <div class="sidebar-search-head">
-        <h2>산 검색하기</h2>
-      </div>
-
       <label class="bfp-search-row sidebar-search-row">
         <svg class="bfp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input
@@ -102,7 +98,6 @@
           <svg class="mbr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
-
     </section>
 
     <div class="sidebar-fire-stats">
@@ -136,7 +131,6 @@ import { fetchMlRisk } from '../api.js';
 const router = useRouter();
 const sidebarDifficultyFilter = ref('all');
 
-// 산행 안전 예측 (실시간 ML)
 const riskData = ref(null);
 
 const riskBadgeText = computed(() => {

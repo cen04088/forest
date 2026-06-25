@@ -9,6 +9,7 @@
   >
     <div v-if="rank === 1" class="mc-top-banner">
       <span class="mc-top-badge">🏆 오늘의 추천 1위</span>
+      <span v-if="distanceLabel" class="mc-top-distance">{{ distanceLabel }} 거리</span>
     </div>
 
     <span v-else-if="rank" class="rank-badge">{{ rank }}위</span>
@@ -22,6 +23,10 @@
           </div>
 
           <div class="mc-meta-right">
+            <span v-if="distanceLabel" class="mc-dist">
+              <span aria-hidden="true">📍</span>
+              {{ distanceLabel }}
+            </span>
             <button
               :class="['mc-fav-btn', { favorited: isFavorite }]"
               type="button"

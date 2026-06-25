@@ -1,7 +1,7 @@
 import { reactive, ref } from 'vue';
 import {
   createComment, createPost, deleteComment, deletePost,
-  fetchPost, fetchPosts, likePost, updatePost, fetchMyPosts, fetchLikedPosts, fetchMyComments,
+  fetchPost, fetchPosts, likePost, updatePost, fetchMyPosts, fetchLikedPosts,
   followUser, fetchFollowingPosts, fetchFollowingList,
 } from '../api.js';
 import { authToken, authUser, showAuthModal } from './useAuth.js';
@@ -26,8 +26,6 @@ export const myPostsTotal = ref(0);
 export const myPostsLoading = ref(false);
 export const likedPosts = ref([]);
 export const likedPostsLoading = ref(false);
-export const myComments = ref([]);
-export const myCommentsLoading = ref(false);
 export const followingPosts = ref([]);
 export const followingPostsLoading = ref(false);
 export const followingPostsTotal = ref(0);
@@ -183,16 +181,6 @@ export async function loadLikedPosts() {
     likedPosts.value = data.posts || [];
   } catch {}
   finally { likedPostsLoading.value = false; }
-}
-
-export async function loadMyComments() {
-  if (!authToken.value) return;
-  myCommentsLoading.value = true;
-  try {
-    const data = await fetchMyComments(authToken.value);
-    myComments.value = data.comments || [];
-  } catch {}
-  finally { myCommentsLoading.value = false; }
 }
 
 export async function loadFollowingPosts(page = 1) {

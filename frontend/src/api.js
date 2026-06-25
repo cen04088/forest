@@ -200,10 +200,6 @@ export async function fetchLikedPosts(token) {
   return request("/liked-posts/", { headers: authHeaders(token) });
 }
 
-export async function fetchMyComments(token) {
-  return request("/my-comments/", { headers: authHeaders(token) });
-}
-
 export async function followUser(userId, token) {
   return request(`/users/${userId}/follow/`, {
     method: "POST",
