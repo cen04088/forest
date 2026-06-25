@@ -52,25 +52,23 @@
         <div class="guardian-card-title">
           <span class="guardian-card-icon">📍</span>
           <strong>현재 위치 정보</strong>
+          <button v-if="session && !simActive" class="guardian-refresh-btn" type="button" @click="manualRefresh">
+            위치 새로고침
+          </button>
+          <span v-if="!simActive && session" class="guardian-inline-status">
+            <i class="refresh-dot" aria-hidden="true"></i>
+            <em>{{ nextRefreshLabel }}</em>
+          </span>
         </div>
 
         <div class="gbs-info-row">
           <div class="gbs-text">
             <h2 class="gbs-course">{{ displayLocationText }}</h2>
-            <p class="gbs-mountain">위치 정확도 10m · 마지막 업데이트 {{ displayLastUpdate }}</p>
+            <p class="gbs-mountain">
+              위치 정확도 10m · 마지막 업데이트 {{ displayLastUpdate }}
+              <template v-if="displaySession.trail?.length"> · 🗺️ {{ displaySession.trail.length }}회 기록</template>
+            </p>
           </div>
-          <div class="guardian-inline-status">
-            <span>📍 마지막 수신 <strong>{{ displayLastUpdate }}</strong></span>
-            <span v-if="displaySession.trail?.length">🗺️ {{ displaySession.trail.length }}회 기록</span>
-            <span v-if="!simActive && session">
-              <i class="refresh-dot" aria-hidden="true"></i>
-              {{ lastRefreshedLabel }}
-              <em>{{ nextRefreshLabel }}</em>
-            </span>
-          </div>
-          <button v-if="session && !simActive" class="guardian-refresh-btn" type="button" @click="manualRefresh">
-            위치 새로고침
-          </button>
           <span :class="['safety-badge', displayStatusClass]">{{ displayStatusLabel }}</span>
         </div>
       </div>

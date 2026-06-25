@@ -54,7 +54,7 @@
       <template v-if="guideStep === 'browse'">
 
         <!-- ── 통합 찾기 패널 ── -->
-        <section class="panel browse-find-panel">
+        <section v-if="!loading && !hasRecommendationResult" class="panel browse-find-panel">
           <div class="recommend-hero">
             <p class="eyebrow">Today Match</p>
             <h2 class="bfp-title">오늘 어떤 산이 좋을까요?</h2>
