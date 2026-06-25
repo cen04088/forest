@@ -337,6 +337,27 @@ def liked_posts(request):
     return JsonResponse({"posts": [_post_dict(p, user) for p in qs]})
 
 
+@require_http_methods(["GET"])
+def my_comments(request):
+    user = get_auth_user(request)
+    if not user:
+        return JsonResponse({"error": "로그인이 필요합니다."}, status=401)
+
+    qs = Comment.objects.filter(author=user).select_related("post").order_by("-created_at")[:30]
+    comments = [
+        {
+            "id": c.id,
+            "content": c.content,
+            "created_at": c.created_at.isoformat(),
+            "post_id": c.post_id,
+            "post_title": c.post.title if c.post else "",
+            "post_category": c.post.category if c.post else "",
+        }
+        for c in qs
+    ]
+    return JsonResponse({"comments": comments})
+
+
 # ── 산행 기록 ──────────────────────────────────────────────────────────────────
 
 def _record_dict(r):

@@ -15,9 +15,7 @@ _SYSTEM = """당신은 올라(Olla) 앱의 산행 안전 AI 어시스턴트 '올
 - 제공된 [참고 정보]가 있으면 반드시 활용해서 구체적인 수치·장소·코스명을 언급하세요.
 - 모르는 내용은 추측하지 말고 "국립공원 홈페이지나 관리소에 직접 확인해보세요"처럼 솔직하게 안내하세요.
 - 안전을 최우선으로 강조하되, 불필요한 겁주기는 삼가세요.
-
-[중요 행동 지침]
-사용자의 경험, 체력, 동반자, 가능 시간 등 개인 정보가 필요한 질문(예: "가도 될까요?", "코스 추천해줘", "안전할까요?")인데 [사용자 프로필]이 미설정 상태라면, 먼저 필요한 정보를 1~2가지만 자연스럽게 물어보고 답변을 받은 뒤 구체적인 안전 평가를 제공하세요. 이미 프로필이 설정된 경우에는 그 값을 바탕으로 바로 답변하세요. 장비·날씨·응급처치 등 개인 정보가 불필요한 질문은 바로 답변하세요."""
+- 사용자의 경험 수준, 동반자, 체력 등은 묻지 마세요. 제공된 정보(산, 날씨, 시간 등)를 바탕으로 바로 답변하세요."""
 
 
 def _build_system(context: dict, rag_context: str = "") -> str:
@@ -32,17 +30,8 @@ def _build_system(context: dict, rag_context: str = "") -> str:
     # 사용자 프로필
     profile = context.get("userProfile") or {}
     if profile:
-        exp_map = {"beginner": "초보", "intermediate": "중급", "expert": "숙련"}
-        comp_map = {"solo": "혼자", "family": "가족", "vulnerable": "어린이·노약자 동반"}
-        int_map = {"light": "가볍게", "moderate": "보통", "hard": "강하게"}
-        is_default = profile.get("isDefault", True)
-        status_note = "※ 미설정 (기본값) — 맞춤 답변이 필요하면 사용자에게 먼저 질문하세요." if is_default else "※ 사용자가 직접 설정한 값입니다."
         system += (
             f"\n\n[사용자 프로필]\n"
-            f"{status_note}\n"
-            f"경험: {exp_map.get(profile.get('experience', ''), profile.get('experience', '-'))}  "
-            f"동반자: {comp_map.get(profile.get('companion', ''), profile.get('companion', '-'))}  "
-            f"산행 강도: {int_map.get(profile.get('intensity', ''), '-')}\n"
             f"가능 시간: {profile.get('availableMinutes', '-')}분  "
             f"희망 등산 시간: {profile.get('desiredHikingMinutes', '-')}분  "
             f"최대 거리: {profile.get('maxDistanceKm', '-')}km\n"
