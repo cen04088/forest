@@ -600,7 +600,8 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
 import { useRouter } from 'vue-router';
 import {
   loadCourses, loadMountains, publicCourses, publicMountains, recommendedMountains, alternativeMountains,
@@ -1138,15 +1139,22 @@ const mlLoadingMsgIdx = ref(0);
 let _mlMsgTimer = null;
 
 watch(browseRiskLoading, (v) => {
+  clearInterval(_mlMsgTimer);
+  _mlMsgTimer = null;
   if (v) {
     mlLoadingMsgIdx.value = 0;
     _mlMsgTimer = setInterval(() => {
       mlLoadingMsgIdx.value = (mlLoadingMsgIdx.value + 1) % ML_LOADING_MSGS.length;
     }, 1100);
-  } else {
-    clearInterval(_mlMsgTimer);
   }
 });
+
+// 출발 시간/날짜 변경 시 재로드 (컴포넌트 범위 내에서만)
+watch(
+  [() => profile.departureDate, () => profile.departureTime],
+  () => { loadBrowseRisk(); },
+  { immediate: false }
+);
 
 const mlLoadingMsg = computed(() => ML_LOADING_MSGS[mlLoadingMsgIdx.value]);
 
@@ -1276,4 +1284,12 @@ onMounted(async () => {
   // 배포 환경에서 레이아웃 재계산 후 추가 갱신 (CSS 렌더링 딜레이 대응)
   setTimeout(refreshOverviewMap, 500);
 });
+
+function _clearGuideTimers() {
+  clearInterval(_mlMsgTimer);
+  clearInterval(_recLoadingTimer);
+}
+
+onUnmounted(_clearGuideTimers);
+onBeforeRouteLeave(_clearGuideTimers);
 </script>
