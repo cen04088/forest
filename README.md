@@ -296,32 +296,30 @@ LocationLog 누적              파란 폴리라인으로 궤적 표시
 
 ## 6. 기능별 소스코드 및 실행 화면
 
-> 스크린샷은 `docs/screenshots/` 폴더에 이미지를 넣으면 아래 항목에 자동 표시됩니다.
-
 ---
 
 ### 6-1. 안전 코스 추천
 
-**주요 소스코드**
-
 | 파일 | 역할 |
 |------|------|
-| `frontend/src/views/GuideTab.vue` | 프로필 입력 폼, 산 선택, 탐방로 목록, 지도 표시 |
+| `frontend/src/views/GuideTab.vue` | 프로필 입력, 산 선택, 탐방로 목록, Leaflet 지도 |
 | `backend/recommendations/services.py` | 5개 지표 점수 계산, 안전 등급 판정 |
-| `backend/recommendations/mountain_recommend.py` | 138개 산 순위 정렬 알고리즘 |
+| `backend/recommendations/mountain_recommend.py` | 138개 산 순위 정렬 |
 | `backend/recommendations/llm_briefing.py` | Claude Haiku 브리핑 카드 생성 |
 
 ```python
-# services.py — 안전 등급 강제 하향 룰 (점수와 무관)
-if rain_mm >= 10 or wind_ms >= 8 or sunlight_margin_min < 30 or wildfire == 'very_high':
-    grade = 'danger'
-elif weather_score < 0.75 or difficulty_fit < 0.40 or yellow_flags >= 2:
-    grade = 'caution'
-else:
-    grade = 'safe'
-```
+# services.py — red_flags 하나라도 있으면 비추천 강제 적용
+if rainfall >= 10: red_flags.append("강수량이 높아 미끄럼 위험이 큽니다")
+if wind >= 8:      red_flags.append("강풍으로 능선부 보행 위험이 높습니다")
+if daylight_margin is not None and daylight_margin < 30:
+    red_flags.append("일몰 전 하산 여유가 30분 미만입니다")
+if wildfire == "very_high": red_flags.append("산불 위험 단계가 높습니다")
 
-**실행 화면**
+if red_flags:   return {"safety_decision": "not_recommended", ...}
+if len(yellow_flags) >= 2 or w_score < 75 or diff_fit < 0.40:
+                return {"safety_decision": "caution", ...}
+return          {"safety_decision": "recommend", ...}
+```
 
 ![안전 코스 추천 — 메인](docs/screenshots/guide_main.png)
 ![안전 코스 추천 — 탐방로 선택](docs/screenshots/guide_trail.png)
@@ -330,80 +328,69 @@ else:
 
 ### 6-2. 세이프링크 (안전 공유)
 
-**주요 소스코드**
-
 | 파일 | 역할 |
 |------|------|
-| `frontend/src/views/SafeLinkTab.vue` | 산행 시작/종료, GPS 전송, 코드 공유 UI |
-| `backend/recommendations/safe_links.py` | 6자리 코드 발급, 세션 관리 |
-| `backend/recommendations/views.py` | `/api/safe-link/` 엔드포인트 |
+| `frontend/src/composables/useSafeLink.js` | GPS watchPosition, 5분 간격 서버 저장, Wake Lock |
+| `backend/recommendations/models.py` | `SafeLinkSession` (UUID PK, 6자리 코드, GPS 좌표) |
+| `backend/recommendations/community_views.py` | 산행 기록 자동 저장 API |
 
-```python
-# safe_links.py — 혼동 문자 제외 6자리 코드 발급
-CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'  # 0·O·I·1 제외
+```javascript
+// useSafeLink.js — GPS 수신마다 궤적 누적, 5분 간격으로만 서버 전송
+_watchId = navigator.geolocation.watchPosition((pos) => {
+  const { latitude, longitude } = pos.coords;
+  liveTrail.value = [...liveTrail.value, { lat: latitude, lng: longitude }];
 
-def generate_share_code():
-    while True:
-        code = ''.join(random.choices(CHARSET, k=6))
-        if not SafeLinkSession.objects.filter(share_code=code, status='active').exists():
-            return code
+  const nowSec = Date.now() / 1000;
+  if (_lastSavedTs !== 0 && nowSec - _lastSavedTs < WAYPOINT_INTERVAL) return;
+  _lastSavedTs = nowSec;
+  updateSafeLinkLocation(sessionId.value, latitude, longitude);
+});
 ```
 
-**실행 화면**
-
-![세이프링크 — 산행 시작](docs/screenshots/safelink_start.png)
-![세이프링크 — 코드 공유](docs/screenshots/safelink_code.png)
+![세이프링크](docs/screenshots/safelink.png)
 
 ---
 
 ### 6-3. 보호자 실시간 뷰
 
-**주요 소스코드**
-
 | 파일 | 역할 |
 |------|------|
-| `frontend/src/views/GuardianView.vue` | 풀스크린 지도, 20초 폴링, 경고 로직 |
-| `frontend/src/views/GuardianCodeView.vue` | 6자리 코드 입력 화면 |
+| `frontend/src/views/GuardianView.vue` | 풀스크린 Leaflet 지도, 20초 폴링, 미갱신 경고 |
+| `frontend/src/views/GuardianCodeView.vue` | 6자리 코드 입력 |
 
 ```javascript
-// GuardianView.vue — 30분·60분 미갱신 경고
-const minutesSinceUpdate = computed(() =>
-  Math.floor((Date.now() - new Date(session.value.last_updated)) / 60000)
-);
-const isWarning = computed(() => minutesSinceUpdate.value >= 30);
-const isEmergency = computed(() => minutesSinceUpdate.value >= 60);
+// GuardianView.vue — 30분 경고 / 60분 긴급 팝업 (시뮬레이션 동일 로직 적용)
+const SIM_STALE_THRESHOLD_SECS = 1800; // 30분
+// 틱당 5분(300초) 시뮬레이션 → 6틱 = 경고, 12틱 = 긴급 팝업
+if (simStuckTicks.value * SIM_SECS_PER_STUCK_TICK >= 3600) {
+  simEndModal.value = true; // 60분 경고 팝업 표시
+}
 ```
 
-**실행 화면**
-
-![보호자 뷰 — 실시간 지도](docs/screenshots/guardian_map.png)
 ![보호자 뷰 — 긴급 경고](docs/screenshots/guardian_alert.png)
 
 ---
 
 ### 6-4. AI 도우미 채팅 (RAG)
 
-**주요 소스코드**
-
 | 파일 | 역할 |
 |------|------|
 | `frontend/src/views/ChatTab.vue` | 멀티턴 채팅 UI |
 | `backend/recommendations/chat_ai.py` | Gemini API 호출, 시스템 프롬프트 조립 |
-| `backend/recommendations/rag_retriever.py` | BM25 검색, 31개 지식문서 |
+| `backend/recommendations/rag_retriever.py` | IDF 가중 검색, 31개 지식문서 + 탐방로 데이터 |
 
 ```python
-# rag_retriever.py — 순수 파이썬 BM25 (외부 라이브러리 없음)
-def bm25_score(query_tokens, doc_tokens, avg_dl, k1=1.5, b=0.75):
-    score = 0.0
-    dl = len(doc_tokens)
-    for term in query_tokens:
-        tf = doc_tokens.count(term)
-        idf = math.log((N - df + 0.5) / (df + 0.5) + 1)
-        score += idf * (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * dl / avg_dl))
-    return score
-```
+# rag_retriever.py — IDF 가중 점수 (외부 라이브러리 없음)
+def _weighted_score(query_tokens: frozenset, doc_tokens: frozenset) -> float:
+    matched = query_tokens & doc_tokens
+    if not matched: return 0.0
+    idf_sum = sum(_get_idf(t) for t in matched)
+    return idf_sum / (len(query_tokens) + 0.5)
 
-**실행 화면**
+# 키워드 직접 일치 시 +0.4 보너스 (최대 +1.2)
+kw_bonus = sum(0.4 for kw in doc["keywords"] if kw in query_lower)
+scored.append((score + min(kw_bonus, 1.2), doc))
+```
 
 ![AI 도우미 — 채팅](docs/screenshots/chat_main.png)
 
@@ -411,45 +398,47 @@ def bm25_score(query_tokens, doc_tokens, avg_dl, k1=1.5, b=0.75):
 
 ### 6-5. 커뮤니티
 
-**주요 소스코드**
-
 | 파일 | 역할 |
 |------|------|
 | `frontend/src/views/CommunityTab.vue` | 게시판 목록·상세·작성 UI |
-| `backend/recommendations/community_views.py` | 게시글 CRUD, 댓글, 좋아요, 팔로우 |
+| `backend/recommendations/community_views.py` | 게시글 CRUD, 댓글, 좋아요, 팔로우, 팔로잉 피드 |
 
 ```python
-# community_views.py — 팔로잉 피드 (팔로우한 사람 글만 조회)
-@api_view(['GET'])
-@require_auth
+# community_views.py — 팔로잉 피드: 팔로우한 사람 글만 페이지네이션
 def following_posts(request):
-    following_ids = UserFollow.objects.filter(
-        follower=request.user
-    ).values_list('following_id', flat=True)
-    posts = Post.objects.filter(author_id__in=following_ids).order_by('-created_at')
-    return paginate_posts(posts, request)
+    following_ids = Follow.objects.filter(follower=user).values_list("following_id", flat=True)
+    qs = (Post.objects.filter(author_id__in=following_ids)
+          .select_related("author").prefetch_related("likes", "comments"))
+    page = Paginator(qs, 15).get_page(request.GET.get("page", 1))
+    return JsonResponse({"posts": [_post_dict(p, user) for p in page.object_list], ...})
 ```
 
-**실행 화면**
-
 ![커뮤니티 — 게시판](docs/screenshots/community_list.png)
-![커뮤니티 — 게시글 상세](docs/screenshots/community_detail.png)
 
 ---
 
 ### 6-6. 마이페이지
 
-**주요 소스코드**
-
 | 파일 | 역할 |
 |------|------|
-| `frontend/src/views/MyPageTab.vue` | 즐겨찾기, 배지, 산행 기록, 긴급 연락처 |
-| `backend/recommendations/views.py` | 사용자 프로필, 즐겨찾기, 연락처 API |
+| `frontend/src/views/MyPageTab.vue` | 즐겨찾기, 배지, 산행 기록, 긴급 연락처 UI |
+| `backend/recommendations/community_views.py` | 산행 기록 저장·조회, 즐겨찾기 CRUD, 긴급 연락처 관리 |
+
+```python
+# community_views.py — 산행 기록 저장 (세이프링크 종료 시 자동 호출)
+record = HikingRecord.objects.create(
+    user=user,
+    mountain=body.get("mountain", "").strip(),
+    course_name=body.get("course_name", "").strip(),
+    hiked_date=date.fromisoformat(hiked_date_str) if hiked_date_str else date.today(),
+    duration_min=int(body.get("duration_min") or 0),
+    safety_label=body.get("safety_label", "").strip(),
+)
+```
 
 **실행 화면**
 
 ![마이페이지 — 메인](docs/screenshots/mypage_main.png)
-![마이페이지 — 산행 기록](docs/screenshots/mypage_records.png)
 
 ---
 
