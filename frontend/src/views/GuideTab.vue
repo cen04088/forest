@@ -525,40 +525,21 @@
             </div>
           </div>
 
-          <div v-if="selectedMountainCourseRecommendations.length" class="recommended-trails-panel">
-            <div class="rtp-header">
-              <h3>{{ selectedMountain.name }} 추천 탐방로</h3>
-            </div>
-
-            <p class="rtp-copy">
-              선택한 산 안에서 입력한 산행 시간과 난이도 조건에 가까운 탐방로를 먼저 정렬했어요.
-            </p>
-
-            <div v-if="selectedMountainCourseRecommendations.length" class="recommended-trail-list">
+          <div v-if="selectedMountainCourseRecommendations.length" class="trail-list-panel">
+            <h3 class="trail-list-title">탐방로 목록</h3>
+            <div class="trail-list">
               <button
-                v-for="(course, idx) in selectedMountainCourseRecommendations.slice(0, 5)"
+                v-for="course in selectedMountainCourseRecommendations.slice(0, 6)"
                 :key="course.id"
                 type="button"
-                :class="['recommended-trail-card', selectedTrailCourse?.id === course.id ? 'selected' : '']"
+                :class="['trail-row', selectedTrailCourse?.id === course.id ? 'selected' : '']"
                 @click="selectTrailCourse(course)"
               >
-                <div class="rtc-top">
-                  <span :class="['rtc-rank', idx === 0 ? 'top' : '']">{{ idx + 1 }}</span>
-                  <span :class="['badge', course.difficulty]">{{ courseDifficultyLabel(course.difficulty) }}</span>
-                </div>
-                <strong class="rtc-name">{{ course.name }}</strong>
-                <div class="rtc-meta">
-                  <span>{{ course.distance_km }}km</span>
-                  <span>{{ durationLabel(course.duration_min) }}</span>
-                  <span>상승 {{ course.elevation_gain_m }}m</span>
-                </div>
-                <div v-if="course.highlights?.length" class="rtc-route">
-                  <span v-for="h in course.highlights.slice(0, 3)" :key="h">{{ h }}</span>
-                </div>
-                <p class="rtc-reason">{{ trailRecommendationReason(course) }}</p>
+                <span :class="['badge', course.difficulty]">{{ courseDifficultyLabel(course.difficulty) }}</span>
+                <span class="trail-row-name">{{ course.name }}</span>
+                <span class="trail-row-meta">{{ course.distance_km }}km · {{ durationLabel(course.duration_min) }} · ↑{{ course.elevation_gain_m }}m</span>
               </button>
             </div>
-
           </div>
 
           <!-- 재난위험지구 -->
@@ -921,19 +902,6 @@ function courseDifficultyLabel(difficulty) {
   return { easy: '초급', medium: '중급', hard: '고급' }[difficulty] || '보통';
 }
 
-function trailRecommendationReason(course) {
-  const reasons = [];
-  const desired = Number(profile.desiredHikingMinutes || 120);
-  const gap = Math.abs(Number(course.duration_min || 0) - desired);
-
-  if (gap <= 30) reasons.push('희망 산행 시간과 가까워요');
-  if (course.has_entrance_start) reasons.push('입구에서 출발하기 좋아요');
-  if (course.difficulty === 'easy') reasons.push('초보자도 부담이 적어요');
-  if (course.difficulty === profile.difficultyFilter) reasons.push('선택한 난이도와 맞아요');
-  if (!reasons.length) reasons.push('거리와 소요 시간이 무난한 코스예요');
-
-  return reasons.slice(0, 2).join(' · ');
-}
 
 function selectTrailCourse(course) {
   selectedTrailCourse.value = course;
