@@ -5751,12 +5751,11 @@ p {
 .ml-type-sub  { font-size: 10px; color: #6b7280; margin-bottom: 2px; }
 .ml-type-name { font-size: 13px; font-weight: 700; color: #1e1b4b; }
 
-/* 기여도 바 */
-.ml-breakdown { display: flex; flex-direction: column; gap: 5px; }
-.ml-bd-row    { display: flex; align-items: center; gap: 6px; }
-.ml-bd-label  { font-size: 10px; color: #6b7280; width: 30px; flex-shrink: 0; }
-.ml-bd-track  { flex: 1; height: 5px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
-.ml-bd-fill   { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+/* 상황 설명 텍스트 */
+.ml-context-list { display: flex; flex-direction: column; gap: 5px; }
+.ml-context-row  { display: flex; align-items: flex-start; gap: 6px; }
+.ml-ctx-icon     { font-size: 13px; line-height: 1.5; flex-shrink: 0; }
+.ml-ctx-text     { font-size: 11px; color: #374151; line-height: 1.5; }
 
 .ml-data-note { font-size: 10px; color: #9ca3af; margin-top: 2px; }
 .ml-chart-sub {

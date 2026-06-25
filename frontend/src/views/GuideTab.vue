@@ -270,18 +270,11 @@
                     <p class="ml-type-name">{{ mlTopType.name }}</p>
                   </div>
                 </div>
-                <!-- 기여도 바 -->
-                <div class="ml-breakdown">
-                  <div v-for="(item, i) in [
-                    { label: '시간대', val: browseRisk.risk_breakdown?.hourly_risk },
-                    { label: '계절',  val: browseRisk.risk_breakdown?.monthly_risk },
-                    { label: '요일',  val: browseRisk.risk_breakdown?.weekday_risk },
-                  ]" :key="i" class="ml-bd-row">
-                    <span class="ml-bd-label">{{ item.label }}</span>
-                    <div class="ml-bd-track">
-                      <div class="ml-bd-fill"
-                           :style="{ width: ((item.val || 0) * 100) + '%', background: mlBarColor(item.val || 0) }"></div>
-                    </div>
+                <!-- 상황 설명 텍스트 -->
+                <div class="ml-context-list">
+                  <div v-for="(item, i) in mlContextItems" :key="i" class="ml-context-row">
+                    <span class="ml-ctx-icon">{{ item.icon }}</span>
+                    <span class="ml-ctx-text">{{ item.text }}</span>
                   </div>
                 </div>
                 <p class="ml-data-note">날씨·사고 112,902건 반영</p>
@@ -1193,12 +1186,45 @@ const mlTopType = computed(() => {
   return ML_TYPE_MAP[t] ?? ML_TYPE_MAP['기타'];
 });
 
-function mlBarColor(v) {
-  if (v >= 0.70) return '#ef4444';
-  if (v >= 0.45) return '#f97316';
-  if (v >= 0.20) return '#eab308';
-  return '#22c55e';
-}
+const DAYS_KR = ['일', '월', '화', '수', '목', '금', '토'];
+
+const mlContextItems = computed(() => {
+  if (!browseRisk.value) return [];
+
+  const h = parseInt((profile.departureTime || '08:00').split(':')[0], 10);
+  const d = profile.departureDate ? new Date(profile.departureDate) : new Date();
+  const month = d.getMonth() + 1;
+  const jsDay = d.getDay(); // 0=일, 6=토
+
+  // 시간대 상황
+  let timeIcon, timeText;
+  if (h >= 22 || h < 4)      { timeIcon = '🌙'; timeText = `새벽 ${h}시 — 야간 산행, 낙상·길잃음 매우 위험`; }
+  else if (h < 7)             { timeIcon = '🌅'; timeText = `${h}시 — 일출 전후, 기온 낮고 안개 주의`; }
+  else if (h <= 11)           { timeIcon = '⏰'; timeText = `오전 ${h}시 — 사고 집중 시간대, 주의 필요`; }
+  else if (h <= 13)           { timeIcon = '☀️'; timeText = `${h}시 — 정상 접근·하산 혼잡 시간`; }
+  else if (h <= 16)           { timeIcon = '🕑'; timeText = `${h}시 — 하산 중 다리 피로, 낙상 주의`; }
+  else if (h <= 18)           { timeIcon = '🌇'; timeText = `${h}시 — 일몰 접근, 서둘러 하산 필요`; }
+  else                        { timeIcon = '🌙'; timeText = `${h}시 — 어두운 산길, 야간 산행 위험`; }
+
+  // 계절 상황
+  let seasonIcon, seasonText;
+  if (month === 12 || month <= 2) { seasonIcon = '❄️'; seasonText = '겨울 — 빙판·저체온증 위험'; }
+  else if (month <= 5)            { seasonIcon = '🌸'; seasonText = '봄 — 성수기, 실족·추락 사고 다발'; }
+  else if (month <= 8)            { seasonIcon = '☀️'; seasonText = '여름 — 폭염·탈진·낙뢰 주의'; }
+  else                            { seasonIcon = '🍂'; seasonText = '가을 — 성수기, 낙엽 미끄럼 주의'; }
+
+  // 요일 상황
+  let dayIcon, dayText;
+  if (jsDay === 0 || jsDay === 6) { dayIcon = '📅'; dayText = `${DAYS_KR[jsDay]}요일 — 주말, 사고 평일 대비 2~3배`; }
+  else if (jsDay === 5)           { dayIcon = '📅'; dayText = '금요일 — 주말 앞두고 등산객 증가'; }
+  else                            { dayIcon = '📅'; dayText = `${DAYS_KR[jsDay]}요일 — 평일, 상대적으로 한적`; }
+
+  return [
+    { icon: timeIcon,   text: timeText },
+    { icon: seasonIcon, text: seasonText },
+    { icon: dayIcon,    text: dayText },
+  ];
+});
 
 const mlChartPoints = computed(() => {
   const risks = browseRisk.value?.hourly_risks;
