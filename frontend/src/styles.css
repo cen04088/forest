@@ -5768,37 +5768,65 @@ p {
 
 /* ── 재난위험지구 패널 ──────────────────────────────────────────────────── */
 .disaster-zone-panel {
-  border: 1px solid var(--red-soft);
+  border: 1px solid #fca5a5;
   background: #fff5f5;
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   margin-top: 8px;
 }
 
 .disaster-zone-title {
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--red);
+  color: #b91c1c;
   margin-bottom: 10px;
+}
+.dzp-icon { font-size: 14px; }
+.dzp-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #dc2626;
+  background: #fee2e2;
+  border-radius: 20px;
+  padding: 1px 7px;
 }
 
 .disaster-zone-list {
   margin: 0;
-  padding: 0 0 0 16px;
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.disaster-zone-list li {
-  font-size: 12px;
-  color: var(--ink);
-  line-height: 1.5;
+.dz-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
+.dz-risk-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.dz-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dz-name { font-size: 12px; font-weight: 600; color: #1f2937; line-height: 1.4; }
+.dz-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 6px;
+  width: fit-content;
+}
+.dz-type-fall  { background: #fee2e2; color: #b91c1c; }
+.dz-type-water { background: #dbeafe; color: #1d4ed8; }
+.dz-type-ice   { background: #e0f2fe; color: #0369a1; }
+.dz-type-etc   { background: #fef3c7; color: #92400e; }
 
-.disaster-zone-list span {
-  color: var(--muted);
-}
+.dz-report .dz-name { font-weight: 500; }
+.dz-meta { font-size: 11px; color: #6b7280; }
 
 /* ── 인증 모달 ──────────────────────────────────────────────────────────── */
 .modal-overlay {

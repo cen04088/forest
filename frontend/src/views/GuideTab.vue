@@ -543,23 +543,37 @@
           </div>
 
           <!-- 재난위험지구 -->
-          <div v-if="selectedDisasterZones.length" class="disaster-zone-panel">
-            <p class="disaster-zone-title">⚠️ 인근 재난위험지구 {{ selectedDisasterZones.length }}개</p>
+          <div v-if="dedupedDisasterZones.length" class="disaster-zone-panel">
+            <p class="disaster-zone-title">
+              <span class="dzp-icon">⚠️</span>
+              인근 재난위험지구
+              <span class="dzp-count">{{ dedupedDisasterZones.length }}곳</span>
+            </p>
             <ul class="disaster-zone-list">
-              <li v-for="zone in selectedDisasterZones.slice(0, 3)" :key="zone.id">
-                <strong>{{ zone.district || zone.location }}</strong>
-                <span v-if="zone.risk_factor"> · {{ zone.risk_factor }}</span>
+              <li v-for="zone in dedupedDisasterZones.slice(0, 4)" :key="zone.id" class="dz-row">
+                <span class="dz-risk-icon">{{ zoneRiskIcon(zone.risk_factor) }}</span>
+                <div class="dz-body">
+                  <span class="dz-name">{{ zone.facility || zone.location }}</span>
+                  <span class="dz-badge" :class="zoneRiskClass(zone.risk_factor)">{{ zoneRiskLabel(zone.risk_factor) }}</span>
+                </div>
               </li>
             </ul>
           </div>
 
           <!-- 커뮤니티 안전 제보 -->
           <div v-if="mountainSafetyReports.length" class="disaster-zone-panel">
-            <p class="disaster-zone-title">📢 커뮤니티 안전 제보 {{ mountainSafetyReports.length }}건</p>
+            <p class="disaster-zone-title">
+              <span class="dzp-icon">📢</span>
+              커뮤니티 안전 제보
+              <span class="dzp-count">{{ mountainSafetyReports.length }}건</span>
+            </p>
             <ul class="disaster-zone-list">
-              <li v-for="r in mountainSafetyReports.slice(0, 3)" :key="r.id">
-                <strong>{{ r.title }}</strong>
-                <span> · 👍 {{ r.like_count }} 💬 {{ r.comment_count }}</span>
+              <li v-for="r in mountainSafetyReports.slice(0, 3)" :key="r.id" class="dz-row dz-report">
+                <span class="dz-risk-icon">🗒️</span>
+                <div class="dz-body">
+                  <span class="dz-name">{{ r.title }}</span>
+                  <span class="dz-meta">👍 {{ r.like_count }} · 💬 {{ r.comment_count }}</span>
+                </div>
               </li>
             </ul>
           </div>
@@ -737,6 +751,46 @@ async function handleRetryRecommendation() {
 const selectedDisasterZones = ref([]);
 const mountainStory = ref(null);
 const mountainSafetyReports = ref([]);
+
+// facility명 기준으로 중복 제거
+const dedupedDisasterZones = computed(() => {
+  const seen = new Set();
+  return selectedDisasterZones.value.filter((z) => {
+    const key = (z.facility || z.location || '').trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+});
+
+function zoneRiskIcon(rf = '') {
+  if (/익사|침수|고립|호우|태풍|풍수/.test(rf)) return '🌊';
+  if (/낙석/.test(rf)) return '🪨';
+  if (/미끄럼|결빙|폭설/.test(rf)) return '🧊';
+  if (/추락/.test(rf)) return '⬇️';
+  if (/암릉/.test(rf)) return '🧗';
+  return '⚠️';
+}
+
+function zoneRiskLabel(rf = '') {
+  if (/익사|풍수해.*익사/.test(rf)) return '익사위험';
+  if (/침수|고립.*호우|호우.*고립/.test(rf)) return '침수·고립';
+  if (/폭설.*결빙|결빙.*폭설/.test(rf)) return '결빙위험';
+  if (/폭설/.test(rf)) return '폭설고립';
+  if (/태풍|풍수해/.test(rf)) return '풍수해';
+  if (/낙석/.test(rf)) return '낙석위험';
+  if (/미끄럼/.test(rf)) return '미끄럼';
+  if (/추락/.test(rf)) return '추락위험';
+  if (/암릉/.test(rf)) return '암릉주의';
+  return '위험지구';
+}
+
+function zoneRiskClass(rf = '') {
+  if (/익사|침수|고립|호우|태풍|풍수/.test(rf)) return 'dz-type-water';
+  if (/폭설|결빙|미끄럼/.test(rf)) return 'dz-type-ice';
+  if (/추락|낙석|암릉/.test(rf)) return 'dz-type-fall';
+  return 'dz-type-etc';
+}
 const storyExpanded = ref(false);
 const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
 const selectedTrailCourse = ref(null);
