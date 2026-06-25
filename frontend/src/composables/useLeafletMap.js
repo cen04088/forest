@@ -346,11 +346,37 @@ export function useLeafletMap() {
     });
   }
 
+  function _makeLuxuryCourseIcon(course, isSelected) {
+    const opacity = course._muted ? 0.3 : 1;
+    const w = isSelected ? 46 : (course._highlighted ? 42 : 36);
+    const h = Math.round(w * 1.16);
+    const diffClass = ['easy', 'medium', 'hard'].includes(course.difficulty) ? course.difficulty : 'easy';
+    const badge = course.disaster_zone_count ? `<div class="forest-pin-badge">!</div>` : '';
+
+    return L.divIcon({
+      className: `forest-pin-icon forest-pin-${diffClass}${isSelected ? ' selected' : ''}${course._highlighted ? ' highlighted' : ''}`,
+      html: `
+        <div class="forest-pin-shell" style="width:${w}px;height:${h}px;opacity:${opacity}">
+          <svg class="forest-pin-svg" viewBox="0 0 44 54" aria-hidden="true">
+            <path class="forest-pin-shadow" d="M16 50c4.2-2.2 8-2.2 12 0"/>
+            <path class="forest-pin-body" d="M22 3C12.3 3 5.5 9.9 5.5 19.4c0 12.4 16.5 30.4 16.5 30.4s16.5-18 16.5-30.4C38.5 9.9 31.7 3 22 3Z"/>
+            <circle class="forest-pin-face" cx="22" cy="19.6" r="12.8"/>
+            <path class="forest-pin-mountain" d="M12.3 27.7 18.9 18l4 5.7 2.5-3.3 6.3 7.3H12.3Z"/>
+            <circle class="forest-pin-sun" cx="28.6" cy="15.7" r="2.2"/>
+          </svg>
+          ${badge}
+        </div>`,
+      iconSize: [w, h],
+      iconAnchor: [w / 2, h],
+      popupAnchor: [0, -(h + 4)],
+    });
+  }
+
   function _makeCoursePopup(course) {
     const diff = { easy: '초급', medium: '중급', hard: '고급' }[course.difficulty] || '';
     const color = course._muted ? '#9ca3af' : _safetyPinColor(course);
     const safety = course.safety_label
-      ? `<div style="margin-top:4px;font-size:12px">&#128737; ${course.safety_label}</div>` : '';
+      ? `<div class="forest-popup-safety">&#128737; ${course.safety_label}</div>` : '';
 
     // walk_time_min 속성 존재 여부로 산 vs 코스 판별 (elevation_m은 null일 수 있음)
     const isMountain = 'walk_time_min' in course;
@@ -361,11 +387,13 @@ export function useLeafletMap() {
       const hiH = Math.floor((course.walk_time_max || 0) / 60);
       const elevText = course.elevation_m != null ? `${course.elevation_m}m` : '고도미상';
       const timeText = (loH || hiH) ? `${loH}~${hiH}시간` : '-';
-      const trailPart = course.trail_count ? `<div style="font-size:12px;color:#374151">&#128506; ${course.trail_count}개 탐방로</div>` : '';
-      const regionPart = course.region ? `<div style="font-size:12px;color:#374151">&#128205; ${course.region}</div>` : '';
+      const regionPart = course.region ? `<div class="forest-popup-region">&#128205; ${course.region}</div>` : '';
       statsHtml = `
-        <div style="font-size:12px;margin-top:5px;color:#374151">&#9968; ${elevText} &nbsp; &#8987; ${timeText}</div>
-        ${trailPart}${regionPart}`;
+        <div class="forest-popup-stats">
+          <span>&#9968; ${elevText}</span>
+          <span>&#8987; ${timeText}</span>
+        </div>
+        ${regionPart}`;
     } else {
       const h = Math.floor((course.duration_min || 0) / 60);
       const m = (course.duration_min || 0) % 60;
@@ -373,20 +401,23 @@ export function useLeafletMap() {
       const distText = course.distance_km != null ? `${course.distance_km}km` : '-';
       const gainText = course.elevation_gain_m != null ? `${course.elevation_gain_m}m` : '-';
       statsHtml = `
-        <div style="font-size:12px;margin-top:5px;color:#374151">&#128207; ${distText} &nbsp; &#8987; ${dur}</div>
-        <div style="font-size:12px;color:#374151">&#8679; ${gainText} 고도</div>`;
+        <div class="forest-popup-stats">
+          <span>&#128207; ${distText}</span>
+          <span>&#8987; ${dur}</span>
+        </div>
+        <div class="forest-popup-region">&#8679; ${gainText} 고도</div>`;
     }
 
     const title = isMountain
       ? (course.name || '이름없음')
       : `${course.mountain || ''} · ${course.name || ''}`;
     const disasterHtml = course.disaster_zone_count
-      ? `<div style="margin-top:5px;font-size:11px;color:#b91c1c;font-weight:600">⚠ 재난위험지구 ${course.disaster_zone_count}개</div>`
+      ? `<div class="forest-popup-danger">⚠ 재난위험지구 ${course.disaster_zone_count}개</div>`
       : '';
     return `
-      <div style="min-width:158px;font-family:inherit;line-height:1.4">
-        <div style="font-weight:700;font-size:13px;margin-bottom:5px">${title}</div>
-        <span style="background:${color}22;color:${color};font-size:11px;font-weight:600;padding:2px 7px;border-radius:8px">${diff}</span>
+      <div class="forest-popup-card" style="--popup-accent:${color}">
+        <div class="forest-popup-title">${title}</div>
+        <span class="forest-popup-diff">${diff}</span>
         ${statsHtml}
         ${safety}
         ${disasterHtml}
@@ -441,7 +472,8 @@ export function useLeafletMap() {
 
     if (_overviewMapEl !== el || !_overviewMapInst) {
       if (_overviewMapInst) { _overviewMapInst.remove(); _overviewMarkers.clear(); }
-      _overviewMapInst = L.map(el, { center: [37.55, 127.02], zoom: 11 });
+      _overviewMapInst = L.map(el, { center: [37.55, 127.02], zoom: 11, zoomControl: false });
+      L.control.zoom({ position: 'topright' }).addTo(_overviewMapInst);
       _osmTile().addTo(_overviewMapInst);
       _overviewMapEl = el;
       // 배포 환경에서 컨테이너 크기 재측정 (Leaflet 지도 안 보임 버그 방지)
@@ -467,7 +499,7 @@ export function useLeafletMap() {
       const key = _mapItemKey(course);
       const isSelected = key === selectedId || course.id === selectedId;
       const c = isSelected && disasterCount > 0 ? { ...course, disaster_zone_count: disasterCount } : course;
-      const icon = _makeCourseIcon(c, isSelected);
+      const icon = _makeLuxuryCourseIcon(c, isSelected);
 
       if (_overviewMarkers.has(key)) {
         const m = _overviewMarkers.get(key);
