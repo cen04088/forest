@@ -324,7 +324,7 @@ export function useGuardianView(sessionId) {
     return Math.floor((Date.now() / 1000 - ts) / 60);
   });
 
-  const isLocationStale = computed(() => locationStaleMins.value >= 10);
+  const isLocationStale = computed(() => locationStaleMins.value >= 30);
 
   const statusLabel = computed(() => {
     if (!session.value) return '연결 중';

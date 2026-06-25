@@ -62,10 +62,11 @@
       </div>
 
       <!-- 시뮬레이션 단계 표시 -->
-      <div v-if="simActive" class="guardian-sim-status">
-        <span class="sim-dot"></span>
-        <span>체크포인트 {{ simStep }}/{{ SIM_WAYPOINTS.length }} — {{ currentWaypointName }}</span>
-        <span v-if="simStep >= SIM_WAYPOINTS.length && simStuckTicks > 0" class="sim-stuck-label">⚠️ 정상 대기 중</span>
+      <div v-if="simActive" :class="['guardian-sim-status', simIsStale ? 'sim-status-alert' : '']">
+        <span :class="simIsStale ? 'sim-dot-red' : 'sim-dot'"></span>
+        <span v-if="simStep < SIM_WAYPOINTS.length">이동 중 — {{ currentWaypointName }}</span>
+        <span v-else-if="!simIsStale">하루재 도착 — 대기 중 ({{ Math.floor(simStuckSecs / 60) }}분 경과)</span>
+        <span v-else>⚠️ {{ Math.floor(simStuckSecs / 60) }}분째 위치 미갱신</span>
       </div>
 
       <!-- 시뮬레이션 시작 버튼 (시뮬레이션 꺼진 상태) -->
@@ -109,16 +110,14 @@ const {
 const { renderGuardianMap } = useLeafletMap();
 
 // ── 북한산 시뮬레이션 ─────────────────────────────────────────────────────────
+// 중간 지점(하루재)까지만 이동 후 정지 시뮬레이션 — 진입로부터 시작
 const SIM_WAYPOINTS = [
-  { lat: 37.6647, lng: 127.0162, name: '우이동 탐방지원센터' },
-  { lat: 37.6624, lng: 127.0107, name: '도선사' },
-  { lat: 37.6601, lng: 127.0061, name: '지장암 갈림길' },
-  { lat: 37.6581, lng: 127.0019, name: '하루재' },
-  { lat: 37.6572, lng: 126.9975, name: '인수봉 갈림길' },
-  { lat: 37.6570, lng: 126.9930, name: '위문 아래' },
-  { lat: 37.6575, lng: 126.9888, name: '위문 (백운봉 암문)' },
-  { lat: 37.6580, lng: 126.9808, name: '백운대 아래' },
-  { lat: 37.6584, lng: 126.9726, name: '백운대 정상 (836m)' },
+  { lat: 37.6635, lng: 127.0140, name: '🚩 진입로 (출발)' },
+  { lat: 37.6624, lng: 127.0107, name: '📍 도선사' },
+  { lat: 37.6612, lng: 127.0080, name: '📍 계곡 구간' },
+  { lat: 37.6601, lng: 127.0061, name: '📍 지장암 갈림길' },
+  { lat: 37.6590, lng: 127.0040, name: '📍 능선 합류' },
+  { lat: 37.6581, lng: 127.0019, name: '⛺ 하루재 (중간 지점)' },
 ];
 
 const simActive    = ref(false);
@@ -137,14 +136,18 @@ const simProgressPct = computed(() => {
   return Math.min(100, Math.round(((simStep.value + simStuckTicks.value) / total) * 100));
 });
 
+// 틱당 5분(300초) 시뮬레이션 → 6틱 = 30분 경과 → 경고
+const SIM_SECS_PER_STUCK_TICK = 300;
+const SIM_STALE_THRESHOLD_SECS = 1800; // 30분
+
 function _buildSimSession(trail, stuckSecs = 0) {
   const last = trail[trail.length - 1] ?? SIM_WAYPOINTS[0];
   const now = Math.floor(Date.now() / 1000);
   return {
-    course_name: '우이동 → 백운대',
+    course_name: '우이동 → 하루재',
     mountain: '북한산',
-    duration_min: 180,
-    safety_decision: stuckSecs >= 660 ? 'caution' : 'ok',
+    duration_min: 120,
+    safety_decision: stuckSecs >= SIM_STALE_THRESHOLD_SECS ? 'caution' : 'ok',
     status: 'active',
     current_lat: last.lat,
     current_lng: last.lng,
@@ -173,11 +176,11 @@ function _doSimTick() {
     simStep.value++;
   } else {
     simStuckTicks.value++;
-    if (simStuckTicks.value >= 8) { stopSim(); return; }
+    // 하루재 도착 후 14틱 (70분) 되면 자동 종료
+    if (simStuckTicks.value >= 14) { stopSim(); return; }
   }
-  const stuckSecs = simStuckTicks.value * 180;
+  const stuckSecs = simStuckTicks.value * SIM_SECS_PER_STUCK_TICK;
   const sess = _buildSimSession(simTrail.value, stuckSecs);
-  // 맵 div는 항상 DOM에 있으므로 nextTick 불필요
   if (guardianMapEl.value) renderGuardianMap(guardianMapEl.value, sess);
 }
 
@@ -200,17 +203,20 @@ const displaySession = computed(() => {
   return session.value;
 });
 
+const simStuckSecs = computed(() => simStuckTicks.value * SIM_SECS_PER_STUCK_TICK);
+const simIsStale   = computed(() => simStuckSecs.value >= SIM_STALE_THRESHOLD_SECS);
+
 const displayStatusClass = computed(() => {
   if (!displaySession.value) return 'gray';
-  if (simActive.value) return simStuckTicks.value * 180 >= 660 ? 'yellow' : 'green';
+  if (simActive.value) return simIsStale.value ? 'red' : 'green';
   return statusClass.value;
 });
 
 const displayStatusLabel = computed(() => {
   if (!displaySession.value) return '연결 중';
   if (simActive.value) {
-    if (simStuckTicks.value * 180 >= 660) return '위치 미갱신';
-    if (simStep.value >= SIM_WAYPOINTS.length) return '정상 도착';
+    if (simIsStale.value) return '위치 미갱신';
+    if (simStep.value >= SIM_WAYPOINTS.length) return '하루재 대기 중';
     return '이동 중';
   }
   return statusLabel.value;
@@ -218,7 +224,7 @@ const displayStatusLabel = computed(() => {
 
 const displayLastUpdate = computed(() => {
   if (simActive.value) {
-    const secs = simStuckTicks.value * 180;
+    const secs = simStuckSecs.value;
     if (secs === 0) return '방금';
     return `${Math.floor(secs / 60)}분 전`;
   }
@@ -227,12 +233,14 @@ const displayLastUpdate = computed(() => {
 
 const showStaleWarning = computed(() =>
   simActive.value
-    ? simStuckTicks.value >= 3          // 정상 도착 후 3틱 = ~5초 후 경고
+    ? simIsStale.value
     : isLocationStale.value && session.value?.status !== 'ended'
 );
 
 const staleMinutes = computed(() =>
-  simActive.value ? Math.max(11, simStuckTicks.value * 3) : locationStaleMins.value
+  simActive.value
+    ? Math.floor(simStuckSecs.value / 60)
+    : locationStaleMins.value
 );
 
 // ── 실제 세션 맵 갱신 ─────────────────────────────────────────────────────────

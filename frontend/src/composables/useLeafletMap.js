@@ -238,16 +238,45 @@ export function useLeafletMap() {
       }
     });
 
-    // ── 현재 위치 마커 (파란 점) ───────────────
-    L.circleMarker(center, {
-      radius: 12, color: '#1d4ed8', fillColor: '#3b82f6', fillOpacity: 0.85, weight: 3,
-    }).addTo(lg).bindPopup(
-      `<div style="font-size:12px;text-align:center;line-height:1.6">
-        <div style="font-weight:700">📍 현재 위치</div>
-        <div style="color:#6b7280">${fmt(session.location_ts)}</div>
-      </div>`,
-      { maxWidth: 160 }
-    );
+    // ── 현재 위치 마커 ───────────────────────────
+    const nowSec = Math.floor(Date.now() / 1000);
+    const staleSecs = session.location_ts ? nowSec - session.location_ts : 0;
+    const isStale = staleSecs >= 1800; // 30분 이상 미갱신
+
+    if (isStale) {
+      // 경고 상태: 빨간 pulsing divIcon
+      const warningIcon = L.divIcon({
+        html: `<div class="lf-stale-wrap">
+          <div class="lf-stale-pulse"></div>
+          <div class="lf-stale-dot"></div>
+          <div class="lf-stale-label">⚠ ${Math.floor(staleSecs / 60)}분 미갱신</div>
+        </div>`,
+        className: '',
+        iconSize: [80, 80],
+        iconAnchor: [40, 40],
+      });
+      L.marker(center, { icon: warningIcon }).addTo(lg)
+        .bindPopup(
+          `<div style="font-size:13px;text-align:center;line-height:1.7">
+            <div style="font-weight:700;color:#dc2626">⚠️ 위치 미갱신</div>
+            <div style="color:#6b7280">${Math.floor(staleSecs / 60)}분째 업데이트 없음</div>
+            <div style="color:#6b7280">${fmt(session.location_ts)}</div>
+          </div>`,
+          { maxWidth: 180 }
+        )
+        .openPopup();
+    } else {
+      // 정상 상태: 파란 circle 마커
+      L.circleMarker(center, {
+        radius: 12, color: '#1d4ed8', fillColor: '#3b82f6', fillOpacity: 0.85, weight: 3,
+      }).addTo(lg).bindPopup(
+        `<div style="font-size:12px;text-align:center;line-height:1.6">
+          <div style="font-weight:700">📍 현재 위치</div>
+          <div style="color:#6b7280">${fmt(session.location_ts)}</div>
+        </div>`,
+        { maxWidth: 160 }
+      );
+    }
 
     if (trail.length < 2) map.setView(center, zoom);
   }
