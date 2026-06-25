@@ -313,6 +313,14 @@
           </div>
         </section>
 
+        <!-- ── 태그 필터 결과 없음 ── -->
+        <section v-if="hasRecommendationResult && selectedTags.length && !recommendedMountains.length && !alternativeMountains.length" class="panel">
+          <p class="rec-summary" style="color:var(--text-muted, #888)">
+            선택한 태그({{ selectedTags.join(', ') }})를 가진 산이 현재 조건에서 없습니다. 태그를 초기화하거나 다른 조건으로 다시 시도해 보세요.
+          </p>
+          <button class="clear-rec-btn" type="button" style="margin-top:8px" @click="selectedTags = []; handleMountainRecommend()">태그 초기화 후 다시 추천</button>
+        </section>
+
         <!-- ── AI 추천 결과 ── -->
         <section v-if="hasRecommendationResult && (recommendedMountains.length || alternativeMountains.length)" class="panel">
           <div class="section-title compact">
@@ -725,7 +733,7 @@ function setDifficulty(level) {
 }
 
 async function handleMountainRecommend() {
-  await submitMountainRecommendation();
+  await submitMountainRecommendation(selectedTags.value);
   hasRecommendationResult.value = true;
   await nextTick();
   refreshOverviewMap();

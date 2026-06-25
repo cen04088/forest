@@ -355,7 +355,7 @@ function withFallbackMountainDescriptions(mountains) {
   });
 }
 
-export async function submitMountainRecommendation() {
+export async function submitMountainRecommendation(preferredTags = []) {
   loading.value = true;
   guideError.value = '';
   try {
@@ -365,9 +365,18 @@ export async function submitMountainRecommendation() {
       profile,
       location: effectiveLocation,
       weather,
+      preferred_tags: preferredTags,
     });
-    recommendedMountains.value = data.mountains || [];
-    alternativeMountains.value = data.alternatives || [];
+
+    const applyTagFilter = (mountains) => {
+      if (!preferredTags.length) return mountains;
+      return mountains.filter((m) =>
+        preferredTags.some((tag) => (m.tags || []).includes(tag))
+      );
+    };
+
+    recommendedMountains.value = applyTagFilter(data.mountains || []);
+    alternativeMountains.value = applyTagFilter(data.alternatives || []);
     resultState.value = recommendedMountains.value.length ? 'has_recommendations' : 'no_safe_course';
     agentSummary.value = _buildMountainSummary(recommendedMountains.value, profile);
     selectedMountain.value = recommendedMountains.value[0] || null;
