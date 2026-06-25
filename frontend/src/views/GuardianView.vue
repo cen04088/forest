@@ -1,5 +1,8 @@
 <template>
   <main class="guardian-shell">
+    <SharedSidebar />
+
+    <div class="guardian-dashboard">
 
     <!-- 헤더 (고정 높이) -->
     <header class="guardian-header">
@@ -22,6 +25,11 @@
     <div class="guardian-map-wrap">
       <!-- Leaflet은 이 div 안에서만 동작, 자식 없이 항상 깨끗하게 유지 -->
       <div ref="guardianMapEl" class="guardian-map-leaflet" aria-label="산행자 현재 위치 지도"></div>
+      <div class="guardian-map-tools" aria-hidden="true">
+        <span>+</span>
+        <span>−</span>
+        <span>⌖</span>
+      </div>
       <!-- 세션 없을 때 오버레이 (Leaflet 컨테이너와 형제 관계) -->
       <div v-if="loading && !displaySession" class="guardian-map-overlay guardian-map-loading">
         <div class="guardian-loading-spinner"></div>
@@ -40,12 +48,22 @@
         <div class="sim-progress-fill" :style="{ width: simProgressPct + '%' }"></div>
       </div>
 
-      <div class="gbs-info-row" v-if="displaySession">
-        <div class="gbs-text">
-          <h2 class="gbs-course">{{ displaySession.course_name || '경로 정보 없음' }}</h2>
-          <p class="gbs-mountain">⛰️ {{ displaySession.mountain || '산 정보 없음' }}</p>
+      <div class="guardian-info-card" v-if="displaySession">
+        <div class="guardian-card-title">
+          <span class="guardian-card-icon">📍</span>
+          <strong>현재 위치 정보</strong>
         </div>
-        <span :class="['safety-badge', displayStatusClass]">{{ displayStatusLabel }}</span>
+
+        <div class="gbs-info-row">
+          <div class="gbs-text">
+            <h2 class="gbs-course">{{ displayLocationText }}</h2>
+            <p class="gbs-mountain">위치 정확도 10m · 마지막 업데이트 {{ displayLastUpdate }}</p>
+          </div>
+          <button v-if="session && !simActive" class="guardian-refresh-btn" type="button" @click="manualRefresh">
+            위치 새로고침
+          </button>
+          <span :class="['safety-badge', displayStatusClass]">{{ displayStatusLabel }}</span>
+        </div>
       </div>
 
       <div class="gbs-meta" v-if="displaySession">
@@ -78,6 +96,7 @@
       </div>
 
       <!-- 액션 버튼 -->
+      <h3 class="guardian-emergency-title">긴급 상황</h3>
       <div class="gbs-actions">
         <a href="tel:119" class="emergency-btn">🚨 119 신고</a>
         <button v-if="simActive" class="outline-btn danger" type="button" @click="stopSim">🔴 종료</button>
@@ -85,6 +104,7 @@
       </div>
 
     </section>
+    </div>
 
     <!-- 60분 경고 팝업 -->
     <Transition name="modal-fade">
@@ -111,6 +131,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import SharedSidebar from '../components/SharedSidebar.vue';
 import { useGuardianView } from '../composables/useSafeLink.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 
@@ -269,6 +290,15 @@ const displayLastUpdate = computed(() => {
     return `${Math.floor(secs / 60)}분 전`;
   }
   return lastUpdateLabel.value;
+});
+
+const displayLocationText = computed(() => {
+  const s = displaySession.value;
+  if (!s) return '위치 정보 없음';
+  if (s.current_lat && s.current_lng) {
+    return `현재 좌표 ${Number(s.current_lat).toFixed(5)}, ${Number(s.current_lng).toFixed(5)}`;
+  }
+  return s.course_name || s.mountain || '현재 위치 확인 중';
 });
 
 const showStaleWarning = computed(() =>

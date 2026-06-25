@@ -53,7 +53,7 @@
 
           <p class="safelink-code-hint">
             <span aria-hidden="true">🔒</span>
-            코드는 산행자의 앱 안전공유 탭에서 확인할 수 있습니다.
+            세이프링크 생성 후 코드를 복사하세요.
           </p>
         </div>
 

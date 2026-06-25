@@ -52,10 +52,6 @@
     </router-link>
 
     <section class="sidebar-search-panel" aria-label="산 검색하기">
-      <div class="sidebar-search-head">
-        <h2>산 검색하기</h2>
-      </div>
-
       <label class="bfp-search-row sidebar-search-row">
         <svg class="bfp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input
