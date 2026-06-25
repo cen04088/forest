@@ -103,21 +103,22 @@
         </button>
       </div>
 
-      <div class="sidebar-fire-stats">
-        <div class="sfs-head">
-          <span class="sfs-title">산행 안전 예측</span>
-          <span class="sfs-badge">1만건 사고를 분석</span>
-        </div>
-        <p class="sfs-sub">이 시간대·요일·추락 사고 주의</p>
-        <div class="sfs-grid">
-          <span class="sfs-pill sfs-pill-1">길잃음·조난 59%</span>
-          <span class="sfs-pill sfs-pill-2">실족·추락 8%</span>
-          <span class="sfs-pill sfs-pill-3">탈진·질환 13%</span>
-          <span class="sfs-pill sfs-pill-4">기타 20%</span>
-        </div>
-        <p class="sfs-note">* 2010-2024년 산악사고 112,902건 기준</p>
-      </div>
     </section>
+
+    <div class="sidebar-fire-stats">
+      <div class="sfs-head">
+        <span class="sfs-title">산행 안전 예측</span>
+        <span class="sfs-badge">11만건 사고를 분석</span>
+      </div>
+      <p class="sfs-sub">이 시간대·요일·추락 사고 주의</p>
+      <div class="sfs-grid">
+        <span class="sfs-pill sfs-pill-1">길잃음·조난 59%</span>
+        <span class="sfs-pill sfs-pill-2">실족·추락 8%</span>
+        <span class="sfs-pill sfs-pill-3">탈진·질환 13%</span>
+        <span class="sfs-pill sfs-pill-4">기타 20%</span>
+      </div>
+      <p class="sfs-note">* 2010-2024년 산악사고 112,902건 기준</p>
+    </div>
   </nav>
 </template>
 
