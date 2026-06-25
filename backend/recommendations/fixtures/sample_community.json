@@ -1,0 +1,289 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 100,
+    "fields": {
+      "username": "fx_trail_buddy",
+      "first_name": "트레일버디",
+      "last_name": "",
+      "email": "trailbuddy@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "is_superuser": false,
+      "date_joined": "2025-01-10T09:00:00Z",
+      "password": "!"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 101,
+    "fields": {
+      "username": "fx_summit_hiker",
+      "first_name": "정상정복",
+      "last_name": "",
+      "email": "summit@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "is_superuser": false,
+      "date_joined": "2025-02-15T10:00:00Z",
+      "password": "!"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 102,
+    "fields": {
+      "username": "fx_safe_walker",
+      "first_name": "안전산행",
+      "last_name": "",
+      "email": "safewalker@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "is_superuser": false,
+      "date_joined": "2025-03-05T08:00:00Z",
+      "password": "!"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 103,
+    "fields": {
+      "username": "fx_weekend_climber",
+      "first_name": "주말등산러",
+      "last_name": "",
+      "email": "weekend@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "is_superuser": false,
+      "date_joined": "2025-04-20T07:30:00Z",
+      "password": "!"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 104,
+    "fields": {
+      "username": "fx_mountain_mom",
+      "first_name": "산악엄마",
+      "last_name": "",
+      "email": "mountainmom@example.com",
+      "is_staff": false,
+      "is_active": true,
+      "is_superuser": false,
+      "date_joined": "2025-05-01T11:00:00Z",
+      "password": "!"
+    }
+  },
+
+  {
+    "model": "recommendations.post",
+    "pk": 100,
+    "fields": {
+      "author": 100,
+      "title": "북한산 백운대 코스 처음 다녀왔어요 — 생각보다 힘드네요",
+      "content": "평소에 동네 뒷산 정도만 다녀봤는데, 이번에 처음으로 북한산 백운대 코스를 도전해봤습니다.\n\n아침 7시에 북한산성 입구에서 출발했고, 정상까지 약 2시간 30분 걸렸어요. 중간중간 바위 구간이 생각보다 많아서 무릎이 많이 힘들었습니다.\n\n정상에서 보는 서울 전경은 정말 멋졌어요. 힘들었지만 꼭 다시 가고 싶은 산입니다. 처음 가시는 분들은 등산화와 스틱 꼭 챙기시길 추천드려요!",
+      "category": "review",
+      "mountain": "북한산",
+      "course_name": "북한산성 코스",
+      "view_count": 312,
+      "created_at": "2025-10-05T08:30:00Z",
+      "updated_at": "2025-10-05T08:30:00Z"
+    }
+  },
+  {
+    "model": "recommendations.post",
+    "pk": 101,
+    "fields": {
+      "author": 101,
+      "title": "설악산 단풍 시즌 — 혼잡 피하는 꿀팁 공유",
+      "content": "매년 10월 설악산 단풍 시즌에는 주차 문제가 정말 심각합니다. 제가 3년 연속 다녀오면서 터득한 꿀팁을 공유할게요.\n\n첫째, 평일 새벽 5시 30분 이전 도착을 목표로 하세요. 오색 주차장 기준으로 이 시간 이후엔 이미 꽉 찹니다.\n\n둘째, 셔틀버스를 이용하면 주차 스트레스 없이 편하게 갈 수 있어요. 양양 시외버스터미널에서 오색까지 운행합니다.\n\n셋째, 권금성 케이블카 대기 시간이 주말 기준 2~3시간인데, 아침 일찍 가면 30분 이내로 줄어요.\n\n단풍은 10월 중순에서 하순이 절정이었습니다!",
+      "category": "review",
+      "mountain": "설악산",
+      "course_name": "오색 코스",
+      "view_count": 587,
+      "created_at": "2025-10-15T14:20:00Z",
+      "updated_at": "2025-10-15T14:20:00Z"
+    }
+  },
+  {
+    "model": "recommendations.post",
+    "pk": 102,
+    "fields": {
+      "author": 102,
+      "title": "⚠️ 지리산 천왕봉 구간 낙석 위험 — 22년 11월 제보",
+      "content": "지리산 천왕봉 오르는 중산리 코스 중 칼바위 근처 구간에서 최근 낙석이 잦다는 제보를 받았습니다.\n\n지난 주에 직접 다녀왔는데, 실제로 칼바위 능선 직전 구간에 낙석 흔적이 여러 곳 있었습니다. 공원 관리소에 신고는 해뒀지만 아직 정식 안전 조치가 취해지지 않은 것 같아요.\n\n당분간 해당 구간을 지날 때는 헬멧 착용을 강력 권장합니다. 낙석이 많은 비 온 직후에는 특히 주의하세요.\n\n더 자세한 위치는 댓글에 달아드릴게요.",
+      "category": "safety",
+      "mountain": "지리산",
+      "course_name": "중산리 코스",
+      "view_count": 893,
+      "created_at": "2025-11-02T10:15:00Z",
+      "updated_at": "2025-11-02T10:15:00Z"
+    }
+  },
+  {
+    "model": "recommendations.post",
+    "pk": 103,
+    "fields": {
+      "author": 103,
+      "title": "등산 초보자 필수 장비 추천 — 예산별 정리",
+      "content": "등산 처음 시작하시는 분들을 위해 예산별로 장비를 정리해봤습니다.\n\n[입문 10만원 이하]\n- 등산화: 살로몬 X Ultra 4 GTX 대신 저가형 국산 방수 트레킹화\n- 배낭: 30L 내외 다용도 배낭으로 충분\n- 스틱: 없어도 되지만 있으면 무릎 보호에 큰 도움\n\n[중급 30만원 이하]\n- 등산화: 살로몬 또는 메렐 방수 미드컷\n- 배낭: 오스프리 테이폰 26 또는 유사 제품\n- 스틱: 블랙다이아몬드 트레일 코르크\n- 방풍 재킷: 바람막이 겸용\n\n가장 중요한 건 등산화입니다. 발이 편해야 산행이 즐거워요!",
+      "category": "general",
+      "mountain": "",
+      "course_name": "",
+      "view_count": 1204,
+      "created_at": "2025-11-20T16:45:00Z",
+      "updated_at": "2025-11-20T16:45:00Z"
+    }
+  },
+  {
+    "model": "recommendations.post",
+    "pk": 104,
+    "fields": {
+      "author": 104,
+      "title": "7살 아이랑 다녀온 북한산 — 아이와 함께하기 좋은 코스 추천",
+      "content": "아이와 함께 산에 가고 싶은 부모님들께 도움이 될까 해서 후기 남깁니다.\n\n7살 아이와 함께 북한산 형제봉 코스를 다녀왔어요. 총 4시간 (쉬는 시간 포함) 걸렸고, 아이도 큰 불만 없이 완주했습니다.\n\n포인트:\n- 출발은 오전 8시 전 (아이가 지치기 전에 핵심 구간 통과)\n- 20~30분마다 짧게 쉬면서 물과 간식 보충\n- 아이용 무릎 패드 착용 강력 추천 (하산 시 무릎 부담 줄어요)\n- 목적지보다 과정을 즐기는 마음으로!\n\n정상 뷰보다 중간중간 아이가 신기해하는 돌, 나무, 계곡이 더 재밌더라고요 😊",
+      "category": "review",
+      "mountain": "북한산",
+      "course_name": "형제봉 코스",
+      "view_count": 445,
+      "created_at": "2025-12-01T09:00:00Z",
+      "updated_at": "2025-12-01T09:00:00Z"
+    }
+  },
+  {
+    "model": "recommendations.post",
+    "pk": 105,
+    "fields": {
+      "author": 100,
+      "title": "겨울 등산 시 저체온증 예방법 — 꼭 알아두세요",
+      "content": "겨울 산행 중 저체온증으로 구조 요청이 급증하는 시기입니다. 기본 예방법을 정리해드려요.\n\n1. 면 소재 금지 — 땀에 젖으면 체온이 급격히 떨어집니다. 기능성 흡습속건 소재를 착용하세요.\n\n2. 레이어링 3단계 — 베이스레이어(흡습속건) + 미들레이어(플리스) + 아우터(방풍방수)\n\n3. 모자와 장갑 — 체온의 30% 이상이 머리와 손에서 빠져나갑니다. 절대 빠뜨리지 마세요.\n\n4. 고열량 비상식 — 초콜릿, 견과류 등 고칼로리 식품 챙기기\n\n5. 일몰 전 하산 — 겨울엔 오후 4시 이후 급격히 어두워집니다. 여유 있게 계획 세우세요.\n\n무엇보다 무리한 일정은 금물입니다!",
+      "category": "safety",
+      "mountain": "",
+      "course_name": "",
+      "view_count": 728,
+      "created_at": "2025-12-10T11:00:00Z",
+      "updated_at": "2025-12-10T11:00:00Z"
+    }
+  },
+  {
+    "model": "recommendations.post",
+    "pk": 106,
+    "fields": {
+      "author": 101,
+      "title": "관악산 연주대 일출 산행 — 새벽 3시에 출발한 후기",
+      "content": "관악산 연주대에서 일출을 보기 위해 새벽 3시에 집을 나섰습니다.\n\n과천 서울랜드 방면에서 출발, 헤드랜턴 두 개 챙겨 올랐어요. 새벽 어둠 속에 걷는 느낌이 묘하게 좋았습니다.\n\n정상에 도착하니 아직 30여 명의 등산객들이 일출을 기다리고 있었어요. 오전 7시 2분 일출 — 서울 시내가 황금빛으로 물드는 순간은 정말 잊을 수 없을 것 같습니다.\n\n주의사항:\n- 새벽 산행은 반드시 2인 이상\n- 헤드랜턴은 여분 배터리 포함 2개\n- 12월 기준 연주대 체감온도 -10도 이하 각오\n- 아이젠 필수 (결빙 구간 다수)",
+      "category": "review",
+      "mountain": "관악산",
+      "course_name": "과천 코스",
+      "view_count": 356,
+      "created_at": "2025-12-22T07:30:00Z",
+      "updated_at": "2025-12-22T07:30:00Z"
+    }
+  },
+  {
+    "model": "recommendations.post",
+    "pk": 107,
+    "fields": {
+      "author": 102,
+      "title": "초보자 질문 — 등산화 방수 처리 얼마나 자주 해야 하나요?",
+      "content": "등산화를 산 지 약 1년 됐는데요, 방수 기능이 약해진 것 같습니다.\n\n비가 살짝 내렸는데 발이 젖더라고요. DWR 스프레이를 사면 되는 건가요? 아니면 전문 세탁이나 수선을 맡겨야 할까요?\n\n사용 빈도는 월 2~3회, 주로 수도권 당일 산행입니다. 등산화는 고어텍스 미드컷 제품이에요.\n\n경험 많으신 분들 조언 부탁드립니다!",
+      "category": "question",
+      "mountain": "",
+      "course_name": "",
+      "view_count": 189,
+      "created_at": "2026-01-08T15:20:00Z",
+      "updated_at": "2026-01-08T15:20:00Z"
+    }
+  },
+
+  {
+    "model": "recommendations.comment",
+    "pk": 100,
+    "fields": {
+      "post": 100,
+      "author": 101,
+      "content": "저도 처음엔 북한산이 엄청 힘들었어요. 세 번쯤 가니까 익숙해지더라고요. 스틱 꼭 챙기세요!",
+      "created_at": "2025-10-05T10:15:00Z"
+    }
+  },
+  {
+    "model": "recommendations.comment",
+    "pk": 101,
+    "fields": {
+      "post": 100,
+      "author": 102,
+      "content": "무릎 보호대도 추천드려요. 하산 시 무릎 부담이 확 줄어듭니다.",
+      "created_at": "2025-10-05T12:30:00Z"
+    }
+  },
+  {
+    "model": "recommendations.comment",
+    "pk": 102,
+    "fields": {
+      "post": 101,
+      "author": 103,
+      "content": "셔틀버스 정보 정말 유용하네요. 작년에 주차 때문에 2시간이나 허비했거든요 ㅠㅠ",
+      "created_at": "2025-10-15T16:00:00Z"
+    }
+  },
+  {
+    "model": "recommendations.comment",
+    "pk": 103,
+    "fields": {
+      "post": 102,
+      "author": 100,
+      "content": "정확한 GPS 좌표 공유해 주실 수 있나요? 다음 달에 지리산 계획 중입니다.",
+      "created_at": "2025-11-02T11:30:00Z"
+    }
+  },
+  {
+    "model": "recommendations.comment",
+    "pk": 104,
+    "fields": {
+      "post": 102,
+      "author": 102,
+      "content": "칼바위 올라가기 직전 왼쪽 사면입니다. GPS 좌표는 35.3376°N, 127.7303°E 근처예요.",
+      "created_at": "2025-11-02T13:45:00Z"
+    }
+  },
+  {
+    "model": "recommendations.comment",
+    "pk": 105,
+    "fields": {
+      "post": 103,
+      "author": 104,
+      "content": "등산화 추천 정말 감사해요. 저도 입문자인데 살로몬이 좋다는 말을 많이 들었는데 가격이 부담됐거든요.",
+      "created_at": "2025-11-20T18:00:00Z"
+    }
+  },
+  {
+    "model": "recommendations.comment",
+    "pk": 106,
+    "fields": {
+      "post": 104,
+      "author": 100,
+      "content": "아이와 함께하는 산행 후기 넘 좋아요! 저도 곧 아이 데리고 가보려고 했는데 많은 참고가 됐습니다.",
+      "created_at": "2025-12-01T11:20:00Z"
+    }
+  },
+  {
+    "model": "recommendations.comment",
+    "pk": 107,
+    "fields": {
+      "post": 107,
+      "author": 101,
+      "content": "DWR 스프레이로 충분합니다. 니켁스 또는 그랜저 제품 추천드려요. 건조 후 드라이어로 열처리하면 효과 2배!",
+      "created_at": "2026-01-08T17:00:00Z"
+    }
+  },
+  {
+    "model": "recommendations.comment",
+    "pk": 108,
+    "fields": {
+      "post": 107,
+      "author": 103,
+      "content": "고어텍스는 멤브레인 자체는 괜찮고 겉감 DWR이 닳은 거라 스프레이 처리로 해결됩니다. 연 1~2회 처리하면 충분해요.",
+      "created_at": "2026-01-08T19:30:00Z"
+    }
+  }
+]
