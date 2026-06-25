@@ -452,11 +452,11 @@ record = HikingRecord.objects.create(
 | AI 도우미 멀티턴 채팅 | Gemini 2.5 Flash Lite (`gemini-2.5-flash-lite`) | `GEMINI_API_KEY` |
 | 개인화 안전 조언 3줄 | Gemini 2.5 Flash Lite | `GEMINI_API_KEY` |
 
-### 6-1. Claude Haiku — 안전 브리핑 (`llm_briefing.py`)
+### 7-1. Claude Haiku — 안전 브리핑 (`llm_briefing.py`)
 
 코스 추천 결과 최상단에 표시되는 카드. 선택 산·날씨·난이도·재난 정보를 프롬프트에 주입해 "지금 이 산에 가도 되는가"를 3문장으로 요약한다. 동일 조건에 대해 1시간 Django 캐시 적용.
 
-### 6-2. Gemini — AI 도우미 채팅 (`chat_ai.py`)
+### 7-2. Gemini — AI 도우미 채팅 (`chat_ai.py`)
 
 **RAG(Retrieval-Augmented Generation) 파이프라인**:
 
@@ -480,7 +480,7 @@ Gemini API 호출 (max_output_tokens: 400)
 
 BM25는 외부 의존성 없이 순수 파이썬으로 구현해 서버 리소스를 최소화했다.
 
-### 6-3. Gemini — 개인화 안전 조언 (`safety_advice_ai.py`)
+### 7-3. Gemini — 개인화 안전 조언 (`safety_advice_ai.py`)
 
 산 선택 직후 사이드바에 표시. 선택 산·실시간 날씨·산행 목적·일몰 시간을 기반으로 "오늘 이 산을 오를 때 특히 주의할 점" 3줄을 생성한다.
 
