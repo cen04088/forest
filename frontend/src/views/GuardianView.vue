@@ -86,6 +86,24 @@
 
     </section>
 
+    <!-- 60분 경고 팝업 -->
+    <Transition name="modal-fade">
+      <div v-if="simEndModal" class="sim-end-overlay" role="dialog" aria-modal="true">
+        <div class="sim-end-modal">
+          <div class="sem-icon">⚠️</div>
+          <h3 class="sem-title">위치 미갱신 60분</h3>
+          <p class="sem-body">
+            산행자의 위치가 <strong>60분째 갱신되지 않았습니다.</strong><br>
+            직접 연락하거나 119에 신고하세요.
+          </p>
+          <div class="sem-actions">
+            <a href="tel:119" class="emergency-btn">🚨 119 신고</a>
+            <button class="outline-btn" type="button" @click="dismissSimEnd">확인</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
   </main>
 </template>
 
@@ -110,21 +128,21 @@ const {
 const { renderGuardianMap } = useLeafletMap();
 
 // ── 북한산 시뮬레이션 ─────────────────────────────────────────────────────────
-// 중간 지점(하루재)까지만 이동 후 정지 시뮬레이션 — 진입로부터 시작
+// 중간 지점(하루재)까지만 이동 후 정지 시뮬레이션 — 도선사부터 시작
 const SIM_WAYPOINTS = [
-  { lat: 37.6635, lng: 127.0140, name: '🚩 진입로 (출발)' },
-  { lat: 37.6624, lng: 127.0107, name: '📍 도선사' },
+  { lat: 37.6624, lng: 127.0107, name: '🚩 도선사 (출발)' },
   { lat: 37.6612, lng: 127.0080, name: '📍 계곡 구간' },
   { lat: 37.6601, lng: 127.0061, name: '📍 지장암 갈림길' },
   { lat: 37.6590, lng: 127.0040, name: '📍 능선 합류' },
   { lat: 37.6581, lng: 127.0019, name: '⛺ 하루재 (중간 지점)' },
 ];
 
-const simActive    = ref(false);
-const simStep      = ref(0);
+const simActive     = ref(false);
+const simStep       = ref(0);
 const simStuckTicks = ref(0);
-const simTrail     = ref([]);
-let _simInterval   = null;
+const simTrail      = ref([]);
+const simEndModal   = ref(false); // 60분 경고 팝업
+let _simInterval    = null;
 
 const currentWaypointName = computed(() => {
   if (simStep.value === 0) return '';
@@ -165,6 +183,7 @@ function startSim() {
   simActive.value = true;
   simStep.value = 0;
   simStuckTicks.value = 0;
+  simEndModal.value = false;
   simTrail.value = [];
   _doSimTick();
   _simInterval = setInterval(_doSimTick, 1600);
@@ -176,8 +195,16 @@ function _doSimTick() {
     simStep.value++;
   } else {
     simStuckTicks.value++;
-    // 하루재 도착 후 14틱 (70분) 되면 자동 종료
-    if (simStuckTicks.value >= 14) { stopSim(); return; }
+    // 60분(12틱) 도달 시 경고 팝업 표시 후 종료
+    if (simStuckTicks.value * SIM_SECS_PER_STUCK_TICK >= 3600) {
+      const stuckSecs = simStuckTicks.value * SIM_SECS_PER_STUCK_TICK;
+      const sess = _buildSimSession(simTrail.value, stuckSecs);
+      if (guardianMapEl.value) renderGuardianMap(guardianMapEl.value, sess);
+      clearInterval(_simInterval);
+      _simInterval = null;
+      simEndModal.value = true;
+      return;
+    }
   }
   const stuckSecs = simStuckTicks.value * SIM_SECS_PER_STUCK_TICK;
   const sess = _buildSimSession(simTrail.value, stuckSecs);
@@ -191,10 +218,19 @@ function stopSim() {
   simStep.value = 0;
   simStuckTicks.value = 0;
   simTrail.value = [];
-  // 실제 세션이 있으면 맵 복구
+  simEndModal.value = false;
   if (session.value && guardianMapEl.value) {
     nextTick(() => renderGuardianMap(guardianMapEl.value, session.value));
   }
+}
+
+// 팝업 확인 버튼 → 시뮬레이션 완전 종료
+function dismissSimEnd() {
+  simEndModal.value = false;
+  simActive.value = false;
+  simStep.value = 0;
+  simStuckTicks.value = 0;
+  simTrail.value = [];
 }
 
 // ── 표시용 합성값 ─────────────────────────────────────────────────────────────

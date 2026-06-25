@@ -5319,6 +5319,57 @@ p {
   z-index: 2;
 }
 
+/* ── 60분 경고 팝업 ── */
+.sim-end-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.sim-end-modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 24px 20px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+}
+.sem-icon { font-size: 44px; line-height: 1; margin-bottom: 10px; }
+.sem-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #dc2626;
+  margin: 0 0 10px;
+}
+.sem-body {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.7;
+  margin: 0 0 20px;
+}
+.sem-body strong { color: #dc2626; }
+.sem-actions {
+  display: flex;
+  gap: 10px;
+}
+.sem-actions .emergency-btn,
+.sem-actions .outline-btn {
+  flex: 1;
+  font-size: 14px;
+  padding: 12px;
+}
+
+/* 팝업 트랜지션 */
+.modal-fade-enter-active,
+.modal-fade-leave-active { transition: opacity 0.2s ease; }
+.modal-fade-enter-from,
+.modal-fade-leave-to   { opacity: 0; }
+
 /* 시뮬레이션 시작 버튼 (시트 안) */
 .gbs-sim-row {
   display: flex;
