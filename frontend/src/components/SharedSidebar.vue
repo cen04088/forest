@@ -154,7 +154,7 @@ const riskWarning = computed(() => {
 });
 
 const riskPills = computed(() => {
-  if (!riskData.value?.type_proba) {
+  if (!riskData.value?.type_proba || !Object.keys(riskData.value.type_proba).length) {
     return [
       { label: '길잃음·조난 59%', cls: 'sfs-pill-1' },
       { label: '실족·추락 8%',   cls: 'sfs-pill-2' },
