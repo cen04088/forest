@@ -12,12 +12,13 @@
 3. [데이터베이스 모델링 (ERD)](#3-데이터베이스-모델링-erd)
 4. [추천 알고리즘 기술 설명](#4-추천-알고리즘-기술-설명)
 5. [핵심 기능 설명](#5-핵심-기능-설명)
-6. [생성형 AI 활용](#6-생성형-ai-활용)
-7. [배포 서비스 URL](#7-배포-서비스-url)
-8. [프로젝트 구조](#8-프로젝트-구조)
-9. [실행 방법](#9-실행-방법)
-10. [환경 변수](#10-환경-변수)
-11. [구현 과정 회고](#11-구현-과정-회고)
+6. [기능별 소스코드 및 실행 화면](#6-기능별-소스코드-및-실행-화면)
+7. [생성형 AI 활용](#7-생성형-ai-활용)
+8. [배포 서비스 URL](#8-배포-서비스-url)
+9. [프로젝트 구조](#9-프로젝트-구조)
+10. [실행 방법](#10-실행-방법)
+11. [환경 변수](#11-환경-변수)
+12. [구현 과정 회고](#12-구현-과정-회고)
 
 ---
 
@@ -293,7 +294,166 @@ LocationLog 누적              파란 폴리라인으로 궤적 표시
 
 ---
 
-## 6. 생성형 AI 활용
+## 6. 기능별 소스코드 및 실행 화면
+
+> 스크린샷은 `docs/screenshots/` 폴더에 이미지를 넣으면 아래 항목에 자동 표시됩니다.
+
+---
+
+### 6-1. 안전 코스 추천
+
+**주요 소스코드**
+
+| 파일 | 역할 |
+|------|------|
+| `frontend/src/views/GuideTab.vue` | 프로필 입력 폼, 산 선택, 탐방로 목록, 지도 표시 |
+| `backend/recommendations/services.py` | 5개 지표 점수 계산, 안전 등급 판정 |
+| `backend/recommendations/mountain_recommend.py` | 138개 산 순위 정렬 알고리즘 |
+| `backend/recommendations/llm_briefing.py` | Claude Haiku 브리핑 카드 생성 |
+
+```python
+# services.py — 안전 등급 강제 하향 룰 (점수와 무관)
+if rain_mm >= 10 or wind_ms >= 8 or sunlight_margin_min < 30 or wildfire == 'very_high':
+    grade = 'danger'
+elif weather_score < 0.75 or difficulty_fit < 0.40 or yellow_flags >= 2:
+    grade = 'caution'
+else:
+    grade = 'safe'
+```
+
+**실행 화면**
+
+![안전 코스 추천 — 메인](docs/screenshots/guide_main.png)
+![안전 코스 추천 — 탐방로 선택](docs/screenshots/guide_trail.png)
+
+---
+
+### 6-2. 세이프링크 (안전 공유)
+
+**주요 소스코드**
+
+| 파일 | 역할 |
+|------|------|
+| `frontend/src/views/SafeLinkTab.vue` | 산행 시작/종료, GPS 전송, 코드 공유 UI |
+| `backend/recommendations/safe_links.py` | 6자리 코드 발급, 세션 관리 |
+| `backend/recommendations/views.py` | `/api/safe-link/` 엔드포인트 |
+
+```python
+# safe_links.py — 혼동 문자 제외 6자리 코드 발급
+CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'  # 0·O·I·1 제외
+
+def generate_share_code():
+    while True:
+        code = ''.join(random.choices(CHARSET, k=6))
+        if not SafeLinkSession.objects.filter(share_code=code, status='active').exists():
+            return code
+```
+
+**실행 화면**
+
+![세이프링크 — 산행 시작](docs/screenshots/safelink_start.png)
+![세이프링크 — 코드 공유](docs/screenshots/safelink_code.png)
+
+---
+
+### 6-3. 보호자 실시간 뷰
+
+**주요 소스코드**
+
+| 파일 | 역할 |
+|------|------|
+| `frontend/src/views/GuardianView.vue` | 풀스크린 지도, 20초 폴링, 경고 로직 |
+| `frontend/src/views/GuardianCodeView.vue` | 6자리 코드 입력 화면 |
+
+```javascript
+// GuardianView.vue — 30분·60분 미갱신 경고
+const minutesSinceUpdate = computed(() =>
+  Math.floor((Date.now() - new Date(session.value.last_updated)) / 60000)
+);
+const isWarning = computed(() => minutesSinceUpdate.value >= 30);
+const isEmergency = computed(() => minutesSinceUpdate.value >= 60);
+```
+
+**실행 화면**
+
+![보호자 뷰 — 실시간 지도](docs/screenshots/guardian_map.png)
+![보호자 뷰 — 긴급 경고](docs/screenshots/guardian_alert.png)
+
+---
+
+### 6-4. AI 도우미 채팅 (RAG)
+
+**주요 소스코드**
+
+| 파일 | 역할 |
+|------|------|
+| `frontend/src/views/ChatTab.vue` | 멀티턴 채팅 UI |
+| `backend/recommendations/chat_ai.py` | Gemini API 호출, 시스템 프롬프트 조립 |
+| `backend/recommendations/rag_retriever.py` | BM25 검색, 31개 지식문서 |
+
+```python
+# rag_retriever.py — 순수 파이썬 BM25 (외부 라이브러리 없음)
+def bm25_score(query_tokens, doc_tokens, avg_dl, k1=1.5, b=0.75):
+    score = 0.0
+    dl = len(doc_tokens)
+    for term in query_tokens:
+        tf = doc_tokens.count(term)
+        idf = math.log((N - df + 0.5) / (df + 0.5) + 1)
+        score += idf * (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * dl / avg_dl))
+    return score
+```
+
+**실행 화면**
+
+![AI 도우미 — 채팅](docs/screenshots/chat_main.png)
+
+---
+
+### 6-5. 커뮤니티
+
+**주요 소스코드**
+
+| 파일 | 역할 |
+|------|------|
+| `frontend/src/views/CommunityTab.vue` | 게시판 목록·상세·작성 UI |
+| `backend/recommendations/community_views.py` | 게시글 CRUD, 댓글, 좋아요, 팔로우 |
+
+```python
+# community_views.py — 팔로잉 피드 (팔로우한 사람 글만 조회)
+@api_view(['GET'])
+@require_auth
+def following_posts(request):
+    following_ids = UserFollow.objects.filter(
+        follower=request.user
+    ).values_list('following_id', flat=True)
+    posts = Post.objects.filter(author_id__in=following_ids).order_by('-created_at')
+    return paginate_posts(posts, request)
+```
+
+**실행 화면**
+
+![커뮤니티 — 게시판](docs/screenshots/community_list.png)
+![커뮤니티 — 게시글 상세](docs/screenshots/community_detail.png)
+
+---
+
+### 6-6. 마이페이지
+
+**주요 소스코드**
+
+| 파일 | 역할 |
+|------|------|
+| `frontend/src/views/MyPageTab.vue` | 즐겨찾기, 배지, 산행 기록, 긴급 연락처 |
+| `backend/recommendations/views.py` | 사용자 프로필, 즐겨찾기, 연락처 API |
+
+**실행 화면**
+
+![마이페이지 — 메인](docs/screenshots/mypage_main.png)
+![마이페이지 — 산행 기록](docs/screenshots/mypage_records.png)
+
+---
+
+## 7. 생성형 AI 활용
 
 ### 사용 모델
 
@@ -343,7 +503,7 @@ BM25는 외부 의존성 없이 순수 파이썬으로 구현해 서버 리소�
 
 ---
 
-## 7. 배포 서비스 URL
+## 8. 배포 서비스 URL
 
 | 항목 | 내용 |
 |------|------|
@@ -377,7 +537,7 @@ Railway PostgreSQL에 fixture 데이터 적재 완료.
 
 ---
 
-## 8. 프로젝트 구조
+## 9. 프로젝트 구조
 
 ```
 forest/
@@ -442,7 +602,7 @@ forest/
 
 ---
 
-## 9. 실행 방법
+## 10. 실행 방법
 
 ### Backend
 
@@ -468,7 +628,7 @@ Vite 개발 서버가 `/api` 요청을 `http://127.0.0.1:8000`으로 프록시�
 
 ---
 
-## 10. 환경 변수
+## 11. 환경 변수
 
 | 변수 | 필수 | 설명 |
 |------|------|------|
@@ -481,7 +641,7 @@ Vite 개발 서버가 `/api` 요청을 `http://127.0.0.1:8000`으로 프록시�
 
 ---
 
-## 11. 구현 과정 회고
+## 12. 구현 과정 회고
 
 ### 학습한 내용 및 새로 배운 것들
 

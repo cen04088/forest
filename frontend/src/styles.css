@@ -5750,11 +5750,7 @@ p {
 }
 
 @media (min-width: 1024px) {
-  .guardian-shell { left: 254px; }
-}
-
-@media (min-width: 1280px) {
-  .guardian-shell { left: 264px; }
+  .guardian-shell { left: 292px; }
 }
 
 .guardian-map-controls {
@@ -13071,7 +13067,8 @@ body {
 
   .app-shell .tabbar.shared-sidebar .sidebar-search-panel {
     flex: 1 1 auto !important;
-    min-height: 0 !important;
+    min-height: 120px !important;
+    max-height: calc(100vh - 560px) !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
