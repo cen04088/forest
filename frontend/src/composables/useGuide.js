@@ -399,7 +399,7 @@ export async function submitMountainRecommendation() {
     alternativeMountains.value = data.alternatives || [];
     resultState.value = recommendedMountains.value.length ? 'has_recommendations' : 'no_safe_course';
     agentSummary.value = _buildMountainSummary(recommendedMountains.value, profile);
-    selectedMountain.value = recommendedMountains.value[0] || null;
+    selectedMountain.value = null;
   } catch (err) {
     const isNetwork = !navigator.onLine || err.message?.includes('fetch');
     guideError.value = isNetwork

@@ -219,22 +219,33 @@
         </section>
 
         <!-- ── AI 추천 결과 ── -->
-        <section v-if="hasRecommendationResult && (recommendedMountains.length || alternativeMountains.length)" class="panel">
-          <div class="section-title compact">
+        <section v-if="hasRecommendationResult && (recommendedMountains.length || alternativeMountains.length)" class="panel ai-picks-panel">
+          <div class="section-title compact ai-picks-title">
             <div>
-              <p class="eyebrow">AI Picks</p>
-              <h2>{{ recommendedMountains.length ? '오늘의 추천 산' : '오늘의 대안 산' }}</h2>
+              <p class="eyebrow">OLA PICKS</p>
+              <h2>{{ recommendedMountains.length ? '오늘의 추천 산' : '오늘의 대안 산' }} <span aria-hidden="true">⛰️</span></h2>
             </div>
-            <button class="clear-rec-btn" type="button" @click="handleRetryRecommendation">다시 추천</button>
+            <button class="clear-rec-btn" type="button" @click="handleRetryRecommendation">🔄 다시 추천</button>
           </div>
-          <p v-if="agentSummary" class="rec-summary">{{ agentSummary }}</p>
-          <p v-if="!recommendedMountains.length && alternativeMountains.length" class="rec-summary">
-            현재 조건에서 바로 추천할 만큼 안전 점수가 높은 산은 없어서, 조건에 가장 가까운 대안을 먼저 보여드려요.
-          </p>
+
+          <div class="ai-picks-notices">
+            <p v-if="!recommendedMountains.length && alternativeMountains.length" class="rec-summary">
+              <span aria-hidden="true">🌱</span>
+              현재 조건에 맞는 추천 산이 없습니다.
+            </p>
+            <p v-else class="rec-summary">
+              <span aria-hidden="true">🌱</span>
+              현재 조건에서 가기 좋은 산을 우선 정렬했어요.
+            </p>
+            <p class="rec-summary">
+              <span aria-hidden="true">💡</span>
+              {{ recommendedMountains.length ? '산행 시간과 이동 거리 조건에 가까운 산부터 보여드려요.' : '조건에 가장 가까운 대안을 먼저 보여드려요.' }}
+            </p>
+          </div>
 
           <div class="mountain-card-list">
             <MountainCard
-              v-for="(mountain, idx) in (recommendedMountains.length ? recommendedMountains.slice(0, 3) : alternativeMountains.slice(0, 3))"
+              v-for="(mountain, idx) in (recommendedMountains.length ? recommendedMountains.slice(0, 4) : alternativeMountains.slice(0, 4))"
               :key="mountain.mountain_key || mountain.id"
               :mountain="mountain"
               :rank="idx + 1"
@@ -631,6 +642,8 @@ function setDifficulty(level) {
 
 async function handleMountainRecommend() {
   await submitMountainRecommendation();
+  guideStep.value = 'browse';
+  selectedMountain.value = null;
   hasRecommendationResult.value = true;
   await nextTick();
   refreshOverviewMap();
