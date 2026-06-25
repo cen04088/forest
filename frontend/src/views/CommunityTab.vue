@@ -24,13 +24,7 @@
                     <span class="info-mag-num">{{ String(idx + 1).padStart(2, '0') }}</span>
                     <span class="info-mag-badge">{{ slide.infoPost.label }}</span>
                   </div>
-                  <div class="info-mag-card-actions">
-                    <template v-if="idx === 2">
-                      <button type="button" aria-label="이전 정보글" @click.stop>‹</button>
-                      <button type="button" aria-label="다음 정보글" @click.stop>›</button>
-                    </template>
-                    <span class="info-mag-readtime">{{ slide.infoPost.readTime }}</span>
-                  </div>
+                  <div class="info-mag-card-actions"></div>
                 </div>
 
                 <div class="info-mag-card-bottom">

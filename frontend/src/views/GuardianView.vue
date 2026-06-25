@@ -312,10 +312,15 @@ watch(() => session.value?.location_ts, () => { _notifiedStale = false; });
 onMounted(async () => {
   startPolling();
   await nextTick();
-  // 마운트 시점에 이미 세션이 있으면 즉시 렌더
   if (session.value && guardianMapEl.value) {
     renderGuardianMap(guardianMapEl.value, session.value);
   }
+  // fixed 레이아웃 전환 직후 타이밍 보정: 세션이 있으면 재렌더
+  setTimeout(() => {
+    if (session.value && guardianMapEl.value) {
+      renderGuardianMap(guardianMapEl.value, session.value);
+    }
+  }, 500);
 });
 onUnmounted(() => { stopPolling(); stopSim(); });
 </script>
