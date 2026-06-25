@@ -1,203 +1,266 @@
 <template>
   <section class="screen-stack safelink-layout">
-    <!-- 왼쪽 컬럼: 보호자 코드 입력 -->
     <div class="safelink-col-map">
-    <section class="panel">
-      <div class="section-title compact">
-        <div><p class="eyebrow">보호자 연결</p><h2>산행자 코드 입력</h2></div>
-      </div>
-
-      <div v-if="!guardianResolved">
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 20px;">
-          산행자가 알려준 6자리 코드를 입력하면<br>현재 위치를 실시간으로 확인할 수 있습니다.
-        </p>
-
-        <div class="code-input-wrap" :class="{ focused: inputFocused }" @click="focusGuardianInput">
-          <input
-            ref="hiddenInput"
-            class="code-hidden-input"
-            type="text"
-            inputmode="text"
-            autocomplete="off"
-            autocorrect="off"
-            autocapitalize="off"
-            spellcheck="false"
-            maxlength="6"
-            @input="onGuardianInput"
-            @keydown="onGuardianKeydown"
-            @keydown.enter="lookupCode"
-            @paste="onGuardianPaste"
-            @focus="inputFocused = true"
-            @blur="inputFocused = false"
-          />
-          <div class="code-input-row">
-            <div
-              v-for="i in 6" :key="i"
-              class="code-digit-input"
-              :class="{ filled: guardianCode.length >= i, active: inputFocused && guardianCode.length === i - 1 }"
-            >{{ guardianCode[i - 1] || '' }}</div>
-          </div>
+      <section class="safelink-guardian-card">
+        <div class="safelink-card-copy">
+          <p class="safelink-kicker">
+            <span class="safelink-shield" aria-hidden="true">◆</span>
+            보호자 연결
+          </p>
+          <h1>산행자 코드 입력</h1>
+          <p>산행자가 알려준 6자리 코드를 입력하면<br>현재 위치를 실시간으로 확인할 수 있습니다.</p>
         </div>
 
-        <p v-if="guardianError" class="guardian-entry-error">{{ guardianError }}</p>
-
-        <button
-          class="primary-btn wide-field"
-          style="margin-bottom:16px"
-          :disabled="guardianCode.length < 6 || guardianLoading"
-          type="button"
-          @click="lookupCode"
-        >
-          {{ guardianLoading ? '확인 중…' : '위치 확인하기' }}
-        </button>
-
-        <p style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5;">
-          코드는 산행자의 앱 안전공유 탭에서 확인할 수 있습니다.
-        </p>
-      </div>
-
-      <div v-else style="font-size:14px;color:var(--muted);margin-top:20px;">
-        위치 정보를 불러오는 중입니다…
-      </div>
-    </section>
-    </div>
-
-    <!-- 오른쪽 컬럼: 산행 시작 컨트롤 -->
-    <div class="safelink-col-ctrl">
-    <section class="panel share-panel">
-      <div class="section-title compact">
-        <div><p class="eyebrow">산행 시작</p><h2>세이프링크 생성</h2></div>
-      </div>
-
-      <!-- 대기 상태 -->
-      <div v-if="!safeLinkActive && safeLinkStatus !== 'ended'">
-        <p class="safe-link-guide">
-          산행을 시작하면 보호자 전용 실시간 위치 링크가 생성됩니다.
-        </p>
-        <p v-if="!selectedMountain" class="safe-link-guide" style="color:var(--muted);font-size:12px;">
-          💡 안전코스 탭에서 산을 선택하면 안전 정보도 함께 공유됩니다.
-        </p>
-        <button
-          class="primary-btn wide-field" type="button"
-          :disabled="safeLinkStatus === 'creating'"
-          @click="startHiking(mountainAsCourse)"
-        >
-          {{ safeLinkStatus === 'creating' ? '링크 생성 중…' : '산행 시작 & 세이프링크 생성' }}
-        </button>
-        <p v-if="safeLinkError" class="share-status error">{{ safeLinkError }}</p>
-        <p v-if="gpsErrorMsg" class="share-status error">📡 {{ gpsErrorMsg }}</p>
-      </div>
-
-      <!-- 산행 중 -->
-      <div v-else-if="safeLinkActive" class="safe-link-active-panel">
-
-        <!-- 산행 현황 카드 -->
-        <div class="hike-status-card">
-          <div class="hike-status-row">
-            <div class="hike-stat">
-              <span class="hike-stat-label">경과 시간</span>
-              <strong class="hike-stat-val">{{ elapsedLabel }}</strong>
-            </div>
-            <div class="hike-stat">
-              <span class="hike-stat-label">이동 거리</span>
-              <strong class="hike-stat-val">{{ distanceLabel }}</strong>
-            </div>
-            <div class="hike-stat">
-              <span class="hike-stat-label">걸음 수</span>
-              <strong class="hike-stat-val">{{ stepCount.toLocaleString() }}</strong>
+        <div v-if="!guardianResolved" class="safelink-code-area">
+          <div class="code-input-wrap" :class="{ focused: inputFocused }" @click="focusGuardianInput">
+            <input
+              ref="hiddenInput"
+              class="code-hidden-input"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              maxlength="6"
+              @input="onGuardianInput"
+              @keydown="onGuardianKeydown"
+              @keydown.enter="lookupCode"
+              @paste="onGuardianPaste"
+              @focus="inputFocused = true"
+              @blur="inputFocused = false"
+            />
+            <div class="code-input-row">
+              <div
+                v-for="i in 6" :key="i"
+                class="code-digit-input"
+                :class="{ filled: guardianCode.length >= i, active: inputFocused && guardianCode.length === i - 1 }"
+              >{{ guardianCode[i - 1] || '' }}</div>
             </div>
           </div>
-          <div class="hike-status-footer">
-            <span class="status-dot dot-green"></span>
-            <span>산행 중 · {{ wakeLockActive ? '화면 유지 활성' : '화면 꺼짐 주의' }}</span>
-          </div>
-        </div>
 
-        <div v-if="!wakeLockActive" class="wakelock-warn">
-          ⚠️ 화면이 꺼지면 GPS 추적이 중단됩니다. 산행 중에는 화면을 켜두세요.
-        </div>
-        <p v-if="gpsErrorMsg" class="share-status error" style="margin:8px 0 0;">📡 {{ gpsErrorMsg }}</p>
+          <p v-if="guardianError" class="guardian-entry-error">{{ guardianError }}</p>
 
-        <div v-if="shareCode" class="share-code-box">
-          <p class="share-code-label">보호자에게 이 코드를 알려주세요</p>
-          <div class="share-code-display">
-            <span v-for="ch in shareCode" :key="ch + Math.random()" class="share-code-char">{{ ch }}</span>
-          </div>
-          <button class="copy-code-btn" type="button" @click="copyShareCode">
-            <span v-if="codeCopied">✓ 복사됨</span>
-            <span v-else>코드 복사</span>
+          <button
+            class="safelink-primary-btn"
+            :disabled="guardianCode.length < 6 || guardianLoading"
+            type="button"
+            @click="lookupCode"
+          >
+            <span>{{ guardianLoading ? '확인 중…' : '위치 확인하기' }}</span>
+            <span aria-hidden="true">→</span>
           </button>
-          <p class="share-code-hint">보호자는 앱에서 <strong>보호자 연결</strong>을 눌러 코드를 입력합니다</p>
+
+          <p class="safelink-code-hint">
+            <span aria-hidden="true">🔒</span>
+            코드는 산행자의 앱 안전공유 탭에서 확인할 수 있습니다.
+          </p>
         </div>
 
-        <details class="share-url-details">
-          <summary>링크로 공유하기</summary>
-          <div class="safe-link-url-box" style="margin-top:8px">
-            <span class="safe-link-url-text">{{ safeLinkUrl }}</span>
-          </div>
-          <button class="outline-btn" style="margin-top:8px;width:100%" type="button" @click="copyAndShare">링크 복사</button>
-        </details>
-
-        <button class="outline-btn danger wide-field" style="margin-top:16px" type="button" @click="stopAndRecord">산행 종료</button>
-        <p v-if="shareStatus" class="share-status">{{ shareStatus }}</p>
-      </div>
-
-      <!-- 종료 -->
-      <div v-else class="safe-link-ended">
-        <p>산행이 종료되었습니다.</p>
-        <button class="primary-btn wide-field" type="button" style="margin-top:12px" @click="resetSafeLink">
-          새 산행 시작하기
-        </button>
-      </div>
-
-      <details class="share-message-details" v-if="selectedMountain">
-        <summary>문자 공유 문구 보기</summary>
-        <textarea class="share-message" :value="safeLinkMessage" readonly aria-label="보호자 공유 메시지"></textarea>
-        <div class="share-actions">
-          <button class="outline-btn" type="button" @click="shareMessage">문자 공유</button>
-          <button class="outline-btn" type="button" @click="copyMessage">문구 복사</button>
+        <div v-else class="safelink-loading-note">
+          위치 정보를 불러오는 중입니다…
         </div>
-      </details>
-    </section>
+      </section>
 
-    <section class="panel kakao-actions">
-      <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? kakaoMapUrl : undefined" target="_blank" rel="noreferrer">
-        <strong>카카오맵에서 위치 보기</strong>
-        <span>보호자가 산 위치를 바로 확인합니다.</span>
-      </a>
-      <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? 'https://m.map.kakao.com/scheme/open?page=locationsharing' : undefined" target="_blank" rel="noreferrer">
-        <strong>카카오맵 친구위치 공유</strong>
-        <span>현재 나의 위치를 친구들과 카카오맵으로 실시간 공유합니다.</span>
-      </a>
-      <a class="map-action emergency" href="tel:119">
-        <strong>🚨 119 신고</strong>
-        <span>산악 사고 발생 시 즉시 119에 신고하세요.</span>
-      </a>
+      <section class="safelink-guide-card">
+        <h2>안전 가이드</h2>
+        <div class="safelink-guide-grid">
+          <article class="safelink-guide-item tone-check">
+            <span class="guide-item-icon" aria-hidden="true">☑</span>
+            <strong>산행 전 체크리스트</strong>
+            <p>안전한 산행을 위한 필수 확인 사항</p>
+            <button type="button">자세히 보기 <span aria-hidden="true">→</span></button>
+          </article>
+          <article class="safelink-guide-item tone-alert">
+            <span class="guide-item-icon" aria-hidden="true">🔔</span>
+            <strong>긴급 상황 대처법</strong>
+            <p>위급 상황 발생 시 대처 요령 안내</p>
+            <button type="button">자세히 보기 <span aria-hidden="true">→</span></button>
+          </article>
+          <article class="safelink-guide-item tone-weather">
+            <span class="guide-item-icon" aria-hidden="true">🌧</span>
+            <strong>기상 위험 정보</strong>
+            <p>실시간 기상과 위험 정보 확인</p>
+            <button type="button">자세히 보기 <span aria-hidden="true">→</span></button>
+          </article>
+          <article class="safelink-guide-item tone-gear">
+            <span class="guide-item-icon" aria-hidden="true">🎒</span>
+            <strong>장비 점검 가이드</strong>
+            <p>필수 장비 점검과 준비 방법</p>
+            <button type="button">자세히 보기 <span aria-hidden="true">→</span></button>
+          </article>
+        </div>
+      </section>
 
-      <div class="sos-divider">긴급 연락처</div>
-
-      <div v-if="!authUser" class="map-action sos-unset">
-        <strong>📞 로그인 후 이용 가능</strong>
-        <span>로그인하면 긴급 연락처를 등록할 수 있습니다.</span>
-      </div>
-      <div v-else-if="emergencyContacts.length === 0" class="map-action sos-unset">
-        <strong>📞 긴급 연락처 미등록</strong>
-        <span>내 정보 탭에서 연락처를 추가하세요.</span>
-      </div>
-      <template v-else>
-        <a
-          v-for="contact in emergencyContacts.slice(0, 2)"
-          :key="contact.id"
-          class="map-action sos-contact"
-          :href="`tel:${contact.phone}`"
-          @click.prevent="callWithLocation(contact)"
-        >
-          <strong>📞 {{ contact.name }}<span v-if="contact.relation" class="sos-relation"> · {{ contact.relation }}</span></strong>
-          <span>{{ contact.phone }}<template v-if="safeLinkActive && currentLat"> · 전화 전 GPS 위치 자동 복사</template></span>
-        </a>
-      </template>
-    </section>
+      <section class="safelink-info-card">
+        <div class="safelink-info-icon" aria-hidden="true">✚</div>
+        <div>
+          <h2>안전 공유 이용 안내</h2>
+          <ul>
+            <li><span>✓</span> 산행자는 앱에서 안전공유 코드를 생성할 수 있습니다.</li>
+            <li><span>✓</span> 코드를 공유한 보호자는 실시간 위치 확인이 가능합니다.</li>
+            <li><span>✓</span> 네트워크가 불안정한 지역에서도 위치가 저장되어 복구됩니다.</li>
+          </ul>
+        </div>
+      </section>
     </div>
+
+    <aside class="safelink-col-ctrl">
+      <section class="safelink-side-card share-panel">
+        <div class="safelink-side-head">
+          <p class="eyebrow">산행 시작</p>
+          <h2>세이프링크 생성</h2>
+          <p>산행을 시작하면 보호자 전용 실시간 위치 링크가 생성됩니다.</p>
+        </div>
+
+        <div v-if="!safeLinkActive && safeLinkStatus !== 'ended'" class="safelink-create-state">
+          <p v-if="!selectedMountain" class="safe-link-guide">
+            💡 안전코스 탭에서 산을 선택하면 안전 정보도 함께 공유됩니다.
+          </p>
+          <button
+            class="safelink-primary-btn wide"
+            type="button"
+            :disabled="safeLinkStatus === 'creating'"
+            @click="startHiking(mountainAsCourse)"
+          >
+            <span>{{ safeLinkStatus === 'creating' ? '링크 생성 중…' : '산행 시작 & 세이프링크 생성' }}</span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <p v-if="safeLinkError" class="share-status error">{{ safeLinkError }}</p>
+          <p v-if="gpsErrorMsg" class="share-status error">📡 {{ gpsErrorMsg }}</p>
+        </div>
+
+        <div v-else-if="safeLinkActive" class="safe-link-active-panel">
+          <div class="hike-status-card">
+            <div class="hike-status-row">
+              <div class="hike-stat">
+                <span class="hike-stat-label">경과 시간</span>
+                <strong class="hike-stat-val">{{ elapsedLabel }}</strong>
+              </div>
+              <div class="hike-stat">
+                <span class="hike-stat-label">이동 거리</span>
+                <strong class="hike-stat-val">{{ distanceLabel }}</strong>
+              </div>
+              <div class="hike-stat">
+                <span class="hike-stat-label">걸음 수</span>
+                <strong class="hike-stat-val">{{ stepCount.toLocaleString() }}</strong>
+              </div>
+            </div>
+            <div class="hike-status-footer">
+              <span class="status-dot dot-green"></span>
+              <span>산행 중 · {{ wakeLockActive ? '화면 유지 활성' : '화면 꺼짐 주의' }}</span>
+            </div>
+          </div>
+
+          <div v-if="!wakeLockActive" class="wakelock-warn">
+            ⚠️ 화면이 꺼지면 GPS 추적이 중단됩니다. 산행 중에는 화면을 켜두세요.
+          </div>
+          <p v-if="gpsErrorMsg" class="share-status error">📡 {{ gpsErrorMsg }}</p>
+
+          <div v-if="shareCode" class="share-code-box">
+            <p class="share-code-label">보호자에게 이 코드를 알려주세요</p>
+            <div class="share-code-display">
+              <span v-for="ch in shareCode" :key="ch + Math.random()" class="share-code-char">{{ ch }}</span>
+            </div>
+            <button class="copy-code-btn" type="button" @click="copyShareCode">
+              <span v-if="codeCopied">✓ 복사됨</span>
+              <span v-else>코드 복사</span>
+            </button>
+            <p class="share-code-hint">보호자는 앱에서 <strong>보호자 연결</strong>을 눌러 코드를 입력합니다</p>
+          </div>
+
+          <details class="share-url-details">
+            <summary>링크로 공유하기</summary>
+            <div class="safe-link-url-box">
+              <span class="safe-link-url-text">{{ safeLinkUrl }}</span>
+            </div>
+            <button class="outline-btn" type="button" @click="copyAndShare">링크 복사</button>
+          </details>
+
+          <button class="outline-btn danger wide-field" type="button" @click="stopAndRecord">산행 종료</button>
+          <p v-if="shareStatus" class="share-status">{{ shareStatus }}</p>
+        </div>
+
+        <div v-else class="safe-link-ended">
+          <p>산행이 종료되었습니다.</p>
+          <button class="safelink-primary-btn wide" type="button" @click="resetSafeLink">
+            <span>새 산행 시작하기</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+
+        <details class="share-message-details" v-if="selectedMountain">
+          <summary>문자 공유 문구 보기</summary>
+          <textarea class="share-message" :value="safeLinkMessage" readonly aria-label="보호자 공유 메시지"></textarea>
+          <div class="share-actions">
+            <button class="outline-btn" type="button" @click="shareMessage">문자 공유</button>
+            <button class="outline-btn" type="button" @click="copyMessage">문구 복사</button>
+          </div>
+        </details>
+      </section>
+
+      <section class="safelink-side-card kakao-actions">
+        <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? kakaoMapUrl : undefined" target="_blank" rel="noreferrer">
+          <span class="map-action-icon pin" aria-hidden="true">●</span>
+          <span class="map-action-copy">
+            <strong>카카오맵에서 위치 보기</strong>
+            <span>보호자가 산행자의 위치를 카카오맵으로 바로 확인합니다.</span>
+          </span>
+          <span class="map-action-chevron" aria-hidden="true">›</span>
+        </a>
+        <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? 'https://m.map.kakao.com/scheme/open?page=locationsharing' : undefined" target="_blank" rel="noreferrer">
+          <span class="map-action-icon people" aria-hidden="true">●</span>
+          <span class="map-action-copy">
+            <strong>카카오맵 친구위치 공유</strong>
+            <span>현재 나의 위치를 친구들과 카카오맵으로 실시간 공유합니다.</span>
+          </span>
+          <span class="map-action-chevron" aria-hidden="true">›</span>
+        </a>
+        <a class="map-action emergency" href="tel:119">
+          <span class="map-action-icon siren" aria-hidden="true">●</span>
+          <span class="map-action-copy">
+            <strong>119 신고</strong>
+            <span>산악 사고 발생 시 즉시 119에 신고하세요.</span>
+          </span>
+          <span class="map-action-chevron" aria-hidden="true">›</span>
+        </a>
+
+        <div class="sos-divider">긴급 연락처</div>
+
+        <div v-if="!authUser" class="map-action sos-unset">
+          <span class="map-action-icon phone" aria-hidden="true">●</span>
+          <span class="map-action-copy">
+            <strong>로그인 후 이용 가능</strong>
+            <span>로그인하면 긴급 연락처를 등록할 수 있습니다.</span>
+          </span>
+          <span class="map-action-chevron" aria-hidden="true">›</span>
+        </div>
+        <div v-else-if="emergencyContacts.length === 0" class="map-action sos-unset">
+          <span class="map-action-icon phone" aria-hidden="true">●</span>
+          <span class="map-action-copy">
+            <strong>긴급 연락처 미등록</strong>
+            <span>내 정보 탭에서 연락처를 추가하세요.</span>
+          </span>
+          <span class="map-action-chevron" aria-hidden="true">›</span>
+        </div>
+        <template v-else>
+          <a
+            v-for="contact in emergencyContacts.slice(0, 2)"
+            :key="contact.id"
+            class="map-action sos-contact"
+            :href="`tel:${contact.phone}`"
+            @click.prevent="callWithLocation(contact)"
+          >
+            <span class="map-action-icon phone" aria-hidden="true">●</span>
+            <span class="map-action-copy">
+              <strong>{{ contact.name }}<span v-if="contact.relation" class="sos-relation"> · {{ contact.relation }}</span></strong>
+              <span>{{ contact.phone }}<template v-if="safeLinkActive && currentLat"> · 전화 전 GPS 위치 자동 복사</template></span>
+            </span>
+            <span class="map-action-chevron" aria-hidden="true">›</span>
+          </a>
+        </template>
+      </section>
+    </aside>
   </section>
 </template>
 

@@ -14,12 +14,13 @@
         <i aria-hidden="true"></i>
         LIVE 안전현황
       </span>
-      <div class="live-safety-marquee" :class="{ paused: isPaused || reduceMotion }">
+      <div class="live-safety-marquee" :class="{ paused: isPaused }">
         <div class="live-safety-track">
           <span
             v-for="item in marqueeItems"
             :key="item.loopId"
             class="live-safety-item"
+            :class="{ 'cycle-end': item.isCycleEnd }"
           >
             <span class="live-safety-dot" aria-hidden="true"></span>
             <span>{{ item.label }}</span>
@@ -40,14 +41,13 @@
           @click="emitTheme(activeSlide)"
         >
           <span class="theme-label">{{ activeSlide.label }}</span>
-          <strong class="theme-title">{{ activeSlide.title }}</strong>
+          <strong class="theme-title">
+            <template v-for="(line, lineIndex) in titleLines(activeSlide.title)" :key="`${activeSlide.id}-title-${lineIndex}`">
+              <span>{{ line }}</span>
+              <br v-if="lineIndex < titleLines(activeSlide.title).length - 1" />
+            </template>
+          </strong>
           <span class="theme-subtitle">{{ activeSlide.subtitle }}</span>
-          <span class="theme-chips">
-            <span v-for="chip in activeSlide.chips" :key="`${activeSlide.id}-${chip.label}`" class="theme-chip">
-              <strong>{{ chip.label }}</strong>
-              <em>{{ chip.meta }}</em>
-            </span>
-          </span>
         </button>
 
       </div>
@@ -107,6 +107,7 @@ const marqueeItems = computed(() => {
   return [...source, ...source].map((item, index) => ({
     ...item,
     loopId: `${item.id || item.label}-${index}`,
+    isCycleEnd: source.length > 0 && (index + 1) % source.length === 0,
   }));
 });
 
@@ -128,6 +129,12 @@ function resume() {
 
 function emitTheme(slide) {
   emit('select-theme', slide);
+}
+
+function titleLines(title) {
+  if (!title || !title.includes(',')) return [title || ''];
+  const [first, ...rest] = title.split(',');
+  return [first.trim() + ',', rest.join(',').trim()].filter(Boolean);
 }
 
 function start() {

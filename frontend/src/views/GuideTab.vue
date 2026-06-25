@@ -11,7 +11,7 @@
             :class="['mli-col', 'mli-all', mapDifficultyFilter === 'all' ? 'active' : '']"
             @click="setMapDifficultyFilter('all')"
           >
-            <span class="mli-all-dot"></span>
+            <span class="mli-filter-icon mli-filter-all" aria-hidden="true"></span>
             <span class="mli-label">전체</span>
           </button>
           <div class="mli-divider"></div>
@@ -20,7 +20,7 @@
             :class="['mli-col', mapDifficultyFilter === 'easy' ? 'active' : '']"
             @click="setMapDifficultyFilter('easy')"
           >
-            <img src="/marker-easy.png" class="mli-icon" />
+            <span class="mli-filter-icon mli-filter-easy" aria-hidden="true"></span>
             <span class="mli-label mli-easy">초급</span>
           </button>
           <div class="mli-divider"></div>
@@ -29,7 +29,7 @@
             :class="['mli-col', mapDifficultyFilter === 'medium' ? 'active' : '']"
             @click="setMapDifficultyFilter('medium')"
           >
-            <img src="/marker-medium.png" class="mli-icon" />
+            <span class="mli-filter-icon mli-filter-medium" aria-hidden="true"></span>
             <span class="mli-label mli-medium">중급</span>
           </button>
           <div class="mli-divider"></div>
@@ -38,7 +38,7 @@
             :class="['mli-col', mapDifficultyFilter === 'hard' ? 'active' : '']"
             @click="setMapDifficultyFilter('hard')"
           >
-            <img src="/marker-hard.png" class="mli-icon" />
+            <span class="mli-filter-icon mli-filter-hard" aria-hidden="true"></span>
             <span class="mli-label mli-hard">고급</span>
           </button>
         </div>
@@ -206,100 +206,6 @@
           </div>
         </section>
 
-        <!-- ── 소방청 데이터 기반 예측 카드 ── -->
-        <section class="panel ml-predict-panel">
-          <div v-if="browseRiskLoading" class="ml-skel-wrap">
-            <div class="ml-skel-header">
-              <div class="ml-skel-bar ml-skel-title"></div>
-              <div class="ml-skel-bar ml-skel-badge"></div>
-            </div>
-            <div class="ml-skel-body">
-              <div class="ml-skel-gauge"></div>
-              <div class="ml-skel-right">
-                <div class="ml-skel-bar ml-skel-line1"></div>
-                <div class="ml-skel-bar ml-skel-line2"></div>
-                <div class="ml-skel-bar ml-skel-line3"></div>
-              </div>
-            </div>
-            <p class="ml-skel-msg">{{ mlLoadingMsg }}</p>
-            <div class="ml-skel-bar ml-skel-chart"></div>
-          </div>
-
-          <div v-else-if="browseRisk" class="ml-predict-card">
-            <!-- 헤더 -->
-            <div class="ml-risk-header">
-              <span class="ml-risk-title">📊 산행 안전 예측</span>
-              <span :class="['ml-risk-badge', mlBadgeClass]">{{ mlBadgeLabel }}</span>
-            </div>
-
-            <!-- 게이지 + 사고 유형 -->
-            <div class="ml-card-body">
-              <div class="ml-gauge-wrap">
-                <svg viewBox="0 0 100 64" class="ml-gauge-svg">
-                  <path d="M 12 54 A 38 38 0 0 1 88 54"
-                        fill="none" stroke="#e5e7eb" stroke-width="8" stroke-linecap="round"/>
-                  <path d="M 12 54 A 38 38 0 0 1 88 54"
-                        fill="none"
-                        :stroke="mlGaugeColor"
-                        stroke-width="8"
-                        stroke-linecap="round"
-                        :stroke-dasharray="`${browseRisk.risk_index * 119} 119`"/>
-                  <text x="50" y="44" text-anchor="middle" class="ml-gauge-level" :fill="mlGaugeColor">{{ mlBadgeLabel }}</text>
-                  <text x="50" y="55" text-anchor="middle" class="ml-gauge-unit">산행 주의도</text>
-                </svg>
-                <p class="ml-gauge-disclaimer">사고 확률이 아닌 과거 패턴 대비 상대 지수예요</p>
-              </div>
-
-              <div class="ml-card-meta">
-                <div class="ml-top-type">
-                  <span class="ml-type-icon-lg">{{ mlTopType.icon }}</span>
-                  <div>
-                    <p class="ml-type-sub">주의가 필요한 유형</p>
-                    <p class="ml-type-name">{{ mlTopType.name }}</p>
-                  </div>
-                </div>
-                <!-- 상황 설명 텍스트 -->
-                <div class="ml-context-list">
-                  <div v-for="(item, i) in mlContextItems" :key="i" class="ml-context-row">
-                    <span class="ml-ctx-icon">{{ item.icon }}</span>
-                    <span class="ml-ctx-text">{{ item.text }}</span>
-                  </div>
-                </div>
-                <p class="ml-data-note">소방청 산악사고 112,902건 기반</p>
-              </div>
-            </div>
-
-            <!-- 24시간 차트 -->
-            <div v-if="browseRisk.hourly_risks" class="ml-risk-chart-container">
-              <p class="ml-chart-sub">24시간 위험 추이</p>
-              <svg class="ml-risk-svg" viewBox="0 0 240 64">
-                <defs>
-                  <linearGradient id="mlBrowseGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" :stop-color="mlGaugeColor" stop-opacity="0.30"/>
-                    <stop offset="100%" :stop-color="mlGaugeColor" stop-opacity="0.0"/>
-                  </linearGradient>
-                </defs>
-                <line x1="10" y1="50" x2="230" y2="50" stroke="rgba(75,85,99,0.2)" stroke-width="0.5" stroke-dasharray="2 2"/>
-                <line x1="10" y1="28" x2="230" y2="28" stroke="rgba(75,85,99,0.2)" stroke-width="0.5" stroke-dasharray="2 2"/>
-                <line x1="10" y1="8"  x2="230" y2="8"  stroke="rgba(75,85,99,0.2)" stroke-width="0.5" stroke-dasharray="2 2"/>
-                <path :d="mlAreaPath" fill="url(#mlBrowseGrad)"/>
-                <path :d="mlLinePath" fill="none" :stroke="mlGaugeColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                <g v-if="mlActivePointer">
-                  <line :x1="mlActivePointer.x" y1="8" :x2="mlActivePointer.x" y2="50"
-                        :stroke="mlGaugeColor" stroke-width="1" stroke-dasharray="2 2"/>
-                  <circle :cx="mlActivePointer.x" :cy="mlActivePointer.y" r="8" :fill="mlGaugeColor" opacity="0.18" class="ml-ptr-pulse"/>
-                  <circle :cx="mlActivePointer.x" :cy="mlActivePointer.y" r="3.5" :fill="mlGaugeColor" stroke="#fff" stroke-width="1.5"/>
-                </g>
-                <text x="10"  y="62" class="ml-chart-label" text-anchor="start">00시</text>
-                <text x="67"  y="62" class="ml-chart-label" text-anchor="middle">06시</text>
-                <text x="124" y="62" class="ml-chart-label" text-anchor="middle">12시</text>
-                <text x="182" y="62" class="ml-chart-label" text-anchor="middle">18시</text>
-                <text x="230" y="62" class="ml-chart-label" text-anchor="end">24시</text>
-              </svg>
-            </div>
-          </div>
-        </section>
-
         <!-- ── 분석 중 로딩 카드 ── -->
         <section v-if="loading" class="panel rec-loading-panel">
           <div class="rec-loading-inner">
@@ -310,14 +216,6 @@
             </div>
             <p class="rec-loading-sub">AI가 수십 가지 안전·환경 지표를 분석하고 있어요</p>
           </div>
-        </section>
-
-        <!-- ── 태그 필터 결과 없음 ── -->
-        <section v-if="hasRecommendationResult && selectedTags.length && !recommendedMountains.length && !alternativeMountains.length" class="panel">
-          <p class="rec-summary" style="color:var(--text-muted, #888)">
-            선택한 태그({{ selectedTags.join(', ') }})를 가진 산이 현재 조건에서 없습니다. 태그를 초기화하거나 다른 조건으로 다시 시도해 보세요.
-          </p>
-          <button class="clear-rec-btn" type="button" style="margin-top:8px" @click="selectedTags = []; handleMountainRecommend()">태그 초기화 후 다시 추천</button>
         </section>
 
         <!-- ── AI 추천 결과 ── -->
@@ -732,7 +630,7 @@ function setDifficulty(level) {
 }
 
 async function handleMountainRecommend() {
-  await submitMountainRecommendation(selectedTags.value);
+  await submitMountainRecommendation();
   hasRecommendationResult.value = true;
   await nextTick();
   refreshOverviewMap();

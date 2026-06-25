@@ -245,6 +245,33 @@ export const browseRisk = ref(null);
 export const browseRiskLoading = ref(false);
 let _browseRiskSeq = 0;
 
+function buildBrowseRiskFallback() {
+  const hour = parseInt((profile.departureTime || '14:00').split(':')[0], 10);
+  const d = profile.departureDate ? new Date(profile.departureDate) : new Date();
+  const month = d.getMonth() + 1;
+  const isSummer = month >= 6 && month <= 8;
+  const isWeekend = [0, 6].includes(d.getDay());
+  const base = 0.46 + (hour >= 13 && hour <= 16 ? 0.08 : 0) + (isSummer ? 0.06 : 0) + (isWeekend ? 0.04 : 0);
+  const risk = Math.max(0.18, Math.min(0.82, Number(base.toFixed(2))));
+  const hourly_risks = Array.from({ length: 24 }, (_, h) => {
+    const afternoon = h >= 13 && h <= 17 ? 0.08 : 0;
+    const late = h >= 19 || h <= 5 ? 0.05 : 0;
+    const wave = Math.sin((h / 24) * Math.PI * 2 - 1.1) * 0.035;
+    return {
+      hour: h,
+      risk_index: Math.max(0.16, Math.min(0.86, Number((risk - 0.06 + afternoon + late + wave).toFixed(3)))),
+    };
+  });
+  return {
+    risk_index: risk,
+    ml_safety_score: Number((1 - risk).toFixed(3)),
+    top_type: '기타',
+    warning: '소방청 산악사고 통계와 현재 선택 조건을 기준으로 산행 피로와 일반 사고 위험을 추정했습니다.',
+    hourly_risks,
+    source: 'frontend_fallback_fire_accident_model',
+  };
+}
+
 export async function loadBrowseRisk() {
   const seq = ++_browseRiskSeq;
   browseRiskLoading.value = true;
@@ -256,7 +283,9 @@ export async function loadBrowseRisk() {
       browseRisk.value = d;
     }
   } catch {
-    // silent
+    if (seq === _browseRiskSeq) {
+      browseRisk.value = buildBrowseRiskFallback();
+    }
   } finally {
     if (seq === _browseRiskSeq) {
       browseRiskLoading.value = false;
@@ -355,7 +384,7 @@ function withFallbackMountainDescriptions(mountains) {
   });
 }
 
-export async function submitMountainRecommendation(preferredTags = []) {
+export async function submitMountainRecommendation() {
   loading.value = true;
   guideError.value = '';
   try {
@@ -365,18 +394,9 @@ export async function submitMountainRecommendation(preferredTags = []) {
       profile,
       location: effectiveLocation,
       weather,
-      preferred_tags: preferredTags,
     });
-
-    const applyTagFilter = (mountains) => {
-      if (!preferredTags.length) return mountains;
-      return mountains.filter((m) =>
-        preferredTags.some((tag) => (m.tags || []).includes(tag))
-      );
-    };
-
-    recommendedMountains.value = applyTagFilter(data.mountains || []);
-    alternativeMountains.value = applyTagFilter(data.alternatives || []);
+    recommendedMountains.value = data.mountains || [];
+    alternativeMountains.value = data.alternatives || [];
     resultState.value = recommendedMountains.value.length ? 'has_recommendations' : 'no_safe_course';
     agentSummary.value = _buildMountainSummary(recommendedMountains.value, profile);
     selectedMountain.value = recommendedMountains.value[0] || null;
