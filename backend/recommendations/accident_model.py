@@ -304,7 +304,11 @@ def predict_accident_risk(month: int, hour: int, weekday: int, temp: float = 15.
     h_risk = _hourly_per_capita.get(hour, 0.5)
     m_risk = _monthly_per_capita.get(month, 0.5)
     wd_risk = _weekday_per_capita.get(weekday, 0.5)
-    risk_index = round(h_risk * 0.50 + m_risk * 0.35 + wd_risk * 0.15, 3)
+    stat_risk = h_risk * 0.50 + m_risk * 0.35 + wd_risk * 0.15
+
+    # RF 중증도 예측을 risk_index에 반영 (최대 +0.20 부스트)
+    rf_boost = sev_proba.get("high", 0) * 0.20 + sev_proba.get("medium", 0) * 0.05
+    risk_index = round(min(1.0, stat_risk + rf_boost), 3)
     ml_safety_score = round(1.0 - risk_index, 3)
 
     top_type = max(type_proba, key=type_proba.get)
