@@ -15253,11 +15253,11 @@ body {
 
 .auth-modal {
   position: relative !important;
-  width: min(90vw, 700px) !important;
-  max-width: 700px !important;
-  min-height: 560px !important;
+  width: min(90vw, 610px) !important;
+  max-width: 610px !important;
+  min-height: 480px !important;
   box-sizing: border-box !important;
-  padding: 86px 64px 56px !important;
+  padding: 72px 52px 44px !important;
   border: 1px solid rgba(214, 220, 214, 0.95) !important;
   border-radius: 32px !important;
   background: #fff !important;
@@ -15270,8 +15270,8 @@ body {
 
 .auth-modal-header {
   position: absolute !important;
-  top: 30px !important;
-  right: 38px !important;
+  top: 24px !important;
+  right: 30px !important;
   z-index: 2 !important;
   display: flex !important;
   justify-content: flex-end !important;
@@ -15279,8 +15279,8 @@ body {
 }
 
 .modal-close {
-  width: 42px !important;
-  height: 42px !important;
+  width: 38px !important;
+  height: 38px !important;
   display: grid !important;
   place-items: center !important;
   padding: 0 !important;
@@ -15297,8 +15297,8 @@ body {
 }
 
 .modal-close svg {
-  width: 30px !important;
-  height: 30px !important;
+  width: 26px !important;
+  height: 26px !important;
   fill: none !important;
   stroke: currentColor !important;
   stroke-width: 1.8 !important;
@@ -15307,11 +15307,11 @@ body {
 
 .auth-tabs {
   width: 100% !important;
-  min-height: 72px !important;
+  min-height: 62px !important;
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 0 !important;
-  margin: 0 0 38px !important;
+  margin: 0 0 30px !important;
   overflow: hidden !important;
   border: 1px solid #d9e2d5 !important;
   border-radius: 18px !important;
@@ -15321,7 +15321,7 @@ body {
 
 .auth-tabs button {
   min-width: 0 !important;
-  min-height: 72px !important;
+  min-height: 62px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -15331,7 +15331,7 @@ body {
   border-right: 1px solid #d9e2d5 !important;
   background: transparent !important;
   color: #3a3f45 !important;
-  font-size: 22px !important;
+  font-size: 20px !important;
   font-weight: 850 !important;
   letter-spacing: -0.02em !important;
   cursor: pointer !important;
@@ -15348,8 +15348,8 @@ body {
 }
 
 .auth-tabs svg {
-  width: 28px !important;
-  height: 28px !important;
+  width: 24px !important;
+  height: 24px !important;
   flex: 0 0 auto !important;
   fill: none !important;
   stroke: currentColor !important;
@@ -15365,13 +15365,13 @@ body {
 
 .auth-form .field {
   display: grid !important;
-  gap: 14px !important;
-  margin: 0 0 30px !important;
+  gap: 12px !important;
+  margin: 0 0 24px !important;
 }
 
 .auth-form .field span {
   color: #35383b !important;
-  font-size: 22px !important;
+  font-size: 20px !important;
   line-height: 1.2 !important;
   font-weight: 900 !important;
   letter-spacing: -0.03em !important;
@@ -15379,7 +15379,7 @@ body {
 
 .auth-form .field input {
   width: 100% !important;
-  min-height: 76px !important;
+  min-height: 62px !important;
   box-sizing: border-box !important;
   padding: 0 26px !important;
   border: 1px solid #e2e8f0 !important;
@@ -15387,7 +15387,7 @@ body {
   outline: 0 !important;
   background: #fff !important;
   color: #202320 !important;
-  font-size: 20px !important;
+  font-size: 18px !important;
   font-weight: 650 !important;
   box-shadow: none !important;
   transition: border-color 0.16s ease, box-shadow 0.16s ease !important;
@@ -15415,8 +15415,8 @@ body {
 }
 
 .auth-form .primary-btn.wide-field {
-  width: 210px !important;
-  min-height: 72px !important;
+  width: 178px !important;
+  min-height: 60px !important;
   justify-self: start !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -15428,7 +15428,7 @@ body {
   background: linear-gradient(135deg, #66b96a 0%, #59ad5e 100%) !important;
   color: #fff !important;
   box-shadow: 0 20px 34px rgba(90, 173, 94, 0.22) !important;
-  font-size: 24px !important;
+  font-size: 21px !important;
   font-weight: 950 !important;
   letter-spacing: -0.03em !important;
   cursor: pointer !important;
@@ -15455,20 +15455,20 @@ body {
   }
 
   .auth-modal {
-    width: min(100%, 520px) !important;
+    width: min(100%, 460px) !important;
     min-height: auto !important;
-    padding: 88px 28px 34px !important;
-    border-radius: 28px !important;
+    padding: 72px 24px 30px !important;
+    border-radius: 24px !important;
   }
 
   .auth-modal-header {
-    top: 28px !important;
-    right: 28px !important;
+    top: 22px !important;
+    right: 22px !important;
   }
 
   .auth-tabs,
   .auth-tabs button {
-    min-height: 72px !important;
+    min-height: 58px !important;
   }
 
   .auth-tabs button {
@@ -15484,7 +15484,7 @@ body {
 
   .auth-form .field {
     gap: 12px !important;
-    margin-bottom: 26px !important;
+    margin-bottom: 22px !important;
   }
 
   .auth-form .field span {
@@ -15492,15 +15492,15 @@ body {
   }
 
   .auth-form .field input {
-    min-height: 64px !important;
+    min-height: 58px !important;
     padding: 0 20px !important;
     font-size: 17px !important;
   }
 
   .auth-form .primary-btn.wide-field {
-    width: 180px !important;
-    min-height: 62px !important;
-    font-size: 22px !important;
+    width: 160px !important;
+    min-height: 56px !important;
+    font-size: 19px !important;
     border-radius: 16px !important;
   }
 }
@@ -18248,12 +18248,14 @@ body:has(.mypage-final) {
 }
 
 .guardian-shell > .tabbar.shared-sidebar .sidebar-brand {
-  width: 100% !important;
+  position: relative !important;
+  width: max-content !important;
   min-height: 72px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 0 22px !important;
+  display: inline-flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  margin: 0 0 24px 42px !important;
   padding: 0 !important;
   border: 0 !important;
   background: transparent !important;
@@ -18262,28 +18264,49 @@ body:has(.mypage-final) {
 
 .guardian-shell > .tabbar.shared-sidebar .sidebar-logo-text {
   position: relative !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  color: #050805 !important;
+  display: inline-block !important;
+  color: #080b08 !important;
   font-family: Georgia, "Times New Roman", serif !important;
   font-size: 56px !important;
   font-weight: 500 !important;
-  line-height: 1 !important;
-  letter-spacing: 0 !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.045em !important;
+  text-shadow: none !important;
 }
 
 .guardian-shell > .tabbar.shared-sidebar .sidebar-logo-leaf {
-  width: 22px !important;
-  height: 22px !important;
-  margin-left: 7px !important;
-  transform: translateY(-14px) rotate(10deg) !important;
-  color: #70af62 !important;
+  position: absolute !important;
+  top: 5px !important;
+  right: -27px !important;
+  width: 25px !important;
+  height: 25px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  color: #70bd5b !important;
+  transform: rotate(9deg) !important;
+  transform-origin: center !important;
+  pointer-events: none !important;
 }
 
 .guardian-shell > .tabbar.shared-sidebar .sidebar-logo-leaf svg {
   width: 100% !important;
   height: 100% !important;
+  display: block !important;
+  overflow: visible !important;
+}
+
+.guardian-shell > .tabbar.shared-sidebar .sidebar-logo-leaf path:first-child {
   fill: currentColor !important;
+  stroke: none !important;
+}
+
+.guardian-shell > .tabbar.shared-sidebar .sidebar-logo-leaf path:last-child {
+  fill: none !important;
+  stroke: rgba(255, 255, 255, 0.72) !important;
+  stroke-width: 1.7 !important;
+  stroke-linecap: round !important;
 }
 
 .guardian-shell > .tabbar.shared-sidebar .tabbar-item {
@@ -18555,8 +18578,8 @@ body:has(.mypage-final) {
   min-height: 0 !important;
   display: grid !important;
   grid-template-rows: auto auto minmax(380px, 1fr) auto !important;
-  gap: 24px !important;
-  padding: 24px 28px 28px !important;
+  gap: 18px !important;
+  padding: 22px 28px 24px !important;
   overflow-y: auto !important;
   background: linear-gradient(135deg, #fcfcf8 0%, #f8faf6 62%, #eef4ec 100%) !important;
 }
@@ -18601,8 +18624,8 @@ body:has(.mypage-final) {
 }
 
 .guardian-map-wrap {
-  min-height: 420px !important;
-  height: min(54vh, 560px) !important;
+  min-height: 360px !important;
+  height: min(48vh, 500px) !important;
   position: relative !important;
   overflow: hidden !important;
   border: 1px solid #e1e8df !important;
@@ -18667,14 +18690,14 @@ body:has(.mypage-final) {
 .guardian-sheet {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 16px 18px !important;
+  gap: 14px 18px !important;
   padding: 0 !important;
   border: 0 !important;
   background: transparent !important;
 }
 
 .guardian-info-card {
-  grid-column: 1 / span 1 !important;
+  grid-column: 1 / -1 !important;
   order: 1 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -18683,6 +18706,7 @@ body:has(.mypage-final) {
   background: #fff !important;
   box-shadow: 0 12px 28px rgba(31, 41, 34, 0.055) !important;
   overflow: hidden !important;
+  min-height: 112px !important;
 }
 
 .guardian-card-title {
@@ -18690,13 +18714,13 @@ body:has(.mypage-final) {
   align-items: center !important;
   gap: 12px !important;
   margin: 0 !important;
-  padding: 24px 24px 0 !important;
+  padding: 18px 22px 2px !important;
   color: #202320 !important;
 }
 
 .guardian-card-icon {
-  width: 34px !important;
-  height: 34px !important;
+  width: 32px !important;
+  height: 32px !important;
   display: grid !important;
   place-items: center !important;
   border-radius: 999px !important;
@@ -18709,14 +18733,77 @@ body:has(.mypage-final) {
 }
 
 .gbs-info-row {
+  display: flex !important;
   align-items: center !important;
-  padding: 18px 24px 24px !important;
+  justify-content: space-between !important;
+  gap: 22px !important;
+  min-height: 62px !important;
+  padding: 12px 22px 18px !important;
+  overflow: visible !important;
+}
+
+.gbs-text {
+  flex: 1 1 360px !important;
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 5px !important;
 }
 
 .gbs-course {
   color: #202320 !important;
   font-size: 18px !important;
   font-weight: 620 !important;
+  line-height: 1.28 !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.gbs-mountain {
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  white-space: nowrap !important;
+}
+
+.guardian-inline-status {
+  flex: 1 1 420px !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: wrap !important;
+  gap: 10px 18px !important;
+  color: #5f6c61 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  font-weight: 420 !important;
+}
+
+.guardian-inline-status span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  white-space: nowrap !important;
+}
+
+.guardian-inline-status strong {
+  color: #203228 !important;
+  font-weight: 620 !important;
+}
+
+.guardian-inline-status em {
+  color: #7a6842 !important;
+  font-style: normal !important;
+}
+
+.guardian-inline-status .refresh-dot {
+  flex: 0 0 auto !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: #79c67a !important;
 }
 
 .gbs-mountain,
@@ -18728,6 +18815,7 @@ body:has(.mypage-final) {
 }
 
 .guardian-refresh-btn {
+  flex: 0 0 auto !important;
   min-height: 38px !important;
   padding: 0 15px !important;
   border: 1px solid #dce7d8 !important;
@@ -18744,7 +18832,7 @@ body:has(.mypage-final) {
 .gbs-sim-row {
   grid-column: 2 / span 1 !important;
   margin: 0 !important;
-  padding: 18px 20px !important;
+  padding: 14px 20px !important;
   border: 1px solid #e4eae1 !important;
   border-radius: 18px !important;
   background: #fff !important;
@@ -18762,8 +18850,8 @@ body:has(.mypage-final) {
 
 .gbs-sim-row {
   grid-column: 1 / span 1 !important;
-  order: 3 !important;
-  min-height: 76px !important;
+  order: 2 !important;
+  min-height: 64px !important;
   display: flex !important;
   align-items: center !important;
   gap: 14px !important;
@@ -18779,8 +18867,8 @@ body:has(.mypage-final) {
 
 .guardian-emergency-title {
   grid-column: 1 / -1 !important;
-  order: 4 !important;
-  margin: 4px 0 -6px !important;
+  order: 3 !important;
+  margin: -2px 0 -8px !important;
   color: #202320 !important;
   font-size: 20px !important;
   font-weight: 650 !important;
@@ -18788,15 +18876,15 @@ body:has(.mypage-final) {
 
 .gbs-actions {
   grid-column: 1 / -1 !important;
-  order: 5 !important;
+  order: 4 !important;
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  gap: 18px !important;
+  gap: 16px !important;
   padding: 0 !important;
 }
 
 .gbs-actions .emergency-btn {
-  min-height: 56px !important;
+  min-height: 52px !important;
   display: grid !important;
   place-items: center !important;
   border: 0 !important;
@@ -18810,7 +18898,7 @@ body:has(.mypage-final) {
 }
 
 .gbs-actions .outline-btn {
-  min-height: 56px !important;
+  min-height: 52px !important;
   border: 1px solid #2d4739 !important;
   border-radius: 12px !important;
   background: #fff !important;

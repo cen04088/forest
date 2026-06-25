@@ -59,24 +59,20 @@
             <h2 class="gbs-course">{{ displayLocationText }}</h2>
             <p class="gbs-mountain">위치 정확도 10m · 마지막 업데이트 {{ displayLastUpdate }}</p>
           </div>
+          <div class="guardian-inline-status">
+            <span>📍 마지막 수신 <strong>{{ displayLastUpdate }}</strong></span>
+            <span v-if="displaySession.trail?.length">🗺️ {{ displaySession.trail.length }}회 기록</span>
+            <span v-if="!simActive && session">
+              <i class="refresh-dot" aria-hidden="true"></i>
+              {{ lastRefreshedLabel }}
+              <em>{{ nextRefreshLabel }}</em>
+            </span>
+          </div>
           <button v-if="session && !simActive" class="guardian-refresh-btn" type="button" @click="manualRefresh">
             위치 새로고침
           </button>
           <span :class="['safety-badge', displayStatusClass]">{{ displayStatusLabel }}</span>
         </div>
-      </div>
-
-      <div class="gbs-meta" v-if="displaySession">
-        <span>📍 마지막 수신 <strong>{{ displayLastUpdate }}</strong></span>
-        <span v-if="displaySession.trail?.length">🗺️ {{ displaySession.trail.length }}회 기록</span>
-        <span v-if="displaySession.duration_min">🕐 {{ displaySession.duration_min }}분 코스</span>
-      </div>
-
-      <!-- 자동 새로고침 상태 (실제 세션) -->
-      <div v-if="!simActive && session" class="guardian-refresh-status">
-        <span class="refresh-dot"></span>
-        <span>{{ lastRefreshedLabel }}</span>
-        <span class="refresh-next">· {{ nextRefreshLabel }}</span>
       </div>
 
       <!-- 시뮬레이션 단계 표시 -->
