@@ -5073,125 +5073,233 @@ p {
 }
 
 /* ── 보호자 전용 뷰 ──────────────────────────────────────────────────────── */
+/* ── 보호자 뷰 — 풀스크린 맵 + 하단 시트 레이아웃 ────────────────────────── */
 .guardian-shell {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: var(--wash);
+  background: #e8eff1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
-.guardian-header {
+/* 풀스크린 맵 */
+.guardian-map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.guardian-map-empty,
+.guardian-map-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #f1f5f9;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 24px;
+}
+.guardian-loading-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid #d1d5db;
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.guardian-empty-msg { line-height: 1.7; }
+
+/* 상단 헤더 오버레이 (맵 위에 뜨는 로고+상태) */
+.guardian-header-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  background: var(--paper);
-  border-bottom: 1px solid var(--line);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  padding: 10px 16px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
 }
-
 .guardian-logo-img {
-  height: 80px;
+  height: 38px;
   width: auto;
   mix-blend-mode: multiply;
+  pointer-events: auto;
 }
-
 .guardian-status-chip {
   font-size: 12px;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
+  pointer-events: auto;
+}
+.guardian-status-chip.green  { background: #dcfce7; color: #15803d; }
+.guardian-status-chip.yellow { background: #fef9c3; color: #a16207; }
+.guardian-status-chip.red    { background: #fee2e2; color: #b91c1c; }
+.guardian-status-chip.gray   { background: #f3f4f6; color: #6b7280; }
+
+/* 하단 정보 시트 */
+.guardian-sheet {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(12px);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+  padding: 8px 0 0;
 }
 
-.guardian-status-chip.green { background: var(--green-soft); color: var(--green); }
-.guardian-status-chip.yellow { background: var(--amber-soft); color: var(--amber); }
-.guardian-status-chip.red { background: var(--red-soft); color: var(--red); }
-.guardian-status-chip.gray { background: var(--line); color: var(--muted); }
-
-.guardian-map {
-  width: 100%;
-  height: 280px;
-  background: var(--line);
+/* 시뮬레이션 진행 바 */
+.sim-progress-bar {
+  height: 3px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  margin: 0 16px 12px;
+  overflow: hidden;
 }
-
-.guardian-map-placeholder {
+.sim-progress-fill {
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 14px;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 3px;
+  transition: width 0.6s ease;
 }
 
-.guardian-card {
-  padding: 20px;
-  background: var(--paper);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.guardian-info-row {
+.gbs-info-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  padding: 12px 20px 8px;
   gap: 12px;
 }
-
-.guardian-mountain {
-  color: var(--muted);
+.gbs-course {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0 0 3px;
+}
+.gbs-mountain {
   font-size: 13px;
-  margin-top: 4px;
+  color: var(--muted);
+  margin: 0;
 }
 
-.guardian-meta-row {
+.gbs-meta {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.guardian-risks {
+  gap: 12px;
   flex-wrap: wrap;
+  padding: 0 20px 8px;
+  font-size: 12px;
+  color: #6b7280;
 }
+.gbs-meta strong { color: var(--ink); }
 
 .guardian-refresh-status {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
-  padding: 8px 12px;
+  margin: 0 16px 10px;
+  padding: 7px 12px;
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
-  border-radius: 10px;
-  font-size: 12px;
+  border-radius: 8px;
+  font-size: 11px;
   color: #166534;
 }
-
 .refresh-dot {
-  width: 7px;
-  height: 7px;
+  width: 7px; height: 7px;
   border-radius: 50%;
   background: #22c55e;
   flex-shrink: 0;
   animation: pulse-green 2s infinite;
 }
-
 @keyframes pulse-green {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+.refresh-next { color: #4b7c5a; margin-left: auto; }
+
+.guardian-sim-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 16px 10px;
+  padding: 7px 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 11px;
+  color: #92400e;
+}
+.sim-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+  animation: pulse-amber 1.2s infinite;
+}
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.8); }
+}
+.sim-stuck-label { margin-left: auto; font-weight: 700; color: #dc2626; }
+
+.gbs-actions {
+  display: flex;
+  gap: 10px;
+  padding: 4px 16px 16px;
+}
+.gbs-actions .outline-btn { flex: 1; }
+.gbs-actions .outline-btn.danger {
+  border-color: #fca5a5;
+  color: #b91c1c;
+  background: #fff5f5;
 }
 
-.refresh-next {
-  color: #4b7c5a;
-  font-size: 11px;
+/* 시뮬레이션 시작 배너 */
+.guardian-sim-banner {
+  position: absolute;
+  bottom: calc(100% + 8px); /* guardian-sheet 위에 떠 있음 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
 }
+/* guardian-sheet가 없는 경우(세션 없음) 화면 중앙 하단에 */
+.guardian-shell:not(:has(.guardian-sheet)) .guardian-sim-banner {
+  bottom: 40px;
+}
+.sim-start-btn {
+  background: rgba(255,255,255,0.95);
+  border: 1.5px solid #d1d5db;
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+  white-space: nowrap;
+  transition: box-shadow 0.15s;
+}
+.sim-start-btn:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.18); }
+.sim-start-desc {
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 위치 미수신 배너 */
 
 /* ── 보호자 위치 미수신 경고 배너 ─────────────────────────────── */
 .guardian-stale-banner {
@@ -5424,16 +5532,6 @@ p {
   text-align: center;
 }
 
-.guardian-actions {
-  display: flex;
-  gap: 12px;
-  padding: 16px 20px;
-}
-
-.guardian-actions .outline-btn {
-  flex: 1;
-}
-
 .emergency-btn {
   flex: 1;
   display: flex;
@@ -5443,25 +5541,10 @@ p {
   background: var(--red);
   color: #fff;
   border-radius: 10px;
-  padding: 14px;
-  font-size: 15px;
+  padding: 13px;
+  font-size: 14px;
   font-weight: 700;
   text-decoration: none;
-}
-
-.guardian-loading,
-.guardian-not-found {
-  padding: 40px 24px;
-  text-align: center;
-  color: var(--muted);
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.guardian-error {
-  padding: 12px 20px;
-  color: var(--red);
-  font-size: 13px;
 }
 
 /* ── 산행 시작 / 세이프링크 패널 ────────────────────────────────────────── */

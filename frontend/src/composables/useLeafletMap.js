@@ -185,6 +185,8 @@ export function useLeafletMap() {
     const trail = Array.isArray(session.trail) ? session.trail : [];
     const zoom = trail.length >= 2 ? 14 : 15;
     const map = _getOrCreateMap(el, center, zoom);
+    // 컨테이너가 position:fixed 전환 등으로 크기가 바뀌었을 때 맵을 재측정
+    map.invalidateSize();
 
     // 매 갱신마다 이전 레이어 제거 후 재그리기
     if (!map._guardianLayerGroup) {
