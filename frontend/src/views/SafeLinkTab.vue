@@ -506,6 +506,7 @@ async function stopAndRecord() {
   if (mountainAsCourse.value) {
     await saveHikingRecord(mountainAsCourse.value, weatherData.value);
   }
+  resetSafeLink();
 }
 
 async function copyAndShare() {
