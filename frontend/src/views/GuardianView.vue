@@ -18,8 +18,11 @@
       <a href="tel:119" class="stale-119">119</a>
     </div>
 
-    <!-- 맵 (항상 DOM에 유지해야 Leaflet이 크기를 제대로 측정) -->
-    <div ref="guardianMapEl" class="guardian-map" aria-label="산행자 현재 위치 지도">
+    <!-- 맵 영역: Leaflet 컨테이너(항상 빈 div) + 오버레이를 형제로 분리 -->
+    <div class="guardian-map-wrap">
+      <!-- Leaflet은 이 div 안에서만 동작, 자식 없이 항상 깨끗하게 유지 -->
+      <div ref="guardianMapEl" class="guardian-map-leaflet" aria-label="산행자 현재 위치 지도"></div>
+      <!-- 세션 없을 때 오버레이 (Leaflet 컨테이너와 형제 관계) -->
       <div v-if="loading && !displaySession" class="guardian-map-overlay guardian-map-loading">
         <div class="guardian-loading-spinner"></div>
         <p>위치 정보를 불러오는 중…</p>
@@ -224,12 +227,12 @@ const displayLastUpdate = computed(() => {
 
 const showStaleWarning = computed(() =>
   simActive.value
-    ? simStuckTicks.value * 180 >= 660
+    ? simStuckTicks.value >= 3          // 정상 도착 후 3틱 = ~5초 후 경고
     : isLocationStale.value && session.value?.status !== 'ended'
 );
 
 const staleMinutes = computed(() =>
-  simActive.value ? Math.floor(simStuckTicks.value * 3) : locationStaleMins.value
+  simActive.value ? Math.max(11, simStuckTicks.value * 3) : locationStaleMins.value
 );
 
 // ── 실제 세션 맵 갱신 ─────────────────────────────────────────────────────────

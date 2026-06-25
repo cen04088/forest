@@ -5123,14 +5123,19 @@ p {
 .guardian-status-chip.red    { background: #fee2e2; color: #b91c1c; }
 .guardian-status-chip.gray   { background: #f3f4f6; color: #6b7280; }
 
-/* 맵 (항상 DOM에 유지, flex로 남은 공간 채움) */
-.guardian-map {
+/* 맵 래퍼 (flex-grow로 남은 공간 채움, 상대 위치 기준) */
+.guardian-map-wrap {
   flex: 1;
   min-height: 0;
   position: relative;
   background: #e8eff1;
 }
-/* 세션 없을 때 맵 위 오버레이 */
+/* Leaflet 전용 div (항상 빈 div, 내부 자식 금지) */
+.guardian-map-leaflet {
+  position: absolute;
+  inset: 0;
+}
+/* 세션 없을 때 오버레이 (Leaflet div와 형제, 위에 덮음) */
 .guardian-map-overlay {
   position: absolute;
   inset: 0;

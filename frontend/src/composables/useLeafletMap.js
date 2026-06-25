@@ -188,12 +188,13 @@ export function useLeafletMap() {
     // 컨테이너가 position:fixed 전환 등으로 크기가 바뀌었을 때 맵을 재측정
     map.invalidateSize();
 
-    // 매 갱신마다 이전 레이어 제거 후 재그리기
-    if (!map._guardianLayerGroup) {
-      map._guardianLayerGroup = L.layerGroup().addTo(map);
+    // 매 갱신마다 레이어 그룹을 완전히 제거 후 새로 추가
+    // (_getOrCreateMap이 기존 맵 재사용 시 레이어를 모두 지워버리므로
+    //  캐시된 _guardianLayerGroup은 이미 맵에서 분리된 상태일 수 있음)
+    if (map._guardianLayerGroup) {
+      map.removeLayer(map._guardianLayerGroup);
     }
-    map._guardianLayerGroup.clearLayers();
-
+    map._guardianLayerGroup = L.layerGroup().addTo(map);
     const lg = map._guardianLayerGroup;
 
     // ── 궤적 선 ────────────────────────────────
