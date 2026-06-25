@@ -18,19 +18,15 @@
       <a href="tel:119" class="stale-119">119</a>
     </div>
 
-    <!-- 맵 (flex-grow로 남은 공간 채움) -->
-    <div
-      v-if="displaySession"
-      ref="guardianMapEl"
-      class="guardian-map"
-      aria-label="산행자 현재 위치 지도"
-    ></div>
-    <div v-else-if="loading" class="guardian-map guardian-map-loading">
-      <div class="guardian-loading-spinner"></div>
-      <p>위치 정보를 불러오는 중…</p>
-    </div>
-    <div v-else class="guardian-map guardian-map-empty">
-      <p class="guardian-empty-msg">세이프 링크를 찾을 수 없습니다.<br>산행자에게 링크를 다시 받으세요.</p>
+    <!-- 맵 (항상 DOM에 유지해야 Leaflet이 크기를 제대로 측정) -->
+    <div ref="guardianMapEl" class="guardian-map" aria-label="산행자 현재 위치 지도">
+      <div v-if="loading && !displaySession" class="guardian-map-overlay guardian-map-loading">
+        <div class="guardian-loading-spinner"></div>
+        <p>위치 정보를 불러오는 중…</p>
+      </div>
+      <div v-else-if="!loading && !displaySession" class="guardian-map-overlay guardian-map-empty">
+        <p class="guardian-empty-msg">세이프 링크를 찾을 수 없습니다.<br>산행자에게 링크를 다시 받으세요.</p>
+      </div>
     </div>
 
     <!-- 하단 정보 시트 -->
@@ -168,7 +164,7 @@ function startSim() {
   _simInterval = setInterval(_doSimTick, 1600);
 }
 
-async function _doSimTick() {
+function _doSimTick() {
   if (simStep.value < SIM_WAYPOINTS.length) {
     simTrail.value = [...simTrail.value, SIM_WAYPOINTS[simStep.value]];
     simStep.value++;
@@ -178,7 +174,7 @@ async function _doSimTick() {
   }
   const stuckSecs = simStuckTicks.value * 180;
   const sess = _buildSimSession(simTrail.value, stuckSecs);
-  await nextTick();
+  // 맵 div는 항상 DOM에 있으므로 nextTick 불필요
   if (guardianMapEl.value) renderGuardianMap(guardianMapEl.value, sess);
 }
 
@@ -262,6 +258,13 @@ watch(isLocationStale, async (stale) => {
 });
 watch(() => session.value?.location_ts, () => { _notifiedStale = false; });
 
-onMounted(() => startPolling());
+onMounted(async () => {
+  startPolling();
+  await nextTick();
+  // 마운트 시점에 이미 세션이 있으면 즉시 렌더
+  if (session.value && guardianMapEl.value) {
+    renderGuardianMap(guardianMapEl.value, session.value);
+  }
+});
 onUnmounted(() => { stopPolling(); stopSim(); });
 </script>

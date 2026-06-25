@@ -5097,7 +5097,7 @@ p {
   z-index: 10;
 }
 .guardian-back-btn {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--muted);
   background: none;
@@ -5106,53 +5106,57 @@ p {
   cursor: pointer;
   flex-shrink: 0;
 }
+.guardian-status-chip {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
 .guardian-logo-img {
   height: 34px;
   width: auto;
   mix-blend-mode: multiply;
-}
-.guardian-status-chip {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 20px;
-  flex-shrink: 0;
 }
 .guardian-status-chip.green  { background: #dcfce7; color: #15803d; }
 .guardian-status-chip.yellow { background: #fef9c3; color: #a16207; }
 .guardian-status-chip.red    { background: #fee2e2; color: #b91c1c; }
 .guardian-status-chip.gray   { background: #f3f4f6; color: #6b7280; }
 
-/* 맵 (flex-grow로 남은 공간 채움) */
+/* 맵 (항상 DOM에 유지, flex로 남은 공간 채움) */
 .guardian-map {
   flex: 1;
   min-height: 0;
   position: relative;
+  background: #e8eff1;
 }
-.guardian-map-empty,
-.guardian-map-loading {
+/* 세션 없을 때 맵 위 오버레이 */
+.guardian-map-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   background: #f1f5f9;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 15px;
   text-align: center;
-  padding: 24px;
+  padding: 28px;
 }
 .guardian-loading-spinner {
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;
   border: 3px solid #d1d5db;
   border-top-color: var(--green);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.guardian-empty-msg { line-height: 1.7; }
+.guardian-empty-msg { line-height: 1.8; font-size: 15px; }
 
-/* 하단 정보 시트 (고정 높이) */
+/* 하단 정보 시트 */
 .guardian-sheet {
   flex-shrink: 0;
   background: #fff;
@@ -5162,7 +5166,7 @@ p {
 
 /* 시뮬레이션 진행 바 */
 .sim-progress-bar {
-  height: 3px;
+  height: 4px;
   background: #e5e7eb;
   overflow: hidden;
 }
@@ -5176,27 +5180,27 @@ p {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 12px 16px 4px;
+  padding: 14px 16px 6px;
   gap: 12px;
 }
 .gbs-course {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 800;
   color: var(--ink);
-  margin: 0 0 2px;
+  margin: 0 0 3px;
 }
 .gbs-mountain {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   margin: 0;
 }
 
 .gbs-meta {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
-  padding: 0 16px 6px;
-  font-size: 11px;
+  padding: 0 16px 8px;
+  font-size: 13px;
   color: #6b7280;
 }
 .gbs-meta strong { color: var(--ink); }
@@ -5204,17 +5208,17 @@ p {
 .guardian-refresh-status {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin: 0 12px 8px;
-  padding: 6px 10px;
+  gap: 8px;
+  margin: 0 12px 10px;
+  padding: 8px 12px;
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 13px;
   color: #166534;
 }
 .refresh-dot {
-  width: 6px; height: 6px;
+  width: 8px; height: 8px;
   border-radius: 50%;
   background: #22c55e;
   flex-shrink: 0;
@@ -5224,22 +5228,22 @@ p {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.5; transform: scale(0.85); }
 }
-.refresh-next { color: #4b7c5a; margin-left: auto; font-size: 10px; }
+.refresh-next { color: #4b7c5a; margin-left: auto; font-size: 12px; }
 
 .guardian-sim-status {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin: 0 12px 8px;
-  padding: 6px 10px;
+  gap: 8px;
+  margin: 0 12px 10px;
+  padding: 8px 12px;
   background: #fffbeb;
   border: 1px solid #fde68a;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 13px;
   color: #92400e;
 }
 .sim-dot {
-  width: 6px; height: 6px;
+  width: 8px; height: 8px;
   border-radius: 50%;
   background: #f59e0b;
   flex-shrink: 0;
@@ -5249,30 +5253,30 @@ p {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.4; transform: scale(0.8); }
 }
-.sim-stuck-label { margin-left: auto; font-weight: 700; color: #dc2626; font-size: 10px; }
+.sim-stuck-label { margin-left: auto; font-weight: 700; color: #dc2626; font-size: 12px; }
 
 /* 시뮬레이션 시작 버튼 (시트 안) */
 .gbs-sim-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 12px 8px;
+  padding: 2px 12px 10px;
 }
 .sim-start-btn {
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
   border-radius: 8px;
-  padding: 7px 14px;
-  font-size: 12px;
+  padding: 9px 16px;
+  font-size: 14px;
   font-weight: 700;
-  color: var(--ink);
+  color: #15803d;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
 }
-.sim-start-btn:hover { background: #f0f4f8; }
+.sim-start-btn:hover { background: #dcfce7; }
 .sim-start-desc {
-  font-size: 10px;
+  font-size: 12px;
   color: #9ca3af;
   line-height: 1.4;
 }
@@ -5280,9 +5284,9 @@ p {
 .gbs-actions {
   display: flex;
   gap: 8px;
-  padding: 0 12px 12px;
+  padding: 0 12px 14px;
 }
-.gbs-actions .outline-btn { flex: 1; }
+.gbs-actions .outline-btn { flex: 1; font-size: 14px; }
 .gbs-actions .outline-btn.danger {
   border-color: #fca5a5;
   color: #b91c1c;
