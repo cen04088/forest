@@ -5744,6 +5744,14 @@ p {
   overflow: hidden;
 }
 
+@media (min-width: 1024px) {
+  .guardian-shell { left: 254px; }
+}
+
+@media (min-width: 1280px) {
+  .guardian-shell { left: 264px; }
+}
+
 .guardian-map-controls {
   position: absolute;
   top: 12px;
