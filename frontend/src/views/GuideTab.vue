@@ -792,6 +792,7 @@ function zoneRiskClass(rf = '') {
   return 'dz-type-etc';
 }
 const storyExpanded = ref(false);
+const storyLoading = ref(false);
 const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
 const selectedTrailCourse = ref(null);
 const fluxData = ref(null);
@@ -849,11 +850,11 @@ let _courseStepToken = 0;
 const loadedMountainDetailKey = ref('');
 
 const storyText = computed(() => {
+  if (storyLoading.value) return ''; // 로딩 중엔 이전 설명 대신 스켈레톤 표시
   const story = mountainStory.value;
   if (story?.source === 'seed_mountain_descriptions') {
     return story.intro || story.summary || story.detail || '';
   }
-
   return selectedMountain.value?.intro || selectedMountain.value?.description || '';
 });
 const storyNeedsToggle = computed(() => storyText.value.length > 160);
@@ -1017,6 +1018,7 @@ async function enterCourseStep(mountain) {
   selectedMountain.value = mountain;
   selectedTrailCourse.value = null;
   mountainStory.value = null;
+  storyLoading.value = true;
   mountainSafetyReports.value = [];
   selectedDisasterZones.value = [];
   landslideRisk.value = 'low';
@@ -1067,6 +1069,7 @@ async function enterCourseStep(mountain) {
   refreshOverviewMap();
   const story = storyData.status === 'fulfilled' ? (storyData.value.items?.[0] ?? null) : null;
   mountainStory.value = story;
+  storyLoading.value = false;
   if (story?.source === 'seed_mountain_descriptions') {
     selectedMountain.value = {
       ...selectedMountain.value,
