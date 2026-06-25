@@ -5096,12 +5096,14 @@ p {
 .rec-loading-panel {
   text-align: center;
   padding: 36px 24px !important;
+  overflow: hidden;
 }
 .rec-loading-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
+  width: 100%;
 }
 .rec-loading-icon {
   font-size: 36px;
@@ -5116,6 +5118,9 @@ p {
   font-weight: 600;
   color: #1a3c2b;
   min-height: 24px;
+  max-width: 100%;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   animation: rec-fadein 0.4s ease;
 }
 @keyframes rec-fadein {
