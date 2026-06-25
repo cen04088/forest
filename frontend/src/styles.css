@@ -5321,10 +5321,10 @@ p {
 
 /* ── 60분 경고 팝업 ── */
 .sim-end-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.55);
+  z-index: 9999;          /* Leaflet popupPane(700)보다 높아야 모달이 보임 */
+  background: rgba(0, 0, 0, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5339,6 +5339,21 @@ p {
   text-align: center;
   box-shadow: 0 8px 40px rgba(0,0,0,0.25);
 }
+.sem-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+}
+.sem-close-btn:hover { background: #f3f4f6; color: #374151; }
+.sim-end-modal { position: relative; }
 .sem-icon { font-size: 44px; line-height: 1; margin-bottom: 10px; }
 .sem-title {
   font-size: 18px;
@@ -5411,31 +5426,32 @@ p {
 /* ── 보호자 위치 미수신 경고 배너 ─────────────────────────────── */
 .guardian-stale-banner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   margin: 0;
-  padding: 14px 20px;
-  background: #fef2f2;
-  border-bottom: 2px solid #fca5a5;
-  color: #991b1b;
+  padding: 12px 16px;
+  background: #dc2626;
+  border-bottom: 3px solid #991b1b;
+  color: #fff;
+  flex-shrink: 0;
 }
 
-.stale-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.stale-icon { font-size: 20px; flex-shrink: 0; }
 
-.guardian-stale-banner strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
-.guardian-stale-banner p { font-size: 12px; margin: 0; opacity: 0.85; }
+.stale-body { flex: 1; min-width: 0; }
+.guardian-stale-banner strong { display: block; font-size: 14px; font-weight: 800; margin-bottom: 1px; color: #fff; }
+.guardian-stale-banner p { font-size: 12px; margin: 0; color: rgba(255,255,255,0.9); }
 
 .stale-119 {
-  margin-left: auto;
   flex-shrink: 0;
-  background: #dc2626;
-  color: #fff;
-  font-weight: 700;
-  font-size: 13px;
-  padding: 6px 14px;
+  background: #fff;
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 8px 16px;
   border-radius: 8px;
   text-decoration: none;
-  align-self: center;
+  border: 2px solid rgba(255,255,255,0.4);
 }
 
 /* ── 산행자 실시간 지도 ─────────────────────────────────────── */

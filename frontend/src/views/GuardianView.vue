@@ -10,12 +10,12 @@
 
     <!-- 위치 미수신 / 시뮬레이션 경고 배너 -->
     <div v-if="showStaleWarning" class="guardian-stale-banner" role="alert">
-      <span class="stale-icon">⚠️</span>
+      <span class="stale-icon">🚨</span>
       <div class="stale-body">
         <strong>{{ simActive ? '[시뮬레이션] ' : '' }}위치 업데이트가 {{ staleMinutes }}분째 없습니다</strong>
         <p>GPS 신호가 끊겼거나 배터리 부족일 수 있습니다. 직접 연락해 보세요.</p>
       </div>
-      <a href="tel:119" class="stale-119">119</a>
+      <a href="tel:119" class="stale-119">📞 119</a>
     </div>
 
     <!-- 맵 영역: Leaflet 컨테이너(항상 빈 div) + 오버레이를 형제로 분리 -->
@@ -88,8 +88,9 @@
 
     <!-- 60분 경고 팝업 -->
     <Transition name="modal-fade">
-      <div v-if="simEndModal" class="sim-end-overlay" role="dialog" aria-modal="true">
+      <div v-if="simEndModal" class="sim-end-overlay" role="dialog" aria-modal="true" @click.self="dismissSimEnd">
         <div class="sim-end-modal">
+          <button class="sem-close-btn" type="button" @click="dismissSimEnd" aria-label="닫기">✕</button>
           <div class="sem-icon">⚠️</div>
           <h3 class="sem-title">위치 미갱신 60분</h3>
           <p class="sem-body">
@@ -98,7 +99,7 @@
           </p>
           <div class="sem-actions">
             <a href="tel:119" class="emergency-btn">🚨 119 신고</a>
-            <button class="outline-btn" type="button" @click="dismissSimEnd">확인</button>
+            <button class="outline-btn" type="button" @click="dismissSimEnd">시뮬레이션 종료</button>
           </div>
         </div>
       </div>
@@ -231,6 +232,9 @@ function dismissSimEnd() {
   simStep.value = 0;
   simStuckTicks.value = 0;
   simTrail.value = [];
+  if (session.value && guardianMapEl.value) {
+    nextTick(() => renderGuardianMap(guardianMapEl.value, session.value));
+  }
 }
 
 // ── 표시용 합성값 ─────────────────────────────────────────────────────────────
