@@ -5935,10 +5935,12 @@ p {
 }
 
 /* 게이지 */
-.ml-gauge-wrap { flex-shrink: 0; width: 100px; }
+.ml-gauge-wrap { flex-shrink: 0; width: 110px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .ml-gauge-svg  { width: 100%; height: auto; overflow: visible; }
 .ml-gauge-num  { font-size: 18px; font-weight: 800; }
-.ml-gauge-unit { font-size: 8px; fill: #6b7280; }
+.ml-gauge-level { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; }
+.ml-gauge-unit { font-size: 7.5px; fill: #6b7280; }
+.ml-gauge-disclaimer { font-size: 10px; color: #9ca3af; text-align: center; line-height: 1.4; word-break: keep-all; }
 
 /* 메타 영역 */
 .ml-card-meta {

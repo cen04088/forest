@@ -228,14 +228,14 @@
           <div v-else-if="browseRisk" class="ml-predict-card">
             <!-- 헤더 -->
             <div class="ml-risk-header">
-              <span class="ml-risk-title">📊 소방청 데이터 기반 예측</span>
+              <span class="ml-risk-title">📊 산행 안전 예측</span>
               <span :class="['ml-risk-badge', mlBadgeClass]">{{ mlBadgeLabel }}</span>
             </div>
 
             <!-- 게이지 + 사고 유형 -->
             <div class="ml-card-body">
               <div class="ml-gauge-wrap">
-                <svg viewBox="0 0 100 58" class="ml-gauge-svg">
+                <svg viewBox="0 0 100 64" class="ml-gauge-svg">
                   <path d="M 12 54 A 38 38 0 0 1 88 54"
                         fill="none" stroke="#e5e7eb" stroke-width="8" stroke-linecap="round"/>
                   <path d="M 12 54 A 38 38 0 0 1 88 54"
@@ -244,18 +244,17 @@
                         stroke-width="8"
                         stroke-linecap="round"
                         :stroke-dasharray="`${browseRisk.risk_index * 119} 119`"/>
-                  <text x="50" y="47" text-anchor="middle" class="ml-gauge-num" :fill="mlGaugeColor">
-                    {{ Math.round(browseRisk.risk_index * 100) }}
-                  </text>
-                  <text x="50" y="56" text-anchor="middle" class="ml-gauge-unit">위험지수</text>
+                  <text x="50" y="44" text-anchor="middle" class="ml-gauge-level" :fill="mlGaugeColor">{{ mlBadgeLabel }}</text>
+                  <text x="50" y="55" text-anchor="middle" class="ml-gauge-unit">산행 주의도</text>
                 </svg>
+                <p class="ml-gauge-disclaimer">사고 확률이 아닌 과거 패턴 대비 상대 지수예요</p>
               </div>
 
               <div class="ml-card-meta">
                 <div class="ml-top-type">
                   <span class="ml-type-icon-lg">{{ mlTopType.icon }}</span>
                   <div>
-                    <p class="ml-type-sub">주요 위험 유형</p>
+                    <p class="ml-type-sub">주의가 필요한 유형</p>
                     <p class="ml-type-name">{{ mlTopType.name }}</p>
                   </div>
                 </div>
@@ -266,7 +265,7 @@
                     <span class="ml-ctx-text">{{ item.text }}</span>
                   </div>
                 </div>
-                <p class="ml-data-note">날씨·사고 112,902건 반영</p>
+                <p class="ml-data-note">소방청 산악사고 112,902건 기반</p>
               </div>
             </div>
 
