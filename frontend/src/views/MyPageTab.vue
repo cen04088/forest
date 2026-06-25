@@ -33,7 +33,7 @@
       </button>
     </section>
 
-    <section class="mypage-bottom-banner">
+    <section v-if="!authUser" class="mypage-bottom-banner">
       <span class="bottom-shield" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.7 2.9 8.4 7 10 4.1-1.6 7-5.3 7-10V6l-7-3Z" /><path d="m9 12 2 2 4-5" /></svg>
       </span>
