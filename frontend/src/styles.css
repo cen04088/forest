@@ -18712,11 +18712,10 @@ body:has(.mypage-final) {
 .guardian-card-title {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
   margin: 0 !important;
-  padding: 18px 22px 4px !important;
+  padding: 18px 22px 2px !important;
   color: #202320 !important;
-  flex-wrap: wrap !important;
 }
 
 .guardian-card-icon {
@@ -18731,7 +18730,6 @@ body:has(.mypage-final) {
 .guardian-card-title strong {
   font-size: 18px !important;
   font-weight: 650 !important;
-  margin-right: 2px !important;
 }
 
 .gbs-info-row {
@@ -18783,16 +18781,6 @@ body:has(.mypage-final) {
   font-weight: 420 !important;
 }
 
-.guardian-card-title .guardian-inline-status {
-  flex: 0 0 auto !important;
-  min-width: auto !important;
-  gap: 5px !important;
-  margin-left: 2px !important;
-  color: #6b746c !important;
-  font-size: 13px !important;
-  white-space: nowrap !important;
-}
-
 .guardian-inline-status span {
   display: inline-flex !important;
   align-items: center !important;
@@ -18828,8 +18816,8 @@ body:has(.mypage-final) {
 
 .guardian-refresh-btn {
   flex: 0 0 auto !important;
-  min-height: 36px !important;
-  padding: 0 14px !important;
+  min-height: 38px !important;
+  padding: 0 15px !important;
   border: 1px solid #dce7d8 !important;
   border-radius: 10px !important;
   background: #f8faf6 !important;
