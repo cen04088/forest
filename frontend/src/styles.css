@@ -17855,17 +17855,7 @@ body:has(.mypage-final) {
 }
 
 .course-step-header .csh-title-block::after {
-  content: "💡 선택한 산의 탐방로와 실시간 환경 정보를 함께 확인하세요.";
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  padding: 0 18px;
-  border-radius: 15px;
-  background: #eaf5ee;
-  color: #416847;
-  font-size: 15px;
-  line-height: 1.45;
-  font-weight: 700;
+  content: none;
 }
 
 .course-step-header .mountain-story-card,

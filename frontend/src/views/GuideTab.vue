@@ -616,7 +616,7 @@ import {
   loadBrowseRisk,
 } from '../composables/useGuide.js';
 import { communitySearch, communityCategory } from '../composables/useCommunity.js';
-import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux, fetchLocalRoadTrails } from '../api.js';
+import { fetchDisasterZones, fetchMountainStory, fetchSafetyReports, fetchLandslide, fetchForestFlux } from '../api.js';
 import { useLeafletMap } from '../composables/useLeafletMap.js';
 import { durationLabel } from '../utils/courseHelpers.js';
 import MountainCard from '../components/MountainCard.vue';
@@ -802,7 +802,6 @@ const storyExpanded = ref(false);
 const storyLoading = ref(false);
 const landslideRisk = ref('low'); // 'low' | 'caution' | 'danger'
 const selectedTrailCourse = ref(null);
-const mountainApiTrails = ref([]);
 const fluxData = ref(null);
 const fluxLoading = ref(false);
 
@@ -894,20 +893,7 @@ const selectedMountainCourseRecommendations = computed(() => {
     .sort((a, b) => b._trailScore - a._trailScore)
     .slice(0, 12);
 
-  if (matchedCourses.length) return matchedCourses;
-
-  // publicCourses에 없으면 로컬 도로 API 탐방로 사용
-  if (mountainApiTrails.value.length) {
-    return mountainApiTrails.value
-      .map((t) => ({
-        ...t,
-        _trailScore: scoreTrailForSelectedMountain(t, desiredMinutes, maxMinutes, difficultyFilter),
-      }))
-      .sort((a, b) => b._trailScore - a._trailScore)
-      .slice(0, 12);
-  }
-
-  return [buildRepresentativeCourse(mountain)];
+  return matchedCourses.length ? matchedCourses : [buildRepresentativeCourse(mountain)];
 });
 
 function normalizeText(value) {
@@ -1038,7 +1024,6 @@ async function enterCourseStep(mountain) {
   guideStep.value = 'courses';
   selectedMountain.value = mountain;
   selectedTrailCourse.value = null;
-  mountainApiTrails.value = [];
   mountainStory.value = null;
   storyLoading.value = true;
   mountainSafetyReports.value = [];
@@ -1060,12 +1045,6 @@ async function enterCourseStep(mountain) {
       .then(d => { fluxData.value = d; })
       .catch(() => { fluxData.value = { ok: false, error: '데이터 조회 실패' }; })
       .finally(() => { fluxLoading.value = false; });
-    fetchLocalRoadTrails({ mountainName: mountain.name, lat: mountain.lat, lng: mountain.lng, radius: 8, size: 30 })
-      .then(d => {
-        if (token !== _courseStepToken) return;
-        mountainApiTrails.value = (d?.items || []).filter(t => t.distance_km && t.duration_min);
-      })
-      .catch(() => {});
   }
   await nextTick();
   if (token !== _courseStepToken) return;

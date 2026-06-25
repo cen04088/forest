@@ -85,11 +85,12 @@ KMA_API_HUB_KEY_FILE_PATH = settings.BASE_DIR.parent / "kma_api_hub_key.txt"
 @lru_cache(maxsize=1)
 def load_public_trail_courses():
     # DB 우선, 없으면 CSV fallback
+    base_courses = None
     try:
         from .models import TrailCourse
         qs = TrailCourse.objects.filter(lat__isnull=False, lng__isnull=False)
         if qs.exists():
-            courses = [
+            base_courses = [
                 {
                     "id": tc.course_id,
                     "mountain": tc.mountain,
@@ -107,20 +108,37 @@ def load_public_trail_courses():
                 }
                 for tc in qs
             ]
-            return with_seed_courses(courses)
     except Exception:
         pass
 
-    if not TRAIL_CSV_PATH.exists():
-        return COURSES
+    if base_courses is None:
+        if TRAIL_CSV_PATH.exists():
+            for encoding in ("utf-8-sig", "cp949", "euc-kr"):
+                try:
+                    base_courses = _read_trail_csv(TRAIL_CSV_PATH, encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+        if base_courses is None:
+            base_courses = []
 
-    for encoding in ("utf-8-sig", "cp949", "euc-kr"):
-        try:
-            return with_seed_courses(_read_trail_csv(TRAIL_CSV_PATH, encoding))
-        except UnicodeDecodeError:
-            continue
+    # 로컬 SHP 등산로 병합
+    try:
+        from .local_road_api import load_local_road_trails
+        road_trails = load_local_road_trails()
+        seen = {
+            (str(c.get("mountain", "")).replace(" ", ""), str(c.get("name", "")).replace(" ", ""))
+            for c in base_courses
+        }
+        for t in road_trails:
+            key = (str(t.get("mountain", "")).replace(" ", ""), str(t.get("name", "")).replace(" ", ""))
+            if key not in seen:
+                base_courses.append(t)
+                seen.add(key)
+    except Exception:
+        pass
 
-    return COURSES
+    return with_seed_courses(base_courses) if base_courses else COURSES
 
 
 def with_seed_courses(courses):
