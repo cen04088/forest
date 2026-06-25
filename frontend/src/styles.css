@@ -5744,27 +5744,29 @@ p {
   overflow: hidden;
 }
 
-/* 헤더 (고정 높이) */
-.guardian-header {
+.guardian-map-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
-  height: 50px;
-  flex-shrink: 0;
-  background: #fff;
-  border-bottom: 1px solid var(--line);
-  z-index: 10;
+  pointer-events: none;
 }
 .guardian-back-btn {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--muted);
-  background: none;
+  color: #1a2a1a;
+  background: rgba(255,255,255,0.92);
   border: none;
-  padding: 6px 4px;
+  border-radius: 20px;
+  padding: 7px 14px;
   cursor: pointer;
-  flex-shrink: 0;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+  backdrop-filter: blur(8px);
 }
 .guardian-status-chip {
   font-size: 13px;
@@ -5772,16 +5774,17 @@ p {
   padding: 5px 12px;
   border-radius: 20px;
   flex-shrink: 0;
-}
-.guardian-logo-img {
-  height: 34px;
-  width: auto;
-  mix-blend-mode: multiply;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.14);
 }
 .guardian-status-chip.green  { background: #dcfce7; color: #15803d; }
 .guardian-status-chip.yellow { background: #fef9c3; color: #a16207; }
 .guardian-status-chip.red    { background: #fee2e2; color: #b91c1c; }
 .guardian-status-chip.gray   { background: #f3f4f6; color: #6b7280; }
+
+@media (min-width: 1024px) {
+  .guardian-shell { left: 244px; }
+}
 
 /* 맵 래퍼 (flex-grow로 남은 공간 채움, 상대 위치 기준) */
 .guardian-map-wrap {

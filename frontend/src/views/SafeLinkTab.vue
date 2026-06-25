@@ -220,7 +220,7 @@
       </section>
 
       <section class="safelink-side-card kakao-actions">
-        <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? kakaoMapUrl : undefined" target="_blank" rel="noreferrer">
+        <a :class="['map-action', (!selectedMountain && !(safeLinkActive && currentLat)) ? 'disabled' : '']" :href="kakaoMapUrl || (safeLinkActive && currentLat && currentLng ? `https://map.kakao.com/link/map/현재위치,${currentLat},${currentLng}` : undefined)" target="_blank" rel="noreferrer">
           <span class="map-action-icon pin" aria-hidden="true">●</span>
           <span class="map-action-copy">
             <strong>카카오맵에서 위치 보기</strong>
@@ -228,7 +228,7 @@
           </span>
           <span class="map-action-chevron" aria-hidden="true">›</span>
         </a>
-        <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? 'https://m.map.kakao.com/scheme/open?page=locationsharing' : undefined" target="_blank" rel="noreferrer">
+        <a class="map-action" href="https://m.map.kakao.com/scheme/open?page=locationsharing" target="_blank" rel="noreferrer">
           <span class="map-action-icon people" aria-hidden="true">●</span>
           <span class="map-action-copy">
             <strong>카카오맵 친구위치 공유</strong>
@@ -364,7 +364,6 @@ const guardianResolved = ref(false);
 const inputFocused = ref(false);
 
 onMounted(() => {
-  nextTick(() => hiddenInput.value?.focus());
   if (authUser.value && emergencyContacts.value.length === 0) loadMyPageData();
 });
 

@@ -1,13 +1,6 @@
 <template>
   <main class="guardian-shell">
 
-    <!-- 헤더 (고정 높이) -->
-    <header class="guardian-header">
-      <button class="guardian-back-btn" type="button" @click="$router.push('/')">← 나가기</button>
-      <img src="/logo.png" alt="올라" class="guardian-logo-img" />
-      <span :class="['guardian-status-chip', displayStatusClass]">{{ displayStatusLabel }}</span>
-    </header>
-
     <!-- 위치 미수신 / 시뮬레이션 경고 배너 -->
     <div v-if="showStaleWarning" class="guardian-stale-banner" role="alert">
       <span class="stale-icon">🚨</span>
@@ -22,6 +15,11 @@
     <div class="guardian-map-wrap">
       <!-- Leaflet은 이 div 안에서만 동작, 자식 없이 항상 깨끗하게 유지 -->
       <div ref="guardianMapEl" class="guardian-map-leaflet" aria-label="산행자 현재 위치 지도"></div>
+      <!-- 맵 위 플로팅 컨트롤 -->
+      <div class="guardian-map-controls">
+        <button class="guardian-back-btn" type="button" @click="$router.push('/')">← 나가기</button>
+        <span :class="['guardian-status-chip', displayStatusClass]">{{ displayStatusLabel }}</span>
+      </div>
       <!-- 세션 없을 때 오버레이 (Leaflet 컨테이너와 형제 관계) -->
       <div v-if="loading && !displaySession" class="guardian-map-overlay guardian-map-loading">
         <div class="guardian-loading-spinner"></div>

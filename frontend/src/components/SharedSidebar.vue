@@ -105,7 +105,7 @@
 
       <div class="sidebar-fire-stats">
         <div class="sfs-head">
-          <span class="sfs-title">소방청 사고 데이터 분석</span>
+          <span class="sfs-title">산행 안전 예측</span>
           <span class="sfs-badge">1만건 사고를 분석</span>
         </div>
         <p class="sfs-sub">이 시간대·요일·추락 사고 주의</p>
