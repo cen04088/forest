@@ -14569,11 +14569,25 @@ body {
     background: #f8faf6 !important;
   }
 
-  .ai-guide-page .chat-hero,
+  .ai-guide-page .chat-hero {
+    border-radius: 22px !important;
+    background: linear-gradient(170deg, #052e16 0%, #14532d 100%) !important;
+  }
+
   .ai-guide-page .chat-shell,
   .ai-side-card {
     border-radius: 24px !important;
     background: #fff !important;
+  }
+
+  .ai-guide-page .chat-hero-title {
+    color: #fff !important;
+    font-size: clamp(22px, 6vw, 34px) !important;
+  }
+
+  .ai-guide-page .chat-hero-copy {
+    color: rgba(220, 242, 225, 0.88) !important;
+    font-size: 14px !important;
   }
 
   .ai-side-panel {
@@ -15156,7 +15170,41 @@ body {
     gap: 14px !important;
   }
 
-  .community-page .info-mag-card,
+  .community-page .info-mag-card {
+    position: relative !important;
+    min-height: 200px !important;
+    display: grid !important;
+    overflow: hidden !important;
+    border-radius: 20px !important;
+    background: #fff !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07) !important;
+    cursor: pointer !important;
+  }
+
+  .community-page .info-mag-image {
+    position: absolute !important;
+    inset: 0 !important;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.14) 0%, rgba(255,255,255,0.82) 70%, #fff 100%),
+      var(--mag-image) center / cover !important;
+  }
+
+  .community-page .info-mag-card-inner {
+    position: relative !important;
+    z-index: 1 !important;
+    min-height: 200px !important;
+    display: grid !important;
+    align-content: space-between !important;
+    padding: 16px !important;
+    color: #202320 !important;
+  }
+
+  .community-page .info-mag-num { color: rgba(30,30,30,0.55) !important; font-size: 20px !important; }
+  .community-page .info-mag-badge { background: rgba(0,0,0,0.12) !important; color: #3d6b45 !important; }
+  .community-page .info-mag-mountain { color: #5f7060 !important; }
+  .community-page .info-mag-title { color: #111 !important; font-size: 17px !important; font-weight: 900 !important; }
+  .community-page .info-mag-tag { background: #edf5e9 !important; color: #3d6b45 !important; }
+
   .community-post-modern,
   .community-feed {
     border-radius: 20px !important;
