@@ -671,17 +671,379 @@
 }
 
 @media (max-width: 1023px) {
+  /* ── 세이프링크 레이아웃 ── */
   .safelink-layout {
     display: grid;
     gap: 16px;
+    padding: 0;
   }
 
+  .safelink-col-map,
+  .safelink-col-ctrl {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  /* ── 카드 공통 ── */
   .safelink-guardian-card,
   .safelink-guide-card,
   .safelink-info-card,
   .safelink-side-card {
     border-radius: 20px;
     background: #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+
+  /* ── 보호자 연결 카드 ── */
+  .safelink-guardian-card {
+    padding: 24px 20px 22px;
+    background: linear-gradient(170deg, #052e16 0%, #14532d 100%);
+    color: #fff;
+  }
+
+  .safelink-card-copy {
+    margin-bottom: 22px;
+  }
+
+  .safelink-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 12px;
+    color: #86efac;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+  }
+
+  .safelink-shield {
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: rgba(134,239,172,0.28);
+    color: #86efac;
+    font-size: 10px;
+  }
+
+  .safelink-card-copy h1 {
+    margin: 0 0 10px;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .safelink-card-copy p:last-child {
+    color: rgba(255,255,255,0.78);
+    font-size: 14px;
+    line-height: 1.65;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .safelink-code-area {
+    display: grid;
+    gap: 16px;
+  }
+
+  .safelink-guardian-card .code-input-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 7px;
+  }
+
+  .safelink-guardian-card .code-digit-input {
+    height: 52px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-size: 22px;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .safelink-guardian-card .code-digit-input.active,
+  .safelink-guardian-card .code-digit-input.filled {
+    border-color: #22c55e;
+    background: rgba(255,255,255,0.22);
+  }
+
+  /* ── 주 버튼 ── */
+  .safelink-primary-btn {
+    width: 100%;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 22px;
+    border: 0;
+    border-radius: 14px;
+    background: #22c55e;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(34,197,94,0.3);
+  }
+
+  .safelink-primary-btn.wide {
+    width: 100%;
+  }
+
+  .safelink-primary-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .safelink-code-hint {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: rgba(255,255,255,0.72);
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  /* ── 안전 가이드 카드 ── */
+  .safelink-guide-card {
+    padding: 20px 18px;
+  }
+
+  .safelink-guide-card h2,
+  .safelink-info-card h2 {
+    font-size: 18px;
+    font-weight: 900;
+    color: #111;
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+  }
+
+  .safelink-guide-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .safelink-guide-item {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    padding: 16px 12px 14px;
+    border: 1px solid #e8eee5;
+    border-radius: 14px;
+    background: #fafdf8;
+    text-align: center;
+  }
+
+  .guide-item-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    font-size: 22px;
+    margin: 0 auto 2px;
+  }
+
+  .tone-check .guide-item-icon  { background: #e8f4df; }
+  .tone-alert .guide-item-icon  { background: #fff4d9; }
+  .tone-weather .guide-item-icon { background: #eaf4ff; }
+  .tone-gear .guide-item-icon   { background: #edf6e7; }
+
+  .safelink-guide-item strong {
+    color: #111;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.3;
+  }
+
+  .safelink-guide-item p {
+    color: #6a7469;
+    font-size: 11.5px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .safelink-guide-item button {
+    min-height: 30px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    background: #edf7e9;
+    color: #235f2c;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* ── 이용 안내 카드 ── */
+  .safelink-info-card {
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+
+  .safelink-info-icon {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #22c55e;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+  }
+
+  .safelink-info-card h2 {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  .safelink-info-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+  }
+
+  .safelink-info-card li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #263026;
+    font-size: 13px;
+    font-weight: 680;
+    line-height: 1.5;
+  }
+
+  /* ── 세이프링크 생성 패널 ── */
+  .safelink-side-card {
+    padding: 22px 18px;
+  }
+
+  .safelink-side-head {
+    margin-bottom: 18px;
+  }
+
+  .safelink-side-head h2 {
+    font-size: 22px;
+    font-weight: 900;
+    color: #111;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    margin: 0 0 8px;
+  }
+
+  .safelink-side-head p,
+  .safe-link-guide {
+    color: #4e5b50;
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .safelink-create-state {
+    display: grid;
+    gap: 12px;
+  }
+
+  /* ── 카카오 액션 ── */
+  .kakao-actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .map-action {
+    min-height: 68px;
+    display: grid;
+    grid-template-columns: 44px 1fr 24px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid #e8eee5;
+    border-radius: 14px;
+    background: #fff;
+    color: #182018;
+    text-decoration: none;
+  }
+
+  .map-action.disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .map-action-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #e6f3df;
+    font-size: 20px;
+  }
+
+  .map-action-copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .map-action-copy strong {
+    color: #155e26;
+    font-size: 14px;
+    font-weight: 900;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .map-action-copy span {
+    color: #586458;
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 650;
+  }
+
+  .map-action-chevron {
+    color: #9ca3af;
+    font-size: 22px;
+    line-height: 1;
+    text-align: right;
+  }
+
+  .map-action.emergency {
+    border-color: #fee2e2;
+    background: #fff8f8;
+  }
+
+  .map-action.emergency .map-action-copy strong,
+  .map-action.emergency .map-action-chevron {
+    color: #ef4444;
+  }
+
+  .map-action.emergency .map-action-icon {
+    background: #ffe0e0;
+  }
+
+  .sos-divider {
+    font-size: 13px;
+    font-weight: 900;
+    color: #111;
+    margin: 4px 0 2px;
   }
 }
 
@@ -1139,6 +1501,10 @@ p {
 }
 
 .sidebar-search-panel {
+  display: none;
+}
+
+.sidebar-fire-stats {
   display: none;
 }
 
@@ -15521,6 +15887,69 @@ body {
   }
 }
 
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 12px !important;
+    align-items: flex-end !important;
+  }
+
+  .auth-modal {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 52px 20px 28px !important;
+    border-radius: 24px 24px 16px 16px !important;
+  }
+
+  .auth-modal-header {
+    top: 16px !important;
+    right: 16px !important;
+  }
+
+  .auth-tabs {
+    min-height: 48px !important;
+    margin-bottom: 20px !important;
+    border-radius: 12px !important;
+  }
+
+  .auth-tabs,
+  .auth-tabs button {
+    min-height: 48px !important;
+  }
+
+  .auth-tabs button {
+    font-size: 15px !important;
+    gap: 7px !important;
+    padding: 0 12px !important;
+  }
+
+  .auth-tabs svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .auth-form .field {
+    gap: 6px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .auth-form .field span {
+    font-size: 14px !important;
+  }
+
+  .auth-form .field input {
+    min-height: 48px !important;
+    font-size: 15px !important;
+    padding: 0 16px !important;
+  }
+
+  .auth-form .primary-btn.wide-field {
+    width: 100% !important;
+    min-height: 50px !important;
+    font-size: 16px !important;
+    border-radius: 14px !important;
+  }
+}
+
 /* My page reference redesign */
 .mypage-redesign {
   width: min(100%, 1420px);
@@ -16708,7 +17137,7 @@ body:has(.mypage-final) {
 
 @media (max-width: 1023px) {
   .app-shell:has(.mypage-final) {
-    padding: 0 !important;
+    padding: 0 0 110px !important;
     background: #f8f9fa !important;
   }
 }
