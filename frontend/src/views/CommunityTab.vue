@@ -24,10 +24,11 @@
                     <span class="info-mag-num">{{ String(idx + 1).padStart(2, '0') }}</span>
                     <span class="info-mag-badge">{{ slide.infoPost.label }}</span>
                   </div>
+                  <div class="info-mag-card-actions"></div>
                 </div>
 
                 <div class="info-mag-card-bottom">
-                  <p class="info-mag-mountain">{{ formatMountainTags(slide.infoPost.mountain) }}</p>
+                  <p class="info-mag-mountain">{{ slide.infoPost.mountain }}</p>
                   <strong class="info-mag-title">{{ slide.infoPost.title }}</strong>
                   <div class="info-mag-tags">
                     <span v-for="tag in slide.infoPost.tags.slice(0, 3)" :key="tag" class="info-mag-tag">
@@ -363,15 +364,6 @@ const CommunityPostCard = defineComponent({
 
 function cleanTag(tag) {
   return String(tag || '').replace(/^#/, '');
-}
-
-function formatMountainTags(value) {
-  return String(value || '')
-    .split(/\s*[·ㆍ•,]\s*/)
-    .map((item) => item.trim().replace(/^#/, ''))
-    .filter(Boolean)
-    .map((item) => `#${item}`)
-    .join(' ');
 }
 
 async function toggleFollowingMenu() {

@@ -53,7 +53,7 @@
 
           <p class="safelink-code-hint">
             <span aria-hidden="true">🔒</span>
-            세이프링크 생성 후 코드를 복사하세요.
+            코드는 산행자의 앱 안전공유 탭에서 확인할 수 있습니다.
           </p>
         </div>
 
@@ -69,28 +69,48 @@
             <span class="guide-item-icon" aria-hidden="true">☑</span>
             <strong>산행 전 체크리스트</strong>
             <p>안전한 산행을 위한 필수 확인 사항</p>
-            <button type="button">자세히 보기 <span aria-hidden="true">→</span></button>
+            <button type="button" @click="openGuide('checklist')">자세히 보기 <span aria-hidden="true">→</span></button>
           </article>
           <article class="safelink-guide-item tone-alert">
             <span class="guide-item-icon" aria-hidden="true">🔔</span>
             <strong>긴급 상황 대처법</strong>
             <p>위급 상황 발생 시 대처 요령 안내</p>
-            <button type="button">자세히 보기 <span aria-hidden="true">→</span></button>
+            <button type="button" @click="openGuide('emergency')">자세히 보기 <span aria-hidden="true">→</span></button>
           </article>
           <article class="safelink-guide-item tone-weather">
             <span class="guide-item-icon" aria-hidden="true">🌧</span>
-            <strong>기상 위험 정보</strong>
-            <p>실시간 기상과 위험 정보 확인</p>
-            <button type="button">자세히 보기 <span aria-hidden="true">→</span></button>
+            <strong>날씨 별 행동강령</strong>
+            <p>날씨에 따른 산행 대응 행동강령</p>
+            <button type="button" @click="openGuide('weather')">자세히 보기 <span aria-hidden="true">→</span></button>
           </article>
           <article class="safelink-guide-item tone-gear">
             <span class="guide-item-icon" aria-hidden="true">🎒</span>
             <strong>장비 점검 가이드</strong>
             <p>필수 장비 점검과 준비 방법</p>
-            <button type="button">자세히 보기 <span aria-hidden="true">→</span></button>
+            <button type="button" @click="openGuide('gear')">자세히 보기 <span aria-hidden="true">→</span></button>
           </article>
         </div>
       </section>
+
+      <!-- 안전 가이드 모달 -->
+      <Teleport to="body">
+        <Transition name="modal-fade">
+          <div v-if="guideModal" class="guide-modal-overlay" @click.self="guideModal = null">
+            <div class="guide-modal">
+              <button class="guide-modal-close" type="button" @click="guideModal = null" aria-label="닫기">✕</button>
+              <h3 class="guide-modal-title">{{ GUIDE_CONTENT[guideModal].title }}</h3>
+              <div class="guide-modal-body">
+                <section v-for="section in GUIDE_CONTENT[guideModal].sections" :key="section.heading" class="guide-modal-section">
+                  <h4 class="guide-section-heading">{{ section.heading }}</h4>
+                  <ul class="guide-section-list">
+                    <li v-for="item in section.items" :key="item">{{ item }}</li>
+                  </ul>
+                </section>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
 
       <section class="safelink-info-card">
         <div class="safelink-info-icon" aria-hidden="true">✚</div>
@@ -200,7 +220,7 @@
       </section>
 
       <section class="safelink-side-card kakao-actions">
-        <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? kakaoMapUrl : undefined" target="_blank" rel="noreferrer">
+        <a :class="['map-action', (!selectedMountain && !(safeLinkActive && currentLat)) ? 'disabled' : '']" :href="kakaoMapUrl || (safeLinkActive && currentLat && currentLng ? `https://map.kakao.com/link/map/현재위치,${currentLat},${currentLng}` : undefined)" target="_blank" rel="noreferrer">
           <span class="map-action-icon pin" aria-hidden="true">●</span>
           <span class="map-action-copy">
             <strong>카카오맵에서 위치 보기</strong>
@@ -208,7 +228,7 @@
           </span>
           <span class="map-action-chevron" aria-hidden="true">›</span>
         </a>
-        <a :class="['map-action', !selectedMountain ? 'disabled' : '']" :href="selectedMountain ? 'https://m.map.kakao.com/scheme/open?page=locationsharing' : undefined" target="_blank" rel="noreferrer">
+        <a class="map-action" href="https://m.map.kakao.com/scheme/open?page=locationsharing" target="_blank" rel="noreferrer">
           <span class="map-action-icon people" aria-hidden="true">●</span>
           <span class="map-action-copy">
             <strong>카카오맵 친구위치 공유</strong>
@@ -277,6 +297,48 @@ const router = useRouter();
 const shareStatus = ref('');
 const codeCopied = ref(false);
 
+const guideModal = ref(null);
+function openGuide(key) { guideModal.value = key; }
+
+const GUIDE_CONTENT = {
+  checklist: {
+    title: '산행 전 체크리스트',
+    sections: [
+      { heading: '신체 & 건강', items: ['충분한 수면 (7시간 이상)', '복용 중인 약 지참 여부 확인', '과도한 음주 전날 산행 금지', '고혈압·심장질환 등 만성질환자 의사 상담'] },
+      { heading: '장비 & 복장', items: ['등산화 밑창 마모 확인', '여벌 옷·우비 준비', '헤드랜턴 + 여분 배터리', '응급처치 키트 (반창고·소독약)'] },
+      { heading: '정보 & 통신', items: ['날씨 예보 확인 (출발 당일 + 예비일)', '등산로 개방 여부 확인', '가족/지인에게 산행 계획 공유', '보조 배터리 충전 상태 확인'] },
+      { heading: '식량 & 수분', items: ['체중 1kg당 음료 30~40ml 계산', '칼로리 보충용 간식 (견과류·에너지바)', '고지대 날씨 급변 대비 따뜻한 음료'] },
+    ],
+  },
+  emergency: {
+    title: '긴급 상황 대처법',
+    sections: [
+      { heading: '조난 발생 시', items: ['즉시 119 신고 (GPS 위치 자동 전송)', '무리한 이동 자제, 현 위치 유지', '호루라기·밝은 물건으로 구조대 신호', '체온 유지 — 방풍/방수 옷 착용'] },
+      { heading: '낙상·골절', items: ['부상 부위를 나뭇가지·스틱으로 고정', '통증이 심하면 자력 이동 중단', '119 신고 후 안내에 따라 행동', '출혈 시 깨끗한 천으로 압박'] },
+      { heading: '저체온증', items: ['서늘하고 바람 없는 곳으로 이동', '젖은 옷 즉시 교체, 담요/비상 은박 시트 활용', '따뜻한 음료(알코올 제외) 제공', '심한 경우 즉시 119 신고'] },
+      { heading: '길 잃음', items: ['패닉 금지 — 잠시 멈추고 현재 위치 파악', '산행 앱 또는 GPS로 등산로 복귀 경로 확인', '해가 지기 전 하산 불가 판단 시 야영 준비', '119에 신고 후 위치 좌표 안내'] },
+    ],
+  },
+  weather: {
+    title: '날씨 별 행동강령',
+    sections: [
+      { heading: '폭우 / 집중호우', items: ['계곡·계류 근처 즉시 대피 (급류 위험)', '낙뢰 위험 — 능선·정상 피하고 낮은 곳으로', '시야 확보 어려우면 안전 장소에서 대기', '기상청 특보 발령 시 즉각 하산'] },
+      { heading: '강풍 / 태풍 주의보', items: ['능선·정상부 통행 자제', '낙석 위험 지역 우회', '텐트/그늘막 즉시 철수', '손목·팔꿈치 보호대 착용'] },
+      { heading: '폭염 (33°C 이상)', items: ['오전 10시 ~ 오후 3시 산행 자제', '30분마다 수분 보충 (목이 마르기 전에)', '그늘진 장소에서 20분 이상 휴식', '열사병 의심 시 즉시 119 신고'] },
+      { heading: '안개 / 저시정', items: ['등산로 이탈 금지 — 지형지물 확인 어려움', '전후 등산객과 간격 유지', '밝은 색 옷·반사재 착용', '헤드랜턴 점등 유지'] },
+    ],
+  },
+  gear: {
+    title: '장비 점검 가이드',
+    sections: [
+      { heading: '필수 장비', items: ['등산화: 발목 지지·방수 여부, 밑창 마모 5mm 이하', '등산 스틱: 잠금 장치 체결, 길이 조절 확인', '배낭: 무게 중심 위치, 어깨끈·허리끈 착용감', '지도·나침반 또는 오프라인 GPS 앱'] },
+      { heading: '안전 장비', items: ['헤드랜턴: 충전 상태 100%, 예비 배터리 1세트', '비상 호루라기 (낙뢰·조난 대비)', '비상 은박 담요 (저체온증 예방)', '응급처치 키트: 지혈대·탄력 붕대·소독제'] },
+      { heading: '날씨 대비', items: ['우비 상하의 세트 (우산 대신 필수)', '기온 차 대비 중간 레이어(플리스·다운)', '선크림 SPF 50+ (고도 높을수록 자외선 강함)', '방한 장갑·모자 (능선부 기온 급강하)'] },
+      { heading: '점검 주기', items: ['매 산행 전: 등산화 밑창·스틱 잠금 확인', '월 1회: 배낭 스트랩·지퍼 상태', '시즌마다: 다운·방수 재킷 세탁 및 발수처리', '2~3년마다: 등산화 밑창 교체 검토'] },
+    ],
+  },
+};
+
 async function copyShareCode() {
   if (!shareCode.value) return;
   try {
@@ -302,7 +364,6 @@ const guardianResolved = ref(false);
 const inputFocused = ref(false);
 
 onMounted(() => {
-  nextTick(() => hiddenInput.value?.focus());
   if (authUser.value && emergencyContacts.value.length === 0) loadMyPageData();
 });
 
@@ -445,6 +506,7 @@ async function stopAndRecord() {
   if (mountainAsCourse.value) {
     await saveHikingRecord(mountainAsCourse.value, weatherData.value);
   }
+  resetSafeLink();
 }
 
 async function copyAndShare() {
