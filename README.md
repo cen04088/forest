@@ -507,7 +507,7 @@ BM25는 외부 의존성 없이 순수 파이썬으로 구현해 서버 리소�
 
 | 항목 | 내용 |
 |------|------|
-| 서비스 URL | Railway 배포 (팀 제출 시 URL 기재) |
+| 서비스 URL | Railway 배포 ([주소](http://forest-production-10d0.up.railway.app/#/)) |
 | 백엔드 | gunicorn + Django + PostgreSQL (Railway) |
 | 프론트엔드 | Vite 빌드 → WhiteNoise 정적 서빙 |
 
