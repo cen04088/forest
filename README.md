@@ -30,7 +30,7 @@
 | 황도경 | 팀원 | 세이프링크 시스템, 프론트엔드 UI/UX 전반, AI 연동| |
 
 
-> Git 저장소: ([주소](http://forest-production-10d0.up.railway.app/#/))
+> 올라 웹페이지: ([주소](http://forest-production-10d0.up.railway.app/#/))
 
 ---
 
