@@ -12,7 +12,7 @@
 3. [데이터베이스 모델링 (ERD)](#3-데이터베이스-모델링-erd)
 4. [추천 알고리즘 기술 설명](#4-추천-알고리즘-기술-설명)
 5. [핵심 기능 설명](#5-핵심-기능-설명)
-6. [기능별 소스코드 및 실행 화면](#6-기능별-소스코드-및-실행-화면)
+6. [기능별 소스코드](#6-기능별-소스코드)
 7. [생성형 AI 활용](#7-생성형-ai-활용)
 8. [배포 서비스 URL](#8-배포-서비스-url)
 9. [프로젝트 구조](#9-프로젝트-구조)
@@ -30,7 +30,7 @@
 | 황도경 | 팀원 | 세이프링크 시스템, 프론트엔드 UI/UX 전반, AI 연동| |
 
 
-> 올라 웹페이지: ([주소](http://forest-production-10d0.up.railway.app/#/))
+> 올라 웹페이지: Railway에 배포했었으나 현재는 서버를 내려 서비스 중단 상태입니다.
 
 ---
 
@@ -294,9 +294,7 @@ LocationLog 누적              파란 폴리라인으로 궤적 표시
 
 ---
 
-## 6. 기능별 소스코드 및 실행 화면
-
-> 스크린샷은 `docs/screenshots/` 폴더에 이미지를 넣으면 아래 항목에 자동 표시됩니다.
+## 6. 기능별 소스코드
 
 ---
 
@@ -321,11 +319,6 @@ else:
     grade = 'safe'
 ```
 
-**실행 화면**
-
-![안전 코스 추천 — 메인](docs/screenshots/guide_main.png)
-![안전 코스 추천 — 탐방로 선택](docs/screenshots/guide_trail.png)
-
 ---
 
 ### 6-2. 세이프링크 (안전 공유)
@@ -349,11 +342,6 @@ def generate_share_code():
             return code
 ```
 
-**실행 화면**
-
-![세이프링크 — 산행 시작](docs/screenshots/safelink_start.png)
-![세이프링크 — 코드 공유](docs/screenshots/safelink_code.png)
-
 ---
 
 ### 6-3. 보호자 실시간 뷰
@@ -373,11 +361,6 @@ const minutesSinceUpdate = computed(() =>
 const isWarning = computed(() => minutesSinceUpdate.value >= 30);
 const isEmergency = computed(() => minutesSinceUpdate.value >= 60);
 ```
-
-**실행 화면**
-
-![보호자 뷰 — 실시간 지도](docs/screenshots/guardian_map.png)
-![보호자 뷰 — 긴급 경고](docs/screenshots/guardian_alert.png)
 
 ---
 
@@ -403,10 +386,6 @@ def bm25_score(query_tokens, doc_tokens, avg_dl, k1=1.5, b=0.75):
     return score
 ```
 
-**실행 화면**
-
-![AI 도우미 — 채팅](docs/screenshots/chat_main.png)
-
 ---
 
 ### 6-5. 커뮤니티
@@ -430,11 +409,6 @@ def following_posts(request):
     return paginate_posts(posts, request)
 ```
 
-**실행 화면**
-
-![커뮤니티 — 게시판](docs/screenshots/community_list.png)
-![커뮤니티 — 게시글 상세](docs/screenshots/community_detail.png)
-
 ---
 
 ### 6-6. 마이페이지
@@ -445,11 +419,6 @@ def following_posts(request):
 |------|------|
 | `frontend/src/views/MyPageTab.vue` | 즐겨찾기, 배지, 산행 기록, 긴급 연락처 |
 | `backend/recommendations/views.py` | 사용자 프로필, 즐겨찾기, 연락처 API |
-
-**실행 화면**
-
-![마이페이지 — 메인](docs/screenshots/mypage_main.png)
-![마이페이지 — 산행 기록](docs/screenshots/mypage_records.png)
 
 ---
 
@@ -507,7 +476,7 @@ BM25는 외부 의존성 없이 순수 파이썬으로 구현해 서버 리소�
 
 | 항목 | 내용 |
 |------|------|
-| 서비스 URL | Railway 배포 ([주소](http://forest-production-10d0.up.railway.app/#/)) |
+| 서비스 URL | Railway에 배포했었으나 현재는 서버 중단 상태 |
 | 백엔드 | gunicorn + Django + PostgreSQL (Railway) |
 | 프론트엔드 | Vite 빌드 → WhiteNoise 정적 서빙 |
 
